@@ -1,0 +1,28 @@
+# The security headers of every static file (Cloudflare Workers static
+# assets). What the Worker answers itself gets the same headers from
+# worker/security-headers.json; tests/security-headers.test.js keeps the two
+# copies equal. A JSON file cannot hold comments, so the reasons live here.
+#
+# Content-Security-Policy: the pages run only the game's own code: scripts and
+# styles only from its files - no inline scripts, styles or style attributes
+# (a script may still set element.style; tests/code-structure.test.js checks
+# the files). Images may be data: (Bootstrap draws its icons so; photo avatars
+# are data:image URLs) and blob: (an uploaded photo is opened at a blob:
+# address before it is shrunk). connect-src 'self' covers the room's
+# WebSocket. No plugins, no <base>, and no other site may show the game in a
+# frame. A new source here is a deliberate decision, written down here.
+#
+# Referrer-Policy: a link to another site tells it only the game's address,
+# never the page: a room's address holds its code. The coffee link sends
+# nothing at all (rel="noreferrer"); this covers any link without it.
+#
+# Permissions-Policy: browser features the game never uses (Web Share, the
+# photo picker and the screen wake lock of a started round are not among them).
+#
+# X-Content-Type-Options: a file is what its Content-Type says, never guessed
+# from its content.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  X-Content-Type-Options: nosniff

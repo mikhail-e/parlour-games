@@ -23,15 +23,16 @@ test('both pages show the version the server answers', async ({ newPlayer, reque
     await expect(footerVersion).toHaveText(`v${version}`);
 });
 
-// iOS cannot read an SVG apple-touch-icon: the home-screen icon must be a PNG
+// iOS cannot read an SVG apple-touch-icon: the home-screen icon must be a PNG.
+// An ICO file has two names for its type; browsers take either
 test('the icons the pages name are served, the iPhone one as a PNG', async ({ newPlayer, request }) => {
     const { page } = await newPlayer('Alice');
     await page.goto('/');
 
-    for (const [rel, type] of [['icon', 'image/x-icon'], ['apple-touch-icon', 'image/png']]) {
+    for (const [rel, type] of [['icon', /^image\/(x-icon|vnd\.microsoft\.icon)$/], ['apple-touch-icon', /^image\/png$/]]) {
         const answer = await request.get(await page.locator(`link[rel="${rel}"]`).getAttribute('href'));
         expect(answer.status(), rel).toBe(200);
-        expect(answer.headers()['content-type'], rel).toBe(type);
+        expect(answer.headers()['content-type'], rel).toMatch(type);
     }
 });
 

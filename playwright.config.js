@@ -2,22 +2,25 @@
 // Browser tests: the real game in Chromium, on a phone and on a desktop, with
 // several players per room (docs/testing.md).
 //
-// Tests start their own server on port 3100, so a running `npm start` (3000)
-// does not interfere, and never reuse one: a server left running would test
-// yesterday's server.js. With BASE_URL set (npm run test:e2e:prod) the same
-// tests run against that address and no server is started; the free Render
-// plan may take up to a minute to wake, hence the longer timeouts.
+// Tests start their own `wrangler dev` (the Worker and its rooms, as on
+// Cloudflare) on port 3100, so a running `npm start` (8787) does not
+// interfere, and never reuse one: a server left running would test yesterday's
+// code. The rooms' storage goes to a temporary folder, not to .wrangler/,
+// where `npm start` keeps its own. With BASE_URL set (npm run test:e2e:prod)
+// the same tests run against that address and no server is started, hence the
+// longer timeouts.
 const os = require('os');
 const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
 
 const TEST_PORT = 3100;
 const BASE_URL = process.env.BASE_URL;
-// Room backups of the test server go to a temporary folder, not into games/,
-// where `npm start` would find them. Tests that check backups read the path
-// from E2E_GAMES_DIR (the workers inherit it)
-const GAMES_DIR = path.join(os.tmpdir(), 'whoami-e2e-games');
-process.env.E2E_GAMES_DIR = GAMES_DIR;
+// A second local server whose room timers take seconds, not hours
+// (tests/e2e/room-timers.spec.js; the workers inherit the address)
+const FAST_TIMERS_PORT = 3101;
+process.env.E2E_FAST_TIMERS_URL = `http://localhost:${FAST_TIMERS_PORT}`;
+const wranglerDev = (port, inspectorPort, state, vars = '') =>
+    `npx wrangler dev --port ${port} --inspector-port ${inspectorPort} --persist-to ${path.join(os.tmpdir(), state)}${vars}`;
 
 module.exports = defineConfig({
     testDir: './tests/e2e',
@@ -54,11 +57,19 @@ module.exports = defineConfig({
     ],
 
     ...(!BASE_URL && {
-        webServer: {
-            command: 'node server.js',
-            env: { PORT: String(TEST_PORT), GAMES_DIR },
-            url: `http://localhost:${TEST_PORT}/api/version`,
-            reuseExistingServer: false,
-        },
+        webServer: [
+            {
+                command: wranglerDev(TEST_PORT, 9230, 'whoami-e2e-state'),
+                env: { WRANGLER_SEND_METRICS: 'false' },
+                url: `http://localhost:${TEST_PORT}/api/version`,
+                reuseExistingServer: false,
+            },
+            {
+                command: wranglerDev(FAST_TIMERS_PORT, 9231, 'whoami-e2e-fast', ' --var ROOM_EMPTY_MS:8000 --var GHOST_MS:3000'),
+                env: { WRANGLER_SEND_METRICS: 'false' },
+                url: `http://localhost:${FAST_TIMERS_PORT}/api/version`,
+                reuseExistingServer: false,
+            },
+        ],
     }),
 });

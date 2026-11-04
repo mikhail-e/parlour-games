@@ -5,7 +5,7 @@ const {
 
 const notifications = page => page.locator('.alert.position-fixed');
 
-/* global socket -- the room page's Socket.IO connection (game-room.js), inside page.evaluate() */
+/* global socket -- the room page's RoomSocket (game-room.js), inside page.evaluate() */
 
 test('your own character is a sealed envelope that reveals it', async ({ newPlayer }) => {
     const { players: { Alice: alice } } = await startedGame(newPlayer, ['Alice', 'Bob']);
@@ -121,13 +121,13 @@ test('a reveal made while the connection is down happens once it is back', async
     // The phone loses the network (and its socket) for a moment, as when it
     // wakes from sleep; Alice reveals in that moment
     await alice.context.setOffline(true);
-    await alice.page.evaluate(() => socket.io.engine.close());
+    await alice.page.evaluate(() => socket.ws.close());
     await playerCard(alice.page, 'Alice').locator('.character-sticker.mystery').click();
     await alice.page.click('#confirmReveal');
 
     await alice.context.setOffline(false);
 
-    // The socket comes back after Socket.IO's reconnection delay (up to a few seconds)
+    // The socket comes back after its reconnection delay (up to a few seconds)
     await expect(playerCard(bob.page, 'Alice').locator('.character-sticker.revealed'))
         .toHaveText(characters.Alice, { timeout: 15_000 });
     await expect(playerCard(alice.page, 'Alice').locator('.character-sticker.revealed')).toHaveText(characters.Alice);

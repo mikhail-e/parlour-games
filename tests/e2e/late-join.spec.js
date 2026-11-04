@@ -6,7 +6,7 @@ const {
     assignCharacter, revealOwnCharacter,
 } = require('./helpers');
 
-/* global socket, io, joinRequestQueue, PLAYER_ID, PLAYER_SECRET -- the room page's names (game-room.js, utils.js), inside page.evaluate() */
+/* global socket, RoomSocket, joinRequestQueue, PLAYER_ID, PLAYER_SECRET -- the room page's names (game-room.js, room-socket.js, utils.js), inside page.evaluate() */
 
 const requestWindow = page => page.locator('#joinRequestModal');
 const notifications = page => page.locator('.alert.position-fixed');
@@ -169,7 +169,7 @@ test('a waiting socket cannot let itself in', async ({ newPlayer }) => {
     await expectRequestFrom(alice.page, 'Dasha');
 
     const error = await dasha.page.evaluate(gameId => new Promise(resolve => {
-        const own = io({ forceNew: true });
+        const own = new RoomSocket(`/ws/${gameId}`);
         own.on('connect', () => {
             own.emit('ask-to-join', { gameId, playerId: PLAYER_ID, playerSecret: PLAYER_SECRET, playerName: 'Dasha', avatar: '🐻' });
             own.emit('admit-player', { playerId: PLAYER_ID });
@@ -297,16 +297,15 @@ test('a newcomer whose connection drops keeps waiting', async ({ newPlayer }) =>
     await askToJoin(dasha, code);
     await expectRequestFrom(alice.page, 'Dasha');
 
-    // The phone loses its socket for a moment and Socket.IO connects a new one
+    // The phone loses its socket for a moment and the page connects a new one
     // (after its reconnection delay), which asks again. Whether the players'
-    // window closes meanwhile depends on how soon the server hears of the
-    // drop: at once here, only after the reconnect behind Render's proxy
-    const lost = await dasha.page.evaluate(() => {
-        const id = socket.id;
-        socket.io.engine.close();
-        return id;
+    // window closes meanwhile depends on how soon the room hears of the drop
+    await dasha.page.evaluate(() => {
+        window.connects = 0;
+        socket.on('connect', () => { window.connects += 1; });
+        socket.ws.close();
     });
-    await expect.poll(() => dasha.page.evaluate(id => socket.connected && socket.id !== id, lost),
+    await expect.poll(() => dasha.page.evaluate(() => window.connects >= 1 && socket.connected),
         { timeout: 15_000 }).toBe(true);
     await expect(requestWindow(alice.page)).toHaveClass(/\bshow\b/, { timeout: 15_000 });
     await expect(dasha.page.locator('#waitingSheet')).toBeVisible();
@@ -401,4 +400,27 @@ test('a request waits while a player types a character', async ({ newPlayer }) =
     await expect(playerCard(dasha.page, 'Dasha').locator('.character-sticker .seal')).toBeVisible();
     await expect(card.locator('.character-sticker')).toHaveText('Gandalf');
     await expectRequestFrom(alice.page, 'Eve');
+});
+
+// A player types into the console: a socket of their own asks to join for an
+// invented newcomer, then joins the room as the player. The request has no
+// waiting page any more, so it goes
+test("a socket that asked to join and then joins as a player takes the request away", async ({ newPlayer }) => {
+    const { code, players: { Alice: alice, Bob: bob } } = await startedGame(newPlayer, ['Alice', 'Bob']);
+    await bob.page.evaluate(gameId => new Promise(resolve => {
+        window.own = new RoomSocket(`/ws/${gameId}`);
+        window.own.on('connect', () => {
+            window.own.emit('ask-to-join', {
+                gameId, playerId: crypto.randomUUID(), playerSecret: crypto.randomUUID(), playerName: 'Ghost', avatar: '🐻',
+            });
+            resolve();
+        });
+    }), code);
+    await expectRequestFrom(alice.page, 'Ghost');
+
+    await bob.page.evaluate(gameId => {
+        window.own.emit('join-room', { gameId, playerId: PLAYER_ID, playerSecret: PLAYER_SECRET });
+    }, code);
+
+    await expect(requestWindow(alice.page)).not.toHaveClass(/\bshow\b/);
 });

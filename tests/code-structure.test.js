@@ -1,7 +1,7 @@
 /**
  * How the page code is written
  * The pages run under a Content Security Policy that allows scripts and styles
- * only from the game's own files (server.js). An onclick="..." attribute is
+ * only from the game's own files (public/_headers). An onclick="..." attribute is
  * inline code and a style="..." attribute an inline style: the browser blocks
  * both. Handlers go through addEventListener, looks through classes in
  * style.css; a script may still set element.style. This test reads the files

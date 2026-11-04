@@ -43,7 +43,7 @@ describe('Service Worker caching policy', () => {
 
     test('the worker responds to icon requests only', () => {
         // A single respondWith(), and it serves icons from cache. Anything else
-        // (app files, Socket.IO, /api/) falls through to the browser untouched.
+        // (app files, the room's socket, /api/) falls through to the browser untouched.
         const respondWithCalls = swSource.match(/event\.respondWith\(/g) || [];
 
         expect(respondWithCalls).toHaveLength(1);

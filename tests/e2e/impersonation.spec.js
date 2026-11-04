@@ -3,7 +3,7 @@
 // only from a socket that proved with the player's secret who it is
 const { test, expect, playerCard, startedGame, waitForPlayers } = require('./helpers');
 
-/* global io -- the Socket.IO client of game.html, inside page.evaluate() */
+/* global RoomSocket -- the room page's socket class (room-socket.js), inside page.evaluate() */
 
 test('a socket without a secret can neither act for players nor watch the room', async ({ newPlayer }) => {
     const { players: { Alice: alice, Bob: bob, Mallory: mallory } } =
@@ -14,7 +14,7 @@ test('a socket without a secret can neither act for players nor watch the room',
     const { errors, gameStates } = await mallory.page.evaluate(async () => {
         const ids = [...document.querySelectorAll('.player-card[data-player-id]')].map(card => card.dataset.playerId);
         const gameId = location.pathname.split('/').pop();
-        const socket = io({ forceNew: true });
+        const socket = new RoomSocket(`/ws/${gameId}`);
         const errors = [];
         let gameStates = 0;
         socket.on('error', error => errors.push(error));

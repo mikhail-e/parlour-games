@@ -2,7 +2,7 @@
 
 /* Fonts. The files live in public/fonts/ (Fontsource; licenses next to them),
    not on a CDN: the Content Security Policy allows fonts only from the game's
-   own site (font-src 'self', server.js).
+   own site (font-src 'self', public/_headers).
    Fira Sans Condensed sets all the text: narrow like a playbill, yet easy to
    read. Latin and Cyrillic are separate files: the browser downloads Cyrillic
    only for a page that has it. No italic files - nothing in the game is italic.
