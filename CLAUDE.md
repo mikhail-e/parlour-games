@@ -23,7 +23,7 @@ npx wrangler deploy                # Deploy to Cloudflare by hand; npx wrangler 
 
 ## Architecture
 ```
-wrangler.jsonc             # Cloudflare: the Worker, the static files of public/, the rooms' Durable Object class and its migrations
+wrangler.jsonc             # Cloudflare: the Worker and its address (whoami.escapist.club), the static files of public/, the rooms' Durable Object class and its migrations
 worker/
 ├── index.js               # The Worker: HTTP API, room pages, room sockets, the 404 page, the security headers on its own answers
 ├── room-base.js           # SHARED room base: sockets, roles in attachments, broadcast, the silent-socket sweep, the timer — no game in it
