@@ -2,6 +2,8 @@
 
 Прод — https://whoami.escapist.club/. **Каждый push в `master` выкладывает прод**: Workers Builds в Cloudflare ставит пакеты и выполняет `npx wrangler deploy`; другие ветки не собираются, руками прод не выкладывают. Push в `master` — только после подтверждения владельца («выкладывай»).
 
+Настройки сборки — в панели Cloudflare: Worker `whoami-game` → Settings → Build. Репозиторий `mikhail-e/whoami-game`; ветка прода — `master` (сама Cloudflare предлагает `main`: с ней push в `master` молча ничего не выкладывал бы); Preview Builds выключены; команда сборки пустая, команда выкладки `npx wrangler deploy`, корень `/`. Имя Worker в панели совпадает с `name` в `wrangler.jsonc`, иначе сборка падает.
+
 ## Ветки (git flow)
 
 | Ветка | Создаётся от | Вливается в | Зачем |

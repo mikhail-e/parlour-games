@@ -100,8 +100,9 @@ test('the landing page names its own address, and Google gets a description of t
 
 // Against a deployed site the cards name that very site: a card with another
 // address sends the reader and the bot's picture request elsewhere
-test('the cards name the site they are served from', async ({ newPlayer, request, baseURL }) => {
+test('the cards name the site they are served from', async ({ newPlayer, request, baseURL, isMobile }) => {
     test.skip(!process.env.BASE_URL, 'the cards hold the production address');
+    test.skip(isMobile, 'the cards are HTML: one browser is enough');
     const { page } = await newPlayer('Reader');
     const site = new URL(baseURL).origin;
     const landing = await headOf(page, request, '/');

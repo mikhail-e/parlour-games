@@ -67,7 +67,7 @@ Facebook и мессенджеры хранят картинку у себя п�
 | `wrangler.jsonc` | `routes`: домен, на котором Cloudflare отвечает игрой |
 | `README.md`, `CLAUDE.md`, `SECURITY.md`, `docs/release.md`, `docs/testing.md` | адрес прода в тексте |
 
-Сменить адрес — значит заменить его во всех местах таблицы (`git grep -n` по прежнему адресу находит их) и в поле Website репозитория на GitHub (`gh repo edit --homepage`): оно вне git.
+Сменить адрес — значит заменить его во всех местах таблицы (`git grep -n` по прежнему домену без `https://` находит их все, маршрут в `wrangler.jsonc` тоже) и в поле Website репозитория на GitHub (`gh repo edit --homepage`): оно вне git.
 
 ## Проверка после выкладки
 
