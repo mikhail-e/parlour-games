@@ -128,13 +128,14 @@ function generateRoomCode() {
     return code;
 }
 
-// Create a new game
-function createGame(games) {
-    let gameId;
+// Create a new game. A room code given is taken as it is: the caller has
+// checked it is valid and free (a room of its own creates its game with its code)
+function createGame(games, roomCode = null) {
+    let gameId = roomCode;
     // Ensure unique code
-    do {
+    while (!gameId || games.has(gameId)) {
         gameId = generateRoomCode();
-    } while (games.has(gameId));
+    }
 
     const game = {
         id: gameId,
@@ -691,6 +692,31 @@ function serializeGame(game, { withSecrets = false } = {}) {
     return data;
 }
 
+// The room's own game as plain data for its storage (worker/room.js), and
+// back. Unlike restoreGame, which checks data from outside, this keeps
+// everything as it is: recentlyLeft, the hashes of the secrets, the join
+// requests, every clock. Maps, Sets and Dates are tagged, so a field added to
+// the game later is kept without a change here
+function gameToStorage(game) {
+    return JSON.parse(JSON.stringify(game, function tag(key, value) {
+        const original = this[key]; // a Date has already been turned into a string in value
+        if (original instanceof Date) return { $date: original.toISOString() };
+        if (value instanceof Map) return { $map: [...value] };
+        if (value instanceof Set) return { $set: [...value] };
+        return value;
+    }));
+}
+
+function gameFromStorage(data) {
+    return JSON.parse(JSON.stringify(data), (key, value) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+        if ('$date' in value) return new Date(value.$date);
+        if ('$map' in value) return new Map(value.$map);
+        if ('$set' in value) return new Set(value.$set);
+        return value;
+    });
+}
+
 // A Date from a saved value (a Date, or an ISO string after JSON), or null
 function toDate(value) {
     const date = new Date(value);
@@ -939,6 +965,36 @@ function removeStaleDisconnectedPlayers(games, maxDisconnectedMs = MAX_DISCONNEC
     return removals;
 }
 
+// A room no page of a player has open goes this long after the last one
+// closed (the owner's decision): a group that took a long break comes back
+// to its room
+const ROOM_EMPTY_MS = 2 * 60 * 60 * 1000;
+
+// The first page of a player to come back to a room nobody had open: every
+// player still offline gets a fresh hour from now. Otherwise the first one
+// back after a gap of over an hour would see everybody else removed as
+// ghosts - their characters and places in the list gone
+function restartGhostClocks(game, now = Date.now()) {
+    for (const player of game.players) {
+        if (player.isConnected !== true) player.disconnectedAt = now;
+    }
+}
+
+// When the room's timer is due (worker/room.js), or null for none. With no
+// page of a player open, nobody is removed: the room itself goes emptyRoomMs
+// after its last page closed (emptySince). With a page open, the earliest
+// ghost is due; one millisecond after its hour, as removeStaleDisconnectedPlayers
+// removes only those offline for MORE than the hour
+function roomAlarmTime(game, { playerPagesOpen, emptySince }, { emptyRoomMs = ROOM_EMPTY_MS, ghostMs = MAX_DISCONNECTED_MS } = {}) {
+    if (!game) return null;
+    if (!playerPagesOpen) return emptySince === null || emptySince === undefined ? null : emptySince + emptyRoomMs;
+
+    const ghostTimes = game.players
+        .filter(player => player.isConnected !== true && player.disconnectedAt)
+        .map(player => player.disconnectedAt + ghostMs + 1);
+    return ghostTimes.length ? Math.min(...ghostTimes) : null;
+}
+
 // Remove games nobody plays anymore from memory (prevents unbounded growth).
 // A game is inactive when it has no connected players and nothing happened
 // in it for maxIdleMs. Returns the list of removed game IDs.
@@ -990,7 +1046,13 @@ module.exports = {
     markPlayerDisconnected,
     cleanupInactiveGames,
     removeStaleDisconnectedPlayers,
+    restartGhostClocks,
+    roomAlarmTime,
+    gameToStorage,
+    gameFromStorage,
     createConnectionTracker,
+    ROOM_EMPTY_MS,
+    MAX_DISCONNECTED_MS,
     MAX_NAME_LENGTH,
     MAX_CHARACTER_LENGTH,
     MAX_CUSTOM_AVATAR_LENGTH
