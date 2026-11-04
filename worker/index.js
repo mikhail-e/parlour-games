@@ -43,8 +43,10 @@ async function createGame(env) {
     return Response.json({ success: false }, { status: 503 });
 }
 
-// The body of a join, or null when it is too large; what is not JSON is empty
+// The body of a join, or null when it is too large; what is not JSON is empty.
+// A body that says it is too large is not read at all
 async function readBody(request) {
+    if (Number(request.headers.get('Content-Length')) > MAX_BODY_BYTES) return null;
     const bytes = await request.arrayBuffer();
     if (bytes.byteLength > MAX_BODY_BYTES) return null;
     try {
@@ -79,7 +81,13 @@ async function joinGame(request, env) {
         return Response.json({ success: false, error: 'Game not found' }, { status: 400 });
     }
 
-    const answer = await env.ROOMS.getByName(gameId).join({ ...body, gameId });
+    // The room gets the fields of a join and nothing else, each a text or
+    // nothing (the game refuses whatever else was sent: game-logic.js): a
+    // value nested thousands of levels deep cannot be handed to a room
+    const text = value => (typeof value === 'string' ? value : null);
+    const answer = await env.ROOMS.getByName(gameId).join({
+        gameId, playerName: text(playerName), avatar: text(avatar), playerId: text(playerId), playerSecret: text(body.playerSecret)
+    });
     return Response.json(answer.body, { status: answer.status });
 }
 
@@ -94,7 +102,8 @@ async function roomPage(request, env, code) {
 
 async function route(request, env) {
     const { pathname } = new URL(request.url);
-    const { method } = request;
+    // HEAD asks what GET would answer (fetch below leaves the body out)
+    const method = request.method === 'HEAD' ? 'GET' : request.method;
 
     // The running version: every page shows it at the bottom, and after a
     // deploy it tells which release is live
@@ -109,7 +118,7 @@ async function route(request, env) {
 
     // A room page's socket goes to its room
     const socket = pathname.match(/^\/ws\/([^/]+)$/);
-    if (method === 'GET' && socket) {
+    if (request.method === 'GET' && socket) {
         const roomCode = socket[1].toUpperCase();
         if (!gameLogic.isValidRoomCode(roomCode)) return new Response('No such room', { status: 400 });
         return env.ROOMS.getByName(roomCode).fetch(request);
@@ -118,10 +127,21 @@ async function route(request, env) {
     return notFound(request, env);
 }
 
+// The Worker's answer: the route's, with the security headers. Should a room
+// fail, the page still gets JSON it can read, with the headers, not
+// Cloudflare's error page
 export default {
     async fetch(request, env) {
-        const response = await route(request, env);
+        let response;
+        try {
+            response = await route(request, env);
+        } catch (error) {
+            console.error(`Error answering ${request.method} ${new URL(request.url).pathname}:`, error);
+            response = Response.json({ success: false }, { status: 500 });
+        }
         // An accepted socket is no page: its answer goes back as it is
-        return response.webSocket ? response : withSecurityHeaders(response);
+        if (response.webSocket) return response;
+        if (request.method === 'HEAD') response = new Response(null, response);
+        return withSecurityHeaders(response);
     },
 };

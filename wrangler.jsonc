@@ -12,7 +12,9 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/game/*", "/ws/*"]
+    // /game, /index and /404 too: the static files would answer them with
+    // game.html, index.html and 404.html, where the game answers its 404 page
+    "run_worker_first": ["/api/*", "/game/*", "/ws/*", "/game", "/index", "/404"]
   },
   // One room per code (worker/room.js). A new or renamed class of rooms needs
   // a new migration entry; SQLite storage is the kind the free plan has

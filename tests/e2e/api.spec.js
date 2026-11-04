@@ -169,3 +169,48 @@ test('there is no room recovery from a browser copy', async ({ request }) => {
 
     expect(response.status()).toBe(404);
 });
+
+// The largest join carries one photo avatar (up to 32 KB): a body over 64 KB
+// is no join of the game
+test('a join body over 64 KB is refused', async ({ request }) => {
+    const response = await request.post('/api/join-game', {
+        data: { gameId: 'ABC123', playerName: 'Alice', avatar: 'x'.repeat(70_000) },
+    });
+
+    expect(response.status()).toBe(413);
+});
+
+test('a socket address that is not a room code is refused', async ({ request }) => {
+    const response = await request.get('/ws/not-a-code');
+
+    expect(response.status()).toBe(400);
+});
+
+// HEAD asks what GET would answer, without the body (uptime checkers use it)
+test('HEAD answers like GET for the version and a room page', async ({ request }) => {
+    const gameId = await createGame(request);
+
+    expect((await request.head('/api/version')).status()).toBe(200);
+    expect((await request.head(`/game/${gameId}`)).status()).toBe(200);
+});
+
+// A value nested thousands of levels deep (well under the size limit) cannot
+// be handed to a room: the join takes only what it needs, and a name that is
+// no text is refused like any other wrong name
+const deeplyNested = depth => JSON.parse(`${'{"a":'.repeat(depth)}1${'}'.repeat(depth)}`);
+
+test('a join with something extra, however deep, is still just a join', async ({ request }) => {
+    const gameId = await createGame(request);
+
+    const body = await join(request, withSecret({ gameId, playerName: 'Alice', avatar: '😀', extra: deeplyNested(5000) }));
+
+    expect(body).toMatchObject({ success: true, player: { name: 'Alice' } });
+});
+
+test('a name that is no text is refused, however deep', async ({ request }) => {
+    const gameId = await createGame(request);
+
+    const body = await join(request, withSecret({ gameId, playerName: deeplyNested(5000), avatar: '😀' }), 400);
+
+    expect(body.error).toBe('Invalid player name');
+});

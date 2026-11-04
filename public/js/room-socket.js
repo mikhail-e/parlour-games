@@ -32,9 +32,10 @@ class RoomSocket {
         this.lastHeard = 0;
 
         this.pingTimer = setInterval(() => this.checkConnection(), RoomSocket.PING_EVERY_MS);
-        document.addEventListener('visibilitychange', () => {
+        this.onVisible = () => {
             if (document.visibilityState === 'visible') this.checkAfterWake();
-        });
+        };
+        document.addEventListener('visibilitychange', this.onVisible);
         this.open();
     }
 
@@ -82,6 +83,7 @@ class RoomSocket {
         this.closedForGood = true;
         clearTimeout(this.retryTimer);
         clearInterval(this.pingTimer);
+        document.removeEventListener('visibilitychange', this.onVisible);
         this.drop();
     }
 
@@ -175,10 +177,13 @@ class RoomSocket {
             if (this.retryTimer) this.open();
             return;
         }
+        const pinged = this.socket;
         const pingedAt = Date.now();
-        this.socket.send('ping');
+        pinged.send('ping');
+        // Only the socket pinged is judged: one that replaced it meanwhile
+        // may still be opening
         setTimeout(() => {
-            if (this.lastHeard < pingedAt) this.reconnectNow();
+            if (this.socket === pinged && this.lastHeard < pingedAt) this.reconnectNow();
         }, RoomSocket.WAKE_CHECK_MS);
     }
 }

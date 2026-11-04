@@ -401,3 +401,26 @@ test('a request waits while a player types a character', async ({ newPlayer }) =
     await expect(card.locator('.character-sticker')).toHaveText('Gandalf');
     await expectRequestFrom(alice.page, 'Eve');
 });
+
+// A player types into the console: a socket of their own asks to join for an
+// invented newcomer, then joins the room as the player. The request has no
+// waiting page any more, so it goes
+test("a socket that asked to join and then joins as a player takes the request away", async ({ newPlayer }) => {
+    const { code, players: { Alice: alice, Bob: bob } } = await startedGame(newPlayer, ['Alice', 'Bob']);
+    await bob.page.evaluate(gameId => new Promise(resolve => {
+        window.own = new RoomSocket(`/ws/${gameId}`);
+        window.own.on('connect', () => {
+            window.own.emit('ask-to-join', {
+                gameId, playerId: crypto.randomUUID(), playerSecret: crypto.randomUUID(), playerName: 'Ghost', avatar: '🐻',
+            });
+            resolve();
+        });
+    }), code);
+    await expectRequestFrom(alice.page, 'Ghost');
+
+    await bob.page.evaluate(gameId => {
+        window.own.emit('join-room', { gameId, playerId: PLAYER_ID, playerSecret: PLAYER_SECRET });
+    }, code);
+
+    await expect(requestWindow(alice.page)).not.toHaveClass(/\bshow\b/);
+});

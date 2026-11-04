@@ -45,3 +45,19 @@ test('a page whose timers run once a minute keeps its connection', async ({ newP
 
     expect(replaced).toBe(false);
 });
+
+// A page back on the screen pings its socket and connects again if no answer
+// comes. If that socket was replaced meanwhile - it dropped, and the next one
+// is still opening - the opening one is left alone
+test('a page back on screen leaves a connection that is still opening alone', async ({ newPlayer }) => {
+    const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Bob']);
+
+    const closedTheOpeningOne = await alice.page.evaluate(() => new Promise(resolve => {
+        socket.checkAfterWake();
+        let closed = false;
+        socket.socket = { readyState: WebSocket.CONNECTING, send() {}, close() { closed = true; } };
+        setTimeout(() => resolve(closed), 5500);
+    }));
+
+    expect(closedTheOpeningOne).toBe(false);
+});

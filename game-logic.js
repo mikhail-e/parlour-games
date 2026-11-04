@@ -702,13 +702,12 @@ function gameToStorage(game) {
 }
 
 function gameFromStorage(data) {
-    return JSON.parse(JSON.stringify(data), (key, value) => {
-        if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
-        if ('$date' in value) return new Date(value.$date);
-        if ('$map' in value) return new Map(value.$map);
-        if ('$set' in value) return new Set(value.$set);
-        return value;
-    });
+    if (Array.isArray(data)) return data.map(gameFromStorage);
+    if (!data || typeof data !== 'object') return data;
+    if ('$date' in data) return new Date(data.$date);
+    if ('$map' in data) return new Map(gameFromStorage(data.$map));
+    if ('$set' in data) return new Set(gameFromStorage(data.$set));
+    return Object.fromEntries(Object.entries(data).map(([key, value]) => [key, gameFromStorage(value)]));
 }
 
 // A page of this player has connected to the room: they are online.

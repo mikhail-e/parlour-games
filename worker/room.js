@@ -84,8 +84,8 @@ export class Room extends RoomBase {
 
     // After every change: the game into the room's storage, and the room's
     // timer set for what is due next. A room without a game keeps nothing and
-    // sets no timer
-    async afterChange() {
+    // sets no timer. alsoStore goes into the same write
+    async afterChange(alsoStore = {}) {
         if (!this.game) {
             this.emptySince = null;
             await this.ctx.storage.deleteAll();
@@ -98,7 +98,7 @@ export class Room extends RoomBase {
         } else {
             this.emptySince ??= Date.now();
         }
-        await this.ctx.storage.put({ game: gameLogic.gameToStorage(this.game), emptySince: this.emptySince });
+        await this.ctx.storage.put({ ...alsoStore, game: gameLogic.gameToStorage(this.game), emptySince: this.emptySince });
         await this.setTimer(playerPagesOpen);
     }
 
@@ -167,10 +167,9 @@ export class Room extends RoomBase {
         if (this.game) return { success: false };
         this.roomCode = roomCode;
         gameLogic.createGame(this.games, roomCode);
-        await this.ctx.storage.put('roomCode', roomCode);
         // A room nobody ever opens goes after the empty-room time too
         this.emptySince = Date.now();
-        await this.afterChange();
+        await this.afterChange({ roomCode });
         console.log(`Game ${roomCode} created`);
         return { success: true };
     }
@@ -274,6 +273,8 @@ export class Room extends RoomBase {
         // offline gets a fresh ghost time (game-logic.js, restartGhostClocks)
         if (this.emptySince !== null) gameLogic.restartGhostClocks(game);
         this.setInfo(ws, { ...info, role: 'player', playerId });
+        // A socket that waited for a request waits no more (askToJoin does the same)
+        if (info.role === 'waiting') this.withdrawRequestWithoutPages(info.playerId);
         gameLogic.markPlayerConnected(game, playerId);
         console.log(`📍 A page of player ${playerId} joined game ${gameId}`);
 
