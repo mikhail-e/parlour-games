@@ -14,6 +14,12 @@
     "not_found_handling": "404-page",
     "run_worker_first": ["/api/*", "/game/*", "/ws/*"]
   },
+  // One room per code (worker/room.js). A new or renamed class of rooms needs
+  // a new migration entry; SQLite storage is the kind the free plan has
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
   // console.log of the Worker goes to Workers Logs in the Cloudflare dashboard
   "observability": { "enabled": true }
 }
