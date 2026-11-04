@@ -98,6 +98,21 @@ test('the landing page names its own address, and Google gets a description of t
     expect(description.url).toBe(canonical);
 });
 
+// Against a deployed site the cards name that very site: a card with another
+// address sends the reader and the bot's picture request elsewhere
+test('the cards name the site they are served from', async ({ newPlayer, request, baseURL }) => {
+    test.skip(!process.env.BASE_URL, 'the cards hold the production address');
+    const { page } = await newPlayer('Reader');
+    const site = new URL(baseURL).origin;
+    const landing = await headOf(page, request, '/');
+    expect(new URL(landing.canonical).origin).toBe(site);
+    expect(new URL(landing.tags['og:url']).origin).toBe(site);
+    const room = await headOf(page, request, `/game/${await createRoom(await newPlayer('Alice'))}`);
+    for (const tags of [landing.tags, room.tags]) {
+        expect(new URL(tags['og:image']).origin).toBe(site);
+    }
+});
+
 test('a link to a room that has ended leads to the landing page and its card', async ({ newPlayer, request }) => {
     const answer = await request.get('/game/ZZZZZZ', { maxRedirects: 0 });
     expect(answer.status()).toBe(302);

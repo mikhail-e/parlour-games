@@ -4,7 +4,7 @@
 
 The classic guessing party game, played remotely. Every player gets a secret character chosen by the others and asks yes/no questions to find out who they are. Create a room, send the link to friends and family, play — no accounts, nothing to install.
 
-**Play:** https://whoami-game.onrender.com/
+**Play:** https://whoami.escapist.club/
 
 ## Features
 
@@ -45,7 +45,7 @@ The documents in `docs/` are written in Russian.
 - Server: Cloudflare Workers and Durable Objects (one per room), WebSocket
 - Browser: plain JavaScript and Bootstrap 5 — no framework, no build step
 - Checks: ESLint, Jest, Playwright and axe-core
-- Hosting: Render
+- Hosting: Cloudflare (Workers Builds deploys every push to master)
 
 ## Contributing
 

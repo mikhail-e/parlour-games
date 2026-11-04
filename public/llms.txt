@@ -19,4 +19,4 @@ the game — this file is the canonical plain-text description of the site.
 
 ## Links
 
-- [Live app](https://whoami-game.onrender.com/): the app itself
+- [Live app](https://whoami.escapist.club/): the app itself

@@ -3,7 +3,7 @@
 ## Project Overview
 Web application to play the "Who am I?" guessing game remotely with friends and family. Players join a room by a 6-character code, assign secret characters to each other, then guess who they are. Adaptive UI works on desktop and mobile browsers; installable as a PWA.
 
-- **Production:** https://whoami-game.onrender.com/ (Render.com, free plan)
+- **Production:** https://whoami.escapist.club/ (Cloudflare Workers, free plan)
 - **Repository:** https://github.com/mikhail-e/whoami-game — public, a showcase (see Decisions)
 - **Stack:** Cloudflare Workers + Durable Objects backend (one Durable Object per room, `wrangler`); vanilla JavaScript (ES6+) + Bootstrap 5 frontend (a local copy); Jest and Playwright for tests. No build step, no frontend framework.
 
@@ -17,8 +17,8 @@ npx jest tests/game-logic.test.js  # Run a single Jest file
 npm run test:e2e                   # Browser tests only (Playwright); :headed and :ui variants
 npm run test:e2e:prod              # Browser tests against production (after a release)
 npx playwright install chromium    # Once per machine: the browser for the tests
-npx wrangler login                 # Once per machine: the owner's Cloudflare account, for deploying and logs
-npx wrangler deploy                # Deploy to Cloudflare by hand; npx wrangler tail whoami-game shows the live log
+npx wrangler login                 # Once per machine: the owner's Cloudflare account, for the live log
+npx wrangler tail whoami-game      # The live log of production; production is deployed by Workers Builds from master, never by hand
 ```
 
 ## Architecture
@@ -66,7 +66,6 @@ SECURITY.md                # How to report a vulnerability privately (GitHub's p
 .github/FUNDING.yml        # The Sponsor button on GitHub: the owner's Buy Me a Coffee
 eslint.config.mjs          # ESLint: one block per environment (game logic, Worker, pages, service worker, tests and scripts)
 .vscode/                   # Shared VS Code settings: ESLint fixes on save, the ESLint extension recommended
-render.yaml                # Render.com deploy config (auto-deploys master branch)
 ```
 
 ### How it works
@@ -129,7 +128,7 @@ render.yaml                # Render.com deploy config (auto-deploys master branc
 
 ## Git Workflow (git flow)
 Steps and commands: `docs/release.md`.
-- `master` — production. **Every push to `master` deploys** to Render. Never commit to it directly
+- `master` — production. **Every push to `master` deploys**: Cloudflare's Workers Builds installs the packages and runs `npx wrangler deploy`; no other branch is built. Never commit to it directly
 - `develop` — integration branch. Never commit to it directly
 - **All changes go in feature branches**: `feature/<short-name>` from `develop`, finished with a local `git merge --no-ff` into `develop` (no Pull Requests), then the branch is deleted
 - Before every merge: `npm test` must pass

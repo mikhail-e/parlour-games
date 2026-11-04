@@ -3,7 +3,7 @@
   "version": "1.11.1",
   "private": true,
   "description": "Who am I? game for friends and family",
-  "homepage": "https://whoami-game.onrender.com/",
+  "homepage": "https://whoami.escapist.club/",
   "bugs": {
     "url": "https://github.com/mikhail-e/whoami-game/issues"
   },
@@ -22,7 +22,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:prod": "BASE_URL=https://whoami-game.onrender.com playwright test --workers=2",
+    "test:e2e:prod": "BASE_URL=https://whoami.escapist.club playwright test --workers=2",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix"
   },
