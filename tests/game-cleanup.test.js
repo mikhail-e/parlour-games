@@ -8,8 +8,7 @@ const {
     startGame,
     touchGame,
     cleanupInactiveGames,
-    removeStaleDisconnectedPlayers,
-    recreateGameFromState
+    removeStaleDisconnectedPlayers
 } = require('../game-logic');
 
 const FOUR_HOURS = 4 * 60 * 60 * 1000;
@@ -245,20 +244,4 @@ describe('Stale Disconnected Player Cleanup (ghosts)', () => {
         expect(games.has(gameId)).toBe(false);
     });
 
-    test('recreated games mark every player disconnected (stale backups cannot fake online)', () => {
-        const savedState = {
-            players: [
-                { id: '11111111-1111-4111-8111-111111111111', name: 'Alice', avatar: '😀', isConnected: true, connected: true },
-                { id: '22222222-2222-4222-8222-222222222222', name: 'Bob', avatar: '😎', isConnected: true, connected: true }
-            ],
-            gameState: 'waiting'
-        };
-
-        recreateGameFromState(games, 'GHOST1', savedState);
-
-        for (const player of games.get('GHOST1').players) {
-            expect(player.isConnected).toBe(false);
-            expect(typeof player.disconnectedAt).toBe('number');
-        }
-    });
 });

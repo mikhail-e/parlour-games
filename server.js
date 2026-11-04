@@ -109,8 +109,7 @@ function forLog(value) {
     return (text && text.length > 64) ? `${text.slice(0, 64)}…` : text;
 }
 
-// Custom image avatars ride inside JSON bodies; recreate-game carries every
-// player's avatar at once, which can exceed express.json()'s 100kb default
+// Custom image avatars ride inside JSON bodies (a join carries one)
 const jsonBody = express.json({ limit: '1mb' });
 
 // The running version: every page shows it at the bottom, and after a deploy
@@ -145,8 +144,8 @@ app.post('/api/join-game', jsonBody, (req, res) => {
 
     // After a restart the room may still be only on disk. A lost room is
     // reported before the secret is checked: a page that sends no secret (an
-    // old page left open while a new version was deployed) then still brings
-    // the room back from its copy (recreate-game) before its join fails
+    // old page left open while a new version was deployed) learns that the
+    // room is gone, not that something is missing
     ensureGameLoaded(gameId);
     if (!games.has(gameId)) {
         return res.status(400).json({ success: false, error: 'Game not found' });
@@ -186,42 +185,6 @@ app.post('/api/join-game', jsonBody, (req, res) => {
         revealedPlayers: result.game.revealedPlayers
     });
 
-    res.json(result);
-});
-
-// API endpoint to recreate a game with saved state
-app.post('/api/recreate-game', jsonBody, (req, res) => {
-    const { roomCode, gameState } = req.body || {};
-
-    console.log('Recreate game request:', { roomCode: forLog(roomCode), gameStateExists: !!gameState });
-
-    if (!roomCode || !gameState) {
-        console.log('Missing required fields for recreation:', { roomCode: !!roomCode, gameState: !!gameState });
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Validate room code format
-    if (!gameLogic.isValidRoomCode(roomCode)) {
-        console.log('Invalid room code format:', forLog(roomCode));
-        return res.status(400).json({ error: 'Invalid room code format' });
-    }
-
-    // Check if room already exists. Its disk backup counts too: the
-    // server's own copy wins over a browser's, so nobody can replace a
-    // saved room with a state of their own
-    if (ensureGameLoaded(roomCode)) {
-        console.log('Room already exists, recreation not needed:', roomCode);
-        return res.json({ success: true, message: 'Room already exists' });
-    }
-
-    const result = gameLogic.recreateGameFromState(games, roomCode, gameState);
-
-    if (!result.success) {
-        console.log('Failed to recreate game:', result.error);
-        return res.status(400).json(result);
-    }
-
-    console.log(`Game ${roomCode} recreated successfully from saved state`);
     res.json(result);
 });
 

@@ -2,8 +2,8 @@
  * Game backups on disk (game-backups.js and the routes that use them)
  * The keep-alive loop saves every room with players online to games/CODE.json,
  * and a room missing from memory after a server restart comes back from that
- * file: through its link, through Join on the landing page, and instead of a
- * browser's own copy (recreate-game). When the last player leaves a room, its
+ * file: through its link and through Join on the landing page. When the last
+ * player leaves a room, its
  * backup must go too - or the old link would bring the room back
  * (tests/e2e/leave-and-return.spec.js checks that through the pages). The
  * code in a room link becomes part of a file path, so only a real room code
@@ -174,21 +174,6 @@ describe('a room that is only on disk', () => {
         expect(response.body.game.state).toBe('started');
     });
 
-    test("is not replaced by a browser's copy", async () => {
-        const { alice } = roomOnDisk('DISK03');
-        const forged = {
-            gameState: 'waiting',
-            players: [{ id: '00000000-0000-4000-8000-00000000000f', name: 'Mallory', avatar: '🐍' }],
-        };
-
-        await request(app).post('/api/recreate-game').send({ roomCode: 'DISK03', gameState: forged });
-        const response = await request(app).post('/api/join-game').send({
-            gameId: 'DISK03', playerName: 'Alice', avatar: '😀', playerId: alice.id, playerSecret: SECRET,
-        });
-
-        expect(response.body.game.players.map(p => p.name)).toEqual(['Alice', 'Bob']);
-        expect(response.body.game.state).toBe('started');
-    });
 });
 
 describe('GET /game/:roomCode', () => {

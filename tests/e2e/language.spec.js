@@ -5,9 +5,9 @@ const {
     startedGame, revealOwnCharacter,
 } = require('./helpers');
 
-// Page names used inside page.evaluate(): i18n is the page's Localization
-// (translations.js), recreateRoomFromStorage rebuilds a lost room (game-room.js)
-/* global i18n, recreateRoomFromStorage */
+// A page name used inside page.evaluate(): i18n is the page's Localization
+// (translations.js)
+/* global i18n */
 
 // The h1 is the sign, a logo that stays English: the page's language shows in
 // the subtitle under it, and in the tab title of a room
@@ -152,22 +152,6 @@ test("the close buttons are named in the player's language", async ({ newPlayer 
     await page.evaluate(() => window.pwaManager.showUpdateAvailable());
     await page.locator('.alert-warning').getByRole('button', { name: text('close', 'ru'), exact: true }).click();
     await expect(page.locator('.alert-warning')).toHaveCount(0);
-});
-
-// A room the server lost (a restart) is rebuilt from the copy the page keeps.
-// A server cannot be restarted in a test: the page is asked to rebuild a room
-// from a broken copy, and the server refuses it
-test("a failed room recovery reads in the player's language", async ({ newPlayer }) => {
-    const alice = await newPlayer('Алиса', { locale: 'ru-RU' });
-    await createRoom(alice);
-    alice.expectDialog(`${text('failedRecoverGame', 'ru')}: ${serverErrorText('Invalid saved game state: missing players', 'ru')}. ${text('pleaseCreateNewRoom', 'ru')}`);
-    // The server answers 400; the browser logs that response, the page its error
-    alice.allowConsoleError(/status of 400/);
-    alice.allowConsoleError(/Error recreating room/);
-
-    await alice.page.evaluate(() => { recreateRoomFromStorage('QQQQQQ', {}); });
-
-    await expect.poll(() => alice.expectedDialogs.length).toBe(0);
 });
 
 test('an unknown text key shows the key itself', async ({ newPlayer }) => {

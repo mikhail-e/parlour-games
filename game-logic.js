@@ -723,8 +723,7 @@ function toDate(value) {
     return (value && !Number.isNaN(date.getTime())) ? date : null;
 }
 
-// Rebuild a game from saved data: a disk backup (state), or a browser's copy
-// sent to /api/recreate-game. The data comes from outside, so it passes the
+// Rebuild a game from a disk backup. The data comes from outside, so it passes the
 // same checks a live game does, and whatever fails them is left out: a
 // player without a valid ID, name or avatar, a character of nobody in the
 // list, an unknown state. Returns null when there is no players list.
@@ -802,30 +801,6 @@ function restoreGame(roomCode, saved) {
     };
     touchGame(game);
     return game;
-}
-
-// Recreate a game from a browser's copy of it (saveGameStateToStorage in
-// game-room.js), after the server lost the room
-function recreateGameFromState(games, roomCode, savedGameState) {
-    if (!savedGameState || typeof savedGameState !== 'object') {
-        return { success: false, error: 'Failed to recreate game from saved state' };
-    }
-
-    // The browser's copy calls the state gameState. It holds no secrets and
-    // must not set any: each player's next join records their own
-    const game = restoreGame(roomCode, { ...savedGameState, state: savedGameState.gameState, secrets: undefined });
-    if (!game) {
-        return { success: false, error: 'Invalid saved game state: missing players' };
-    }
-
-    games.set(roomCode, game);
-    return {
-        success: true,
-        gameId: roomCode,
-        playersRestored: game.players.length,
-        charactersRestored: game.characters.size,
-        gameState: game.state
-    };
 }
 
 // A page of this player has connected to the room: they are online.
@@ -1035,7 +1010,6 @@ module.exports = {
     assignUniqueColor,
     serializeGame,
     restoreGame,
-    recreateGameFromState,
     sanitizePlayerName,
     sanitizeAvatar,
     sanitizeCharacter,

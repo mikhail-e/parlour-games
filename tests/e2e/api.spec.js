@@ -163,3 +163,9 @@ test('a room link that is not a room code goes home', async ({ request }) => {
     expect(response.status()).toBe(302);
     expect(response.headers().location).toBe('/?error=room-not-found');
 });
+
+test('there is no room recovery from a browser copy', async ({ request }) => {
+    const response = await request.post('/api/recreate-game', { data: { roomCode: 'ABC123', gameState: { players: [] } } });
+
+    expect(response.status()).toBe(404);
+});

@@ -11,8 +11,7 @@ const {
     removePlayerFromGame,
     checkPlayerSecret,
     serializeGame,
-    restoreGame,
-    recreateGameFromState
+    restoreGame
 } = require('../game-logic');
 
 const ALICE = '00000000-0000-4000-8000-0000000000a1';
@@ -84,15 +83,4 @@ describe("A player's secret", () => {
         expect(addPlayerToGame(games, 'BACKUP', 'Alice', '🐍', ALICE, OTHER_SECRET).success).toBe(false);
     });
 
-    test("a browser's copy cannot set secrets: the next join records the player's own", () => {
-        recreateGameFromState(games, 'COPY01', {
-            gameState: 'waiting',
-            players: [{ id: ALICE, name: 'Alice', avatar: '😀' }],
-            secrets: { [ALICE]: OTHER_SECRET }
-        });
-
-        expect(checkPlayerSecret(games.get('COPY01'), ALICE, OTHER_SECRET)).toBe(false);
-        expect(addPlayerToGame(games, 'COPY01', 'Alice', '😀', ALICE, ALICE_SECRET).success).toBe(true);
-        expect(checkPlayerSecret(games.get('COPY01'), ALICE, ALICE_SECRET)).toBe(true);
-    });
 });

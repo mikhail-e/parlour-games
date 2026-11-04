@@ -159,10 +159,7 @@ const translations = {
 
         // Error messages
         invalidRoomCode: "Invalid room code",
-        invalidRoomCodeFormat: "Invalid room code format",
-        failedRecoverGame: "Failed to recover game",
         connectionErrorTryAgain: "Please try again.",
-        pleaseCreateNewRoom: "Please create a new room.",
 
         // Language switcher
         language: "Language",
@@ -343,10 +340,7 @@ const translations = {
 
         // Error messages
         invalidRoomCode: "Неверный код комнаты",
-        invalidRoomCodeFormat: "Неверный формат кода комнаты",
-        failedRecoverGame: "Не удалось восстановить игру",
         connectionErrorTryAgain: "Попробуйте еще раз.",
-        pleaseCreateNewRoom: "Пожалуйста, создайте новую комнату.",
 
         // Language switcher
         language: "Язык",
@@ -392,10 +386,7 @@ const serverErrors = {
         'Every player needs a character to start': "Чтобы начать, назначьте персонажей всем игрокам",
         'Game has not started yet': "Игра ещё не началась",
         'No character assigned to this player': "Этому игроку не назначен персонаж",
-        'Invalid saved game state: missing players': "Сохранённая игра повреждена: в ней нет игроков",
-        'Failed to recreate game from saved state': "Не удалось восстановить игру из сохранения",
         'Missing required fields': "Не заполнены обязательные поля",
-        'Invalid room code format': "Неверный формат кода комнаты",
         'Something went wrong, please try again': "Что-то пошло не так, попробуйте ещё раз",
         'You are not in this game': "Вы не участвуете в этой игре",
         'This player is playing in another browser': "Этот игрок играет в другом браузере"
