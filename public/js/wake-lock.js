@@ -7,7 +7,7 @@
 // Silent, as in the owner's other apps: no control, no setting, no line on the
 // screen. A browser without the Screen Wake Lock API (Safari before 16.4,
 // Firefox before 126) or one that refuses the lock (battery saver) shows
-// nothing. The Permissions-Policy of server.js must not forbid screen-wake-lock.
+// nothing. The Permissions-Policy (public/_headers) must not forbid screen-wake-lock.
 /* exported keepScreenAwake */
 /* global debugLog */
 

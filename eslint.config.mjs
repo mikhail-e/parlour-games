@@ -19,13 +19,28 @@ export default [
 
     js.configs.recommended,
 
-    // Server (Node, CommonJS)
+    // The game's rules (CommonJS: Jest runs them in Node, the Worker bundles them)
     {
-        files: ["server.js", "game-logic.js", "game-backups.js"],
+        files: ["game-logic.js"],
         languageOptions: {
             sourceType: "commonjs",
             globals: {
                 ...globals.node,
+            },
+        },
+        rules: sharedRules,
+    },
+
+    // The Worker and its rooms (Cloudflare Workers, ES modules): the names of a
+    // service worker's scope, and the Workers' own WebSocket classes
+    {
+        files: ["worker/**/*.js"],
+        languageOptions: {
+            sourceType: "module",
+            globals: {
+                ...globals.serviceworker,
+                WebSocketPair: "readonly",
+                WebSocketRequestResponsePair: "readonly",
             },
         },
         rules: sharedRules,
@@ -39,7 +54,6 @@ export default [
             globals: {
                 ...globals.browser,
                 bootstrap: "readonly",
-                io: "readonly",
             },
         },
         rules: {
@@ -101,10 +115,10 @@ export default [
     {
         ignores: [
             "node_modules/",
-            "games/",
             "coverage/",
             "test-results/",
             "playwright-report/",
+            ".wrangler/",
         ],
     },
 ];

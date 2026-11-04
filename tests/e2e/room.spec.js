@@ -1,21 +1,13 @@
 // The room before the game: joining, the players list, assigning characters,
 // the Start Game button
 const {
-    test, expect, text, createRoom, joinRoom, playerCard, waitForPlayers, assignCharacter, countSentEvents,
+    test, expect, text, createRoom, joinRoom, playerCard, waitForPlayers, assignCharacter, countSentEvents, roomWith,
     startGame, revealOwnCharacter, leaveGame, waitForLanding,
 } = require('./helpers');
 
 // The names in the list, without the "(You)" label of the viewer's own card
 const listedNames = page => page.locator('.player-name').evaluateAll(names =>
     names.map(name => name.firstChild.textContent));
-
-async function roomWith(newPlayer, names) {
-    const players = await Promise.all(names.map(name => newPlayer(name)));
-    const code = await createRoom(players[0]);
-    for (const player of players.slice(1)) await joinRoom(player, code);
-    for (const player of players) await waitForPlayers(player.page, players.length);
-    return { players, code };
-}
 
 test('both players see both cards in join order', async ({ newPlayer }) => {
     const { players: [alice, bob] } = await roomWith(newPlayer, ['Alice', 'Bob']);

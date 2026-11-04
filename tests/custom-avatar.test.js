@@ -3,7 +3,7 @@
  *
  * A player can upload a photo instead of picking an emoji. The photo travels
  * as a small base64 data URL in the same player.avatar field the emoji uses,
- * so every persistence flow (join, reconnect, disk restore, recreate-game)
+ * so every persistence flow (join, reconnect, disk restore)
  * carries it automatically. These tests cover the server-side validation gate
  * and the game logic; tests/e2e/custom-avatar.spec.js checks the upload and the
  * rendering in the browser.
@@ -12,7 +12,6 @@
 const {
     createGame,
     addPlayerToGame,
-    recreateGameFromState,
     isCustomAvatar,
     MAX_CUSTOM_AVATAR_LENGTH
 } = require('../game-logic');
@@ -73,20 +72,4 @@ describe('Custom avatars flow through the game logic', () => {
         expect(result.player.avatar).toBe(DATA_URL);
     });
 
-    test('recreate-game keeps data URL avatars intact', () => {
-        const savedState = {
-            players: [
-                { id: '00000000-0000-4000-8000-000000000001', name: 'Alice', avatar: DATA_URL, stickerColor: 'red' },
-                { id: '00000000-0000-4000-8000-000000000002', name: 'Bob', avatar: '😎', stickerColor: 'blue' }
-            ],
-            gameState: 'waiting'
-        };
-
-        const result = recreateGameFromState(games, 'ABC123', savedState);
-
-        expect(result.success).toBe(true);
-        const game = games.get('ABC123');
-        expect(game.players[0].avatar).toBe(DATA_URL);
-        expect(game.players[1].avatar).toBe('😎');
-    });
 });

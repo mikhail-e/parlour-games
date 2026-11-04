@@ -15,8 +15,8 @@ const {
     declinePlayer,
     withdrawJoinRequest,
     listJoinRequests,
-    serializeGame,
-    restoreGame,
+    gameToStorage,
+    gameFromStorage,
 } = require('../game-logic');
 
 const uuid = () => crypto.randomUUID();
@@ -128,13 +128,13 @@ describe('Asking to join a started game', () => {
         expect(listJoinRequests(game)).toEqual([]);
     });
 
-    test('requests are never saved: a restored room has none', () => {
+    // A room sleeps between messages: a request outlives its sleep (the room
+    // drops it only once no waiting page of the newcomer is left)
+    test('join requests are kept in storage', () => {
         const { games, gameId, game } = startedGame();
         requestToJoin(games, gameId, 'Dasha', '🐻', uuid(), uuid());
 
-        const saved = serializeGame(game, { withSecrets: true });
-        expect(saved).not.toHaveProperty('joinRequests');
-        expect(restoreGame(gameId, JSON.parse(JSON.stringify(saved))).joinRequests.size).toBe(0);
+        expect(gameFromStorage(JSON.parse(JSON.stringify(gameToStorage(game)))).joinRequests.size).toBe(1);
     });
 });
 

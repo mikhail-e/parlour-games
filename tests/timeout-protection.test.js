@@ -1,6 +1,6 @@
 // Who am I? Game - Timeout Protection Tests
 // Player connection state: a reconnecting player keeps everything they had
-// (the disk backups are tested in game-backup.test.js)
+// (the room's own storage is tested in room-storage.test.js)
 
 const {
     createGame,

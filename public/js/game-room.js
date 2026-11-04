@@ -3,6 +3,8 @@
 /* global debugLog, MAX_CHARACTER_LENGTH, isCustomAvatar, getText, serverErrorText, showNotification, AppStorage, handleApiError, PLAYER_ID, PLAYER_SECRET */
 // From wake-lock.js
 /* global keepScreenAwake */
+// From room-socket.js
+/* global RoomSocket */
 
 let socket;
 let currentGame = null;
@@ -19,15 +21,16 @@ let joinRequestModal = null;
 const joinRequestQueue = [];
 let shownJoinRequest = null;
 
-// The server takes a move only from a socket that has joined the room
-// (join-room, answered with game-state). After a reconnect - a phone waking
-// up, a server restart - the new socket joins only once the HTTP join is
-// back, so a move made meanwhile waits here instead of being refused
+// The room takes a move only from a socket that has joined it (join-room,
+// answered with game-state). After a reconnect - a phone waking up, a room
+// restarted - the new socket joins only once the HTTP join is back, so a move
+// made meanwhile waits here instead of being refused. A socket that is
+// closing sends nothing: its move waits too
 let roomJoined = false;
 const pendingMoves = [];
 
 function sendMove(eventName, data) {
-    if (roomJoined) {
+    if (roomJoined && socket.connected) {
         socket.emit(eventName, data);
     } else {
         debugLog('⏳ Waiting to rejoin the room before sending', eventName);
@@ -37,42 +40,6 @@ function sendMove(eventName, data) {
 
 // Sticker colors are chosen by the server (stickerColors in game-logic.js):
 // a player arrives with player.stickerColor, rendered as the color-<name> class
-
-// LocalStorage persistence for game state backup and recovery: one key per room
-function gameStorageKey(roomCode) {
-    return `whoami-game-${roomCode}`;
-}
-
-function saveGameStateToStorage() {
-    if (!currentGame || !currentPlayer) return;
-
-    const gameState = {
-        roomCode: currentGame.id,
-        playerId: currentPlayer.id,
-        playerName: currentPlayer.name,
-        playerAvatar: currentPlayer.avatar,
-        gameState: currentGame.state,
-        players: currentGame.players,
-        characters: currentGame.characters,
-        revealedPlayers: currentGame.revealedPlayers,
-        lastSaved: new Date().toISOString()
-    };
-
-    AppStorage.set(gameStorageKey(currentGame.id), gameState);
-    debugLog('💾 Game state saved to localStorage:', currentGame.id);
-}
-
-// The saved state of this room, or null (AppStorage.get catches a broken value)
-function loadGameStateFromStorage(roomCode) {
-    const gameState = AppStorage.get(gameStorageKey(roomCode));
-    debugLog('📂 Saved game state for room', roomCode, gameState);
-    return gameState;
-}
-
-function clearGameStateFromStorage(roomCode) {
-    AppStorage.remove(gameStorageKey(roomCode));
-    debugLog('🗑️ Cleared game state from localStorage:', roomCode);
-}
 
 // Clean up local state and return to the landing page after leaving.
 // Idempotent: both the server confirmation and the fallback timer call it.
@@ -88,44 +55,9 @@ function finishLeavingGame(roomStillExists = true) {
     }
 
     const roomCode = currentGame ? currentGame.id : null;
-    if (roomCode) clearGameStateFromStorage(roomCode);
     AppStorage.session.remove('playerData');
 
     window.location.href = (roomStillExists && roomCode) ? `/?join=${roomCode}` : '/';
-}
-
-async function recreateRoomFromStorage(roomCode, savedGameState) {
-    try {
-        debugLog('🔧 Recreating room with saved state...');
-
-        // First, create a new game with the same room code
-        const createResponse = await fetch('/api/recreate-game', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                roomCode: roomCode,
-                gameState: savedGameState
-            })
-        });
-
-        // A refusal comes with status 400 and the reason in its body: read the
-        // body first, so the player gets the server's reason, not the status
-        const createResult = await createResponse.json().catch(() => ({}));
-
-        if (createResponse.ok && createResult.success) {
-            debugLog('✅ Room recreated successfully, now joining...');
-
-            // Now join the recreated game (with flag to prevent recursion)
-            return await joinGameRoom(roomCode, true);
-        } else {
-            throw new Error(createResult.error || `Failed to recreate room: ${createResponse.status}`);
-        }
-
-    } catch (error) {
-        console.error('❌ Error recreating room:', error);
-        alert(`${getText('failedRecoverGame', 'Failed to recover game')}: ${serverErrorText(error.message)}. ${getText('pleaseCreateNewRoom', 'Please create a new room.')}`);
-        window.location.href = '/';
-    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -161,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the game room
     initializeGameRoom(roomCode);
     
-    // Initialize Socket.IO
+    // The room's socket
     initializeSocket(roomCode);
     
     // Set up event listeners
@@ -183,7 +115,7 @@ function initializeGameRoom(roomCode) {
 }
 
 function initializeSocket(roomCode) {
-    socket = io();
+    socket = new RoomSocket(`/ws/${roomCode}`, { log: debugLog });
     
     socket.on('connect', () => {
         debugLog('Connected to server');
@@ -241,7 +173,6 @@ function initializeSocket(roomCode) {
             // take the characters/reveals the server sent along
             if (data.characters) currentGame.characters = data.characters;
             if (data.revealedPlayers) currentGame.revealedPlayers = data.revealedPlayers;
-            saveGameStateToStorage();
             updateGameDisplay();
         }
     });
@@ -286,7 +217,6 @@ function initializeSocket(roomCode) {
         // An open character input would block the rebuild below - and it might
         // even belong to the player who just left
         cancelActiveEdits();
-        saveGameStateToStorage();
         updateGameDisplay();
 
         showNotification(
@@ -304,9 +234,6 @@ function initializeSocket(roomCode) {
         if (currentGame && allCharacters) {
             currentGame.characters = allCharacters;
             debugLog('✅ Updated all character data from server');
-
-            // Save updated game state to localStorage
-            saveGameStateToStorage();
 
             // Close only the input of the player whose character was saved:
             // an input still open for another player keeps blocking the rebuild
@@ -336,7 +263,6 @@ function initializeSocket(roomCode) {
             // Close any character input that is still open - editing is no
             // longer allowed and an open input would block UI updates
             cancelActiveEdits();
-            saveGameStateToStorage();
             updateGameDisplay();
         }
     });
@@ -345,7 +271,6 @@ function initializeSocket(roomCode) {
         debugLog('Character revealed:', data);
         if (currentGame) {
             currentGame.revealedPlayers = data.revealedPlayers;
-            saveGameStateToStorage();
             updateGameDisplay();
         }
     });
@@ -358,7 +283,6 @@ function initializeSocket(roomCode) {
             syncJoinRequests([]);
             currentGame.revealedPlayers = data.revealedPlayers || [];
             currentGame.characters = data.characters || {}; // Clear all character assignments
-            saveGameStateToStorage();
             updateGameDisplay();
 
             // Show a success message
@@ -519,7 +443,7 @@ function answerJoinRequest(eventName) {
     sendMove(eventName, { playerId });
 }
 
-async function joinGameRoom(roomCode, skipRecreation = false) {
+async function joinGameRoom(roomCode) {
     try {
         debugLog('Attempting to join game:', roomCode, 'with player:', currentPlayer);
         
@@ -564,33 +488,10 @@ async function joinGameRoom(roomCode, skipRecreation = false) {
             };
             AppStorage.session.set('playerData', playerData);
 
-            // Save game state to localStorage for recovery
-            saveGameStateToStorage();
-
             updateGameDisplay();
             return 'joined';
         } else {
             console.error('Join game failed:', result.error);
-
-            // Check if it's a "Game not found" error and try to recreate the room (only on first attempt)
-            if (result.error === 'Game not found' && !skipRecreation) {
-                debugLog('🔄 Game not found - attempting room recreation...');
-
-                // Validate room code format before recreation attempt
-                if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-                    debugLog('❌ Invalid room code format, cannot recreate');
-                    alert(getText('invalidRoomCodeFormat', 'Invalid room code format'));
-                    window.location.href = '/';
-                    return;
-                }
-
-                const savedGameState = loadGameStateFromStorage(roomCode);
-
-                if (savedGameState && savedGameState.playerId === currentPlayer.id) {
-                    debugLog('🎯 Found matching saved game state, recreating room...');
-                    return await recreateRoomFromStorage(roomCode, savedGameState);
-                }
-            }
 
             alert(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
             window.location.href = '/';

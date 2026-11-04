@@ -1,0 +1,35 @@
+// The game on Cloudflare Workers (npx wrangler dev / npx wrangler deploy).
+// The files of public/ are served as they are, without running the Worker, so
+// they do not count against the day's request limit; their headers come from
+// public/_headers. Only the addresses in run_worker_first reach worker/index.js.
+{
+  "name": "whoami-game",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  // game-logic.js uses Node's crypto
+  "compatibility_flags": ["nodejs_compat"],
+  // The game's address, whoami.escapist.club: a Custom Domain in a zone of
+  // the owner's account (Cloudflare keeps its DNS record and certificate).
+  // The only one: the browser keeps a player's name, ID and secret per
+  // address, so a second address would be a second player; workers.dev and
+  // the preview addresses of versions are off
+  "routes": [{ "pattern": "whoami.escapist.club", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // /game, /index and /404 too: the static files would answer them with
+    // game.html, index.html and 404.html, where the game answers its 404 page
+    "run_worker_first": ["/api/*", "/game/*", "/ws/*", "/game", "/index", "/404"]
+  },
+  // One room per code (worker/room.js). A new or renamed class of rooms needs
+  // a new migration entry; SQLite storage is the kind the free plan has
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  // console.log of the Worker goes to Workers Logs in the Cloudflare dashboard
+  "observability": { "enabled": true }
+}
