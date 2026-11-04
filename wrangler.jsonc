@@ -1,0 +1,19 @@
+// The game on Cloudflare Workers (npx wrangler dev / npx wrangler deploy).
+// The files of public/ are served as they are, without running the Worker, so
+// they do not count against the day's request limit; their headers come from
+// public/_headers. Only the addresses in run_worker_first reach worker/index.js.
+{
+  "name": "whoami-game",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  // game-logic.js uses Node's crypto
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/game/*", "/ws/*"]
+  },
+  // console.log of the Worker goes to Workers Logs in the Cloudflare dashboard
+  "observability": { "enabled": true }
+}

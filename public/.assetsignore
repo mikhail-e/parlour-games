@@ -1,0 +1,2 @@
+# Files in public/ that are not part of the site: wrangler does not upload them
+.DS_Store

@@ -49,6 +49,9 @@ pids
 games/*.json
 !games/.gitkeep
 
+# wrangler dev: the local state of the rooms and wrangler's own files
+.wrangler/
+
 # Playwright MCP: page snapshots and screenshots from checking the app by hand
 .playwright-mcp/
 

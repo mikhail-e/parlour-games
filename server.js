@@ -56,27 +56,9 @@ const waiting = gameLogic.createConnectionTracker();
 // Security headers on every answer of Express: pages, files, API, 404 and
 // redirects (Socket.IO answers its own /socket.io/ requests before Express).
 // The list is Flying Solo's; Render adds the headers of render.yaml only to
-// static sites, so a server sends them itself.
-const SECURITY_HEADERS = {
-    // The pages run only the game's own code: scripts and styles only from its
-    // files - no inline scripts, styles or style attributes (a script may still
-    // set element.style; tests/code-structure.test.js checks the files).
-    // Images may be data: (Bootstrap draws its icons so; photo avatars are
-    // data:image URLs) and blob: (an uploaded photo is opened at a blob:
-    // address before it is shrunk). connect-src 'self' covers Socket.IO, its
-    // requests and its WebSocket. No plugins, no <base>, and no other site
-    // may show the game in a frame.
-    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
-    // A link to another site tells it only the game's address, never the page:
-    // a room's address holds its code. The coffee link sends nothing at all
-    // (rel="noreferrer"); this covers any link without it
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    // Browser features the game never uses (Web Share, the photo picker and
-    // the screen wake lock of a started round are not among them)
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
-    // A file is what its Content-Type says, never guessed from its content
-    'X-Content-Type-Options': 'nosniff',
-};
+// static sites, so a server sends them itself. Their reasons are written in
+// public/_headers, which puts the same ones on the Worker's static files.
+const SECURITY_HEADERS = require('./worker/security-headers.json');
 
 app.use((req, res, next) => {
     res.set(SECURITY_HEADERS);

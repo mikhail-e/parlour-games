@@ -31,6 +31,21 @@ export default [
         rules: sharedRules,
     },
 
+    // The Worker and its rooms (Cloudflare Workers, ES modules): the names of a
+    // service worker's scope, and the Workers' own WebSocket classes
+    {
+        files: ["worker/**/*.js"],
+        languageOptions: {
+            sourceType: "module",
+            globals: {
+                ...globals.serviceworker,
+                WebSocketPair: "readonly",
+                WebSocketRequestResponsePair: "readonly",
+            },
+        },
+        rules: sharedRules,
+    },
+
     // Browser pages: classic <script> files, no modules and no build step
     {
         files: ["public/js/**/*.js"],
@@ -105,6 +120,7 @@ export default [
             "coverage/",
             "test-results/",
             "playwright-report/",
+            ".wrangler/",
         ],
     },
 ];

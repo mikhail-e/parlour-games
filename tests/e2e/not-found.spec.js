@@ -39,3 +39,12 @@ test('an unknown API address answers 404, not a page of the game', async ({ requ
     expect(response.status()).toBe(404);
     expect(await response.text()).toContain('data-i18n="notFoundTitle"');
 });
+
+// A file that sits next to the site's files without being one of them: the
+// Mac's folder notes, the list of what is not published
+for (const address of ['/.DS_Store', '/.assetsignore']) {
+    test(`${address} is not served`, async ({ request }) => {
+        const response = await request.get(address, { maxRedirects: 0 });
+        expect(response.status()).toBe(404);
+    });
+}
