@@ -15,6 +15,12 @@ const { defineConfig, devices } = require('@playwright/test');
 
 const TEST_PORT = 3100;
 const BASE_URL = process.env.BASE_URL;
+// A second local server whose room timers take seconds, not hours
+// (tests/e2e/room-timers.spec.js; the workers inherit the address)
+const FAST_TIMERS_PORT = 3101;
+process.env.E2E_FAST_TIMERS_URL = `http://localhost:${FAST_TIMERS_PORT}`;
+const wranglerDev = (port, inspectorPort, state, vars = '') =>
+    `npx wrangler dev --port ${port} --inspector-port ${inspectorPort} --persist-to ${path.join(os.tmpdir(), state)}${vars}`;
 
 module.exports = defineConfig({
     testDir: './tests/e2e',
@@ -51,11 +57,19 @@ module.exports = defineConfig({
     ],
 
     ...(!BASE_URL && {
-        webServer: {
-            command: `npx wrangler dev --port ${TEST_PORT} --inspector-port 9230 --persist-to ${path.join(os.tmpdir(), 'whoami-e2e-state')}`,
-            env: { WRANGLER_SEND_METRICS: 'false' },
-            url: `http://localhost:${TEST_PORT}/api/version`,
-            reuseExistingServer: false,
-        },
+        webServer: [
+            {
+                command: wranglerDev(TEST_PORT, 9230, 'whoami-e2e-state'),
+                env: { WRANGLER_SEND_METRICS: 'false' },
+                url: `http://localhost:${TEST_PORT}/api/version`,
+                reuseExistingServer: false,
+            },
+            {
+                command: wranglerDev(FAST_TIMERS_PORT, 9231, 'whoami-e2e-fast', ' --var ROOM_EMPTY_MS:6000 --var GHOST_MS:3000'),
+                env: { WRANGLER_SEND_METRICS: 'false' },
+                url: `http://localhost:${FAST_TIMERS_PORT}/api/version`,
+                reuseExistingServer: false,
+            },
+        ],
     }),
 });

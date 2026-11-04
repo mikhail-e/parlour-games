@@ -6,7 +6,7 @@
 // game-logic.js keeps its games in a Map of every room; here the Map holds
 // this room's game only, under its code.
 import gameLogic from '../game-logic.js';
-import { RoomBase } from './room-base.js';
+import { RoomBase, SWEEP_EVERY_MS } from './room-base.js';
 
 // A value from a request as the log gets it: short, whatever was sent (Workers
 // Logs are the owner's to read). A secret never goes into the log, nor a photo
@@ -43,6 +43,9 @@ export class Room extends RoomBase {
         this.roomCode = null;
         // When the last page of a player closed, or null while one is open
         this.emptySince = null;
+        // The room's times; the browser tests shorten them (playwright.config.js)
+        this.emptyRoomMs = Number(env.ROOM_EMPTY_MS) || gameLogic.ROOM_EMPTY_MS;
+        this.ghostMs = Number(env.GHOST_MS) || gameLogic.MAX_DISCONNECTED_MS;
 
         ctx.blockConcurrencyWhile(async () => {
             const saved = await ctx.storage.get(['game', 'roomCode', 'emptySince']);
@@ -72,19 +75,73 @@ export class Room extends RoomBase {
         for (const playerId of [...game.joinRequests.keys()]) {
             if (this.withdrawRequestWithoutPages(playerId)) changed = true;
         }
-        if (changed) await this.save();
+        if (changed) await this.afterChange();
     }
 
     get game() {
         return this.games.get(this.roomCode);
     }
 
-    // The game into the room's storage; a room without one keeps nothing
-    async save() {
-        if (this.game) {
-            await this.ctx.storage.put('game', gameLogic.gameToStorage(this.game));
-        } else {
+    // After every change: the game into the room's storage, and the room's
+    // timer set for what is due next. A room without a game keeps nothing and
+    // sets no timer
+    async afterChange() {
+        if (!this.game) {
+            this.emptySince = null;
             await this.ctx.storage.deleteAll();
+            await this.ctx.storage.deleteAlarm();
+            return;
+        }
+        const playerPagesOpen = this.sockets(isPlayer).length > 0;
+        if (playerPagesOpen) {
+            this.emptySince = null;
+        } else {
+            this.emptySince ??= Date.now();
+        }
+        await this.ctx.storage.put({ game: gameLogic.gameToStorage(this.game), emptySince: this.emptySince });
+        await this.setAlarmAt([
+            gameLogic.roomAlarmTime(this.game, { playerPagesOpen, emptySince: this.emptySince },
+                { emptyRoomMs: this.emptyRoomMs, ghostMs: this.ghostMs }),
+            this.sockets().length ? Date.now() + SWEEP_EVERY_MS : null
+        ]);
+    }
+
+    // The room's timer: a room nobody had open for the empty-room time goes;
+    // while somebody plays, the ghosts go. Then the silent sockets
+    async alarm() {
+        const playerPagesOpen = this.sockets(isPlayer).length > 0;
+        if (this.game && !playerPagesOpen && this.emptySince !== null && Date.now() >= this.emptySince + this.emptyRoomMs) {
+            this.deleteRoom();
+        } else if (this.game && playerPagesOpen) {
+            this.removeGhosts();
+        }
+        await this.sweepSilentSockets();
+        await this.afterChange();
+    }
+
+    // Nobody had the room open for the empty-room time: it goes, and its code
+    // is free again. The newcomers waiting join again and learn it is gone
+    deleteRoom() {
+        console.log(`🗑️ Game ${this.roomCode} removed - no page open for ${this.emptyRoomMs / 60000} min`);
+        this.endJoinRequests([...this.game.joinRequests.keys()], 'retry');
+        this.games.clear();
+    }
+
+    // Players offline for longer than the ghost time leave, as if they had
+    // left themselves (only while a page of a player is open: a group that
+    // took a break finds its room as it left it)
+    removeGhosts() {
+        for (const removal of gameLogic.removeStaleDisconnectedPlayers(this.games, this.ghostMs)) {
+            console.log(`👻 Removed ghost player ${removal.removedPlayer.id} from game ${this.roomCode} (disconnected too long)`);
+            this.broadcast('player-left', {
+                playerId: removal.removedPlayer.id,
+                playerName: removal.playerName,
+                players: removal.players,
+                characters: removal.characters,
+                revealedPlayers: removal.revealedPlayers,
+                gameDeleted: removal.gameDeleted
+            }, { only: isPlayer });
+            this.endJoinRequests(removal.endedJoinRequests, 'retry');
         }
     }
 
@@ -93,7 +150,10 @@ export class Room extends RoomBase {
         if (this.game) return { success: false };
         this.roomCode = roomCode;
         gameLogic.createGame(this.games, roomCode);
-        await this.ctx.storage.put({ roomCode, game: gameLogic.gameToStorage(this.game) });
+        await this.ctx.storage.put('roomCode', roomCode);
+        // A room nobody ever opens goes after the empty-room time too
+        this.emptySince = Date.now();
+        await this.afterChange();
         console.log(`Game ${roomCode} created`);
         return { success: true };
     }
@@ -147,7 +207,7 @@ export class Room extends RoomBase {
             revealedPlayers: result.game.revealedPlayers
         }, { only: isPlayer });
 
-        await this.save();
+        await this.afterChange();
         return { status: 200, body: result };
     }
 
@@ -193,6 +253,9 @@ export class Room extends RoomBase {
             return;
         }
 
+        // The first page back after a time without any: every player still
+        // offline gets a fresh ghost time (game-logic.js, restartGhostClocks)
+        if (this.emptySince !== null) gameLogic.restartGhostClocks(game);
         this.setInfo(ws, { ...info, role: 'player', playerId });
         gameLogic.markPlayerConnected(game, playerId);
         console.log(`📍 A page of player ${playerId} joined game ${gameId}`);
@@ -200,7 +263,7 @@ export class Room extends RoomBase {
         // The game as it is, with the newcomers waiting to be let in: a page
         // that opens now shows their request too
         this.send(ws, 'game-state', { ...gameLogic.serializeGame(game), joinRequests: gameLogic.listJoinRequests(game) });
-        await this.save();
+        await this.afterChange();
     }
 
     // A newcomer's waiting page asks to join the started round (its HTTP join
@@ -230,7 +293,7 @@ export class Room extends RoomBase {
         }
         console.log(`🚪 Player ${playerId} asks to join game ${gameId}`);
         this.broadcast('join-requested', result.request, { only: isPlayer });
-        await this.save();
+        await this.afterChange();
     }
 
     // Any player answers a request; the first answer decides (game-logic.js)
@@ -255,7 +318,7 @@ export class Room extends RoomBase {
         }, { only: isPlayer });
         // Their page joins the usual way now: the HTTP join lets them in
         this.endJoinRequests([result.player.id], 'retry');
-        await this.save();
+        await this.afterChange();
     }
 
     async declinePlayer(ws, data, me) {
@@ -272,7 +335,7 @@ export class Room extends RoomBase {
             playerName: result.playerName
         }, { only: isPlayer });
         this.endJoinRequests([data.playerId], 'declined');
-        await this.save();
+        await this.afterChange();
     }
 
     // Final character assignment (when editing completes): `playerId` is the
@@ -292,7 +355,7 @@ export class Room extends RoomBase {
             character: result.character,
             allCharacters: result.characters
         }, { only: isPlayer });
-        await this.save();
+        await this.afterChange();
     }
 
     async startGame(ws, data, me) {
@@ -304,7 +367,7 @@ export class Room extends RoomBase {
 
         console.log(`Game ${me.gameId} started by player ${me.playerId}`);
         this.broadcast('game-started', result, { only: isPlayer });
-        await this.save();
+        await this.afterChange();
     }
 
     // A player reveals their own character, nobody else's
@@ -322,7 +385,7 @@ export class Room extends RoomBase {
             character: result.revealedPlayer.character,
             playerId: me.playerId
         }, { only: isPlayer });
-        await this.save();
+        await this.afterChange();
     }
 
     async restartGame(ws, data, me) {
@@ -336,7 +399,7 @@ export class Room extends RoomBase {
         this.broadcast('game-restarted', result, { only: isPlayer });
         // The lobby is open to everybody: the newcomers waiting just join
         this.endJoinRequests(result.endedJoinRequests, 'retry');
-        await this.save();
+        await this.afterChange();
     }
 
     // A player leaves the room themselves: nobody can remove anybody else
@@ -373,7 +436,7 @@ export class Room extends RoomBase {
             // The room's storage goes with it: its old link leads home
             console.log(`🗑️ Game ${gameId} removed - last player left`);
         }
-        await this.save();
+        await this.afterChange();
     }
 
     // A socket is gone: a newcomer's request goes with their last waiting
@@ -393,7 +456,7 @@ export class Room extends RoomBase {
                 changed = true;
             }
         }
-        if (changed) await this.save();
+        if (changed) await this.afterChange();
     }
 
     // A newcomer's request, when no page of theirs waits for it any more:

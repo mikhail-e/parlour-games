@@ -8,6 +8,13 @@
 // socket itself (its attachment), everything else in the room's storage.
 import { DurableObject } from 'cloudflare:workers';
 
+// A page pings its room every 25 seconds (room-socket.js). A socket the room
+// has not heard for this long belongs to a page that is gone without a word -
+// a phone asleep, a lost network - and counts no more
+export const SOCKET_SILENCE_MS = 2 * 60 * 1000;
+// While sockets are open, the room looks for silent ones this often
+export const SWEEP_EVERY_MS = 60 * 1000;
+
 export class RoomBase extends DurableObject {
     constructor(ctx, env) {
         super(ctx, env);
@@ -114,6 +121,18 @@ export class RoomBase extends DurableObject {
     broadcast(event, data, { only = () => true, except = null } = {}) {
         for (const ws of this.sockets(only)) {
             if (ws !== except) this.send(ws, event, data);
+        }
+    }
+
+    // Every open socket the room has not heard for longer than the limit is
+    // gone. A ping's answer is the room's own (no wake), so its time is asked
+    // of the runtime; a socket that never pinged counts from its connection
+    async sweepSilentSockets(limitMs = SOCKET_SILENCE_MS) {
+        const now = Date.now();
+        for (const ws of this.sockets()) {
+            const lastPing = this.ctx.getWebSocketAutoResponseTimestamp(ws);
+            const lastHeard = lastPing ? lastPing.getTime() : this.getInfo(ws).connectedAt;
+            if (now - lastHeard > limitMs) await this.socketGone(ws);
         }
     }
 

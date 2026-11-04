@@ -144,8 +144,8 @@ function playerCard(page, name) {
     });
 }
 
-async function waitForPlayers(page, count) {
-    await expect(page.locator('.player-card')).toHaveCount(count);
+async function waitForPlayers(page, count, options = {}) {
+    await expect(page.locator('.player-card')).toHaveCount(count, options);
 }
 
 // A room of these players, every one of them on the room page and seeing all
