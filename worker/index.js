@@ -107,11 +107,21 @@ async function route(request, env) {
     const room = pathname.match(/^\/game\/([^/]+)$/);
     if (method === 'GET' && room) return roomPage(request, env, room[1]);
 
+    // A room page's socket goes to its room
+    const socket = pathname.match(/^\/ws\/([^/]+)$/);
+    if (method === 'GET' && socket) {
+        const roomCode = socket[1].toUpperCase();
+        if (!gameLogic.isValidRoomCode(roomCode)) return new Response('No such room', { status: 400 });
+        return env.ROOMS.getByName(roomCode).fetch(request);
+    }
+
     return notFound(request, env);
 }
 
 export default {
     async fetch(request, env) {
-        return withSecurityHeaders(await route(request, env));
+        const response = await route(request, env);
+        // An accepted socket is no page: its answer goes back as it is
+        return response.webSocket ? response : withSecurityHeaders(response);
     },
 };

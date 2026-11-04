@@ -366,7 +366,7 @@ const translations = {
     }
 };
 
-// The server answers in English (game-logic.js, server.js), and its error texts
+// The server answers in English (game-logic.js, worker/), and its error texts
 // are the keys here: the page shows a server error in its own language.
 // tests/translations-real.test.js fails if a text the server sends is missing
 const serverErrors = {

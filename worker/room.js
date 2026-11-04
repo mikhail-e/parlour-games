@@ -16,7 +16,25 @@ export function forLog(value) {
     return (text && text.length > LOG_LENGTH) ? `${text.slice(0, LOG_LENGTH)}…` : text;
 }
 
+// Whose a socket is lives in its attachment: { role: 'player', playerId } once
+// join-room has checked the player's secret, { role: 'waiting', playerId } for
+// a newcomer's page asking to join the round, no role for any other socket
 const isPlayer = info => info.role === 'player';
+const isPlayerOf = playerId => info => info.role === 'player' && info.playerId === playerId;
+const isWaitingFor = playerId => info => info.role === 'waiting' && info.playerId === playerId;
+const withoutRole = ({ role: _role, playerId: _playerId, ...info }) => info;
+
+// What a player does in the room: the handler gets the player the socket
+// speaks for, never an ID from the message
+const MOVES = {
+    'admit-player': 'admitPlayer',
+    'decline-player': 'declinePlayer',
+    'assign-character': 'assignCharacter',
+    'start-game': 'startGame',
+    'reveal-character': 'revealCharacter',
+    'restart-game': 'restartGame',
+    'leave-game': 'leaveGame',
+};
 
 export class Room extends RoomBase {
     constructor(ctx, env) {
@@ -33,7 +51,28 @@ export class Room extends RoomBase {
             if (saved.get('game') && this.roomCode) {
                 this.games.set(this.roomCode, gameLogic.gameFromStorage(saved.get('game')));
             }
+            await this.reconcile();
         });
+    }
+
+    // The room has just been loaded - after a sleep, a deploy, a restart. If
+    // it went down with its sockets, it heard none of them close: a player
+    // marked online without a page goes offline, a request without a waiting
+    // page goes away
+    async reconcile() {
+        const { game } = this;
+        if (!game) return;
+        let changed = false;
+        for (const player of game.players) {
+            if (player.isConnected && this.sockets(isPlayerOf(player.id)).length === 0) {
+                gameLogic.markPlayerDisconnected(game, player.id);
+                changed = true;
+            }
+        }
+        for (const playerId of [...game.joinRequests.keys()]) {
+            if (this.withdrawRequestWithoutPages(playerId)) changed = true;
+        }
+        if (changed) await this.save();
     }
 
     get game() {
@@ -110,5 +149,272 @@ export class Room extends RoomBase {
 
         await this.save();
         return { status: 200, body: result };
+    }
+
+    // A page's socket: join-room and ask-to-join for anybody, a move only for
+    // the player the socket speaks for
+    async onEvent(ws, event, data) {
+        if (event === 'join-room') return this.joinRoom(ws, data);
+        if (event === 'ask-to-join') return this.askToJoin(ws, data);
+        if (!Object.hasOwn(MOVES, event)) return;
+
+        const info = this.getInfo(ws);
+        if (info.role !== 'player') {
+            this.send(ws, 'error', 'You are not in this game');
+            return;
+        }
+        await this[MOVES[event]](ws, data, { gameId: this.roomCode, playerId: info.playerId });
+    }
+
+    onEventError(ws) {
+        this.send(ws, 'error', 'Something went wrong, please try again');
+    }
+
+    // A room page connects after its HTTP join. Only a player of this room,
+    // with their secret, gets in: the socket hears every move of the game,
+    // and from now on it acts for that player
+    async joinRoom(ws, data) {
+        const { playerId, playerSecret } = data;
+        const gameId = typeof data.gameId === 'string' ? data.gameId.toUpperCase() : '';
+        const game = this.games.get(gameId);
+        // The page drew the room from its HTTP join, but its player has left
+        // since (in another tab, say) or the room is gone: tell this page it is
+        // out, as a leaver's own page is told, or it stays in a room it never hears
+        if (gameLogic.isValidPlayerId(playerId) && !(game && game.players.some(p => p.id === playerId))) {
+            this.send(ws, 'player-left', { playerId, gameDeleted: !game });
+            return;
+        }
+        if (!game || !gameLogic.checkPlayerSecret(game, playerId, playerSecret)) {
+            return;
+        }
+        // A socket is one page: one player
+        const info = this.getInfo(ws);
+        if (info.role === 'player' && info.playerId !== playerId) {
+            return;
+        }
+
+        this.setInfo(ws, { ...info, role: 'player', playerId });
+        gameLogic.markPlayerConnected(game, playerId);
+        console.log(`📍 A page of player ${playerId} joined game ${gameId}`);
+
+        // The game as it is, with the newcomers waiting to be let in: a page
+        // that opens now shows their request too
+        this.send(ws, 'game-state', { ...gameLogic.serializeGame(game), joinRequests: gameLogic.listJoinRequests(game) });
+        await this.save();
+    }
+
+    // A newcomer's waiting page asks to join the started round (its HTTP join
+    // answered waitingForApproval). Until a player lets them in, the newcomer
+    // hears nothing of the room
+    async askToJoin(ws, data) {
+        const info = this.getInfo(ws);
+        // A player's page has nothing to ask
+        if (info.role === 'player') return;
+        const { playerId, playerSecret, playerName, avatar } = data;
+        const gameId = typeof data.gameId === 'string' ? data.gameId.toUpperCase() : '';
+
+        const result = gameLogic.requestToJoin(this.games, gameId, playerName, avatar, playerId, playerSecret);
+        if (result.retryJoin) {
+            this.send(ws, 'join-request-ended', { outcome: 'retry' });
+            return;
+        }
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        // A socket waits for one request: one it waited for before goes first
+        this.setInfo(ws, { ...info, role: 'waiting', playerId });
+        if (info.role === 'waiting' && info.playerId !== playerId) {
+            this.withdrawRequestWithoutPages(info.playerId);
+        }
+        console.log(`🚪 Player ${playerId} asks to join game ${gameId}`);
+        this.broadcast('join-requested', result.request, { only: isPlayer });
+        await this.save();
+    }
+
+    // Any player answers a request; the first answer decides (game-logic.js)
+    async admitPlayer(ws, data, me) {
+        const result = gameLogic.admitPlayer(this.games, me.gameId, data.playerId, me.playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`🚪 Player ${result.player.id} let into game ${me.gameId} by ${me.playerId}`);
+        this.broadcast('player-joined', {
+            player: result.player,
+            players: result.players,
+            characters: result.characters,
+            revealedPlayers: result.revealedPlayers
+        }, { only: isPlayer });
+        this.broadcast('join-request-closed', {
+            playerId: result.player.id,
+            outcome: 'admitted',
+            playerName: result.player.name
+        }, { only: isPlayer });
+        // Their page joins the usual way now: the HTTP join lets them in
+        this.endJoinRequests([result.player.id], 'retry');
+        await this.save();
+    }
+
+    async declinePlayer(ws, data, me) {
+        const result = gameLogic.declinePlayer(this.games, me.gameId, data.playerId, me.playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`🚪 Player ${data.playerId} declined in game ${me.gameId} by ${me.playerId}`);
+        this.broadcast('join-request-closed', {
+            playerId: data.playerId,
+            outcome: 'declined',
+            playerName: result.playerName
+        }, { only: isPlayer });
+        this.endJoinRequests([data.playerId], 'declined');
+        await this.save();
+    }
+
+    // Final character assignment (when editing completes): `playerId` is the
+    // player who gets the character, the one who gives it is the sender
+    async assignCharacter(ws, data, me) {
+        const { playerId, character } = data;
+        const result = gameLogic.assignCharacter(this.games, me.gameId, playerId, character, me.playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`✅ Character finalized for player ${playerId} in game ${me.gameId}`);
+        // Every page, the sender's own included, updates the same way
+        this.broadcast('character-finalized', {
+            playerId,
+            character: result.character,
+            allCharacters: result.characters
+        }, { only: isPlayer });
+        await this.save();
+    }
+
+    async startGame(ws, data, me) {
+        const result = gameLogic.startGame(this.games, me.gameId, me.playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`Game ${me.gameId} started by player ${me.playerId}`);
+        this.broadcast('game-started', result, { only: isPlayer });
+        await this.save();
+    }
+
+    // A player reveals their own character, nobody else's
+    async revealCharacter(ws, data, me) {
+        const result = gameLogic.revealCharacter(this.games, me.gameId, me.playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`Player ${me.playerId} revealed their character in game ${me.gameId}`);
+        this.broadcast('character-revealed', result, { only: isPlayer });
+        this.broadcast('player-revealed-notification', {
+            playerName: result.revealedPlayer.name,
+            character: result.revealedPlayer.character,
+            playerId: me.playerId
+        }, { only: isPlayer });
+        await this.save();
+    }
+
+    async restartGame(ws, data, me) {
+        const result = gameLogic.restartGame(this.games, me.gameId, me.playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`Game ${me.gameId} restarted by player ${me.playerId}`);
+        this.broadcast('game-restarted', result, { only: isPlayer });
+        // The lobby is open to everybody: the newcomers waiting just join
+        this.endJoinRequests(result.endedJoinRequests, 'retry');
+        await this.save();
+    }
+
+    // A player leaves the room themselves: nobody can remove anybody else
+    async leaveGame(ws, data, me) {
+        const { gameId, playerId } = me;
+        const result = gameLogic.removePlayerFromGame(this.games, gameId, playerId);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
+
+        console.log(`👋 Player ${playerId} left game ${gameId}`);
+        // Sent BEFORE the player's sockets lose their role, so the leaver
+        // receives the confirmation and uses it as the trigger to go home
+        this.broadcast('player-left', {
+            playerId,
+            playerName: result.removedPlayer.name,
+            players: result.players,
+            characters: result.characters,
+            revealedPlayers: result.revealedPlayers,
+            gameDeleted: result.gameDeleted
+        }, { only: isPlayer });
+
+        // None of the player's tabs speaks for them or hears the room any
+        // more; their later closes change nothing
+        for (const socket of this.sockets(isPlayerOf(playerId))) {
+            this.setInfo(socket, withoutRole(this.getInfo(socket)));
+        }
+        // Nobody is left to answer the newcomers waiting: their pages join
+        // again and learn that the room is gone
+        this.endJoinRequests(result.endedJoinRequests, 'retry');
+
+        if (result.gameDeleted) {
+            // The room's storage goes with it: its old link leads home
+            console.log(`🗑️ Game ${gameId} removed - last player left`);
+        }
+        await this.save();
+    }
+
+    // A socket is gone: a newcomer's request goes with their last waiting
+    // page, a player goes offline with their last page (two tabs are one
+    // player; a reloaded page often joins before the old one is gone)
+    async onSocketGone(ws, info) {
+        let changed = false;
+        if (info.role === 'waiting') {
+            changed = this.withdrawRequestWithoutPages(info.playerId);
+        }
+        if (info.role === 'player' && this.game && this.sockets(isPlayerOf(info.playerId)).length === 0) {
+            const player = gameLogic.markPlayerDisconnected(this.game, info.playerId);
+            if (player) {
+                console.log(`🔌 Player ${info.playerId} went offline in game ${this.roomCode}`);
+                this.broadcast('player-disconnected', { playerId: info.playerId, playerName: player.name },
+                    { only: isPlayer, except: ws });
+                changed = true;
+            }
+        }
+        if (changed) await this.save();
+    }
+
+    // A newcomer's request, when no page of theirs waits for it any more:
+    // withdrawn, and the players' windows close. True when it went
+    withdrawRequestWithoutPages(playerId) {
+        if (!this.game || this.sockets(isWaitingFor(playerId)).length > 0) return false;
+        if (!gameLogic.withdrawJoinRequest(this.game, playerId)) return false;
+        console.log(`🚪 Player ${playerId} no longer asks to join game ${this.roomCode}`);
+        this.broadcast('join-request-closed', { playerId, outcome: 'withdrawn' }, { only: isPlayer });
+        return true;
+    }
+
+    // Tell the waiting pages of these newcomers that their request is over:
+    // 'declined' sends them home, 'retry' makes them join again and follow the
+    // answer (let in, the lobby, or a room that is gone)
+    endJoinRequests(playerIds, outcome) {
+        for (const playerId of playerIds) {
+            for (const socket of this.sockets(isWaitingFor(playerId))) {
+                this.setInfo(socket, withoutRole(this.getInfo(socket)));
+                this.send(socket, 'join-request-ended', { outcome });
+            }
+        }
     }
 }

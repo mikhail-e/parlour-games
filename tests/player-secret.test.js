@@ -11,7 +11,8 @@ const {
     removePlayerFromGame,
     checkPlayerSecret,
     serializeGame,
-    restoreGame
+    gameToStorage,
+    gameFromStorage
 } = require('../game-logic');
 
 const ALICE = '00000000-0000-4000-8000-0000000000a1';
@@ -56,6 +57,16 @@ describe("A player's secret", () => {
         expect(JSON.stringify(serializeGame(games.get(gameId)))).not.toContain(ALICE_SECRET);
     });
 
+    test("the room's storage keeps the secrets as hashes, and the room still checks them after a sleep", () => {
+        const stored = JSON.parse(JSON.stringify(gameToStorage(games.get(gameId))));
+        const woken = gameFromStorage(stored);
+
+        // A browser uses one secret in every room: the storage never holds it
+        expect(JSON.stringify(stored)).not.toContain(ALICE_SECRET);
+        expect(checkPlayerSecret(woken, ALICE, ALICE_SECRET)).toBe(true);
+        expect(checkPlayerSecret(woken, ALICE, OTHER_SECRET)).toBe(false);
+    });
+
     test('a leaver returns to the started round only with their own secret', () => {
         const bob = addPlayerToGame(games, gameId, 'Bob', '😎', null, OTHER_SECRET).player;
         assignCharacter(games, gameId, ALICE, 'Batman', bob.id);
@@ -71,16 +82,5 @@ describe("A player's secret", () => {
         expect(games.get(gameId).characters.get(ALICE).character).toBe('Batman');
     });
 
-    test('a backup keeps the secrets as hashes, and the restored room still checks them', () => {
-        const saved = JSON.parse(JSON.stringify(serializeGame(games.get(gameId), { withSecrets: true })));
-        games.set('BACKUP', restoreGame('BACKUP', saved));
-
-        // A browser uses one secret in every room: the disk never holds it
-        expect(JSON.stringify(saved)).not.toContain(ALICE_SECRET);
-        expect(saved.secrets[ALICE]).toMatch(/^[0-9a-f]{64}$/);
-
-        expect(checkPlayerSecret(games.get('BACKUP'), ALICE, ALICE_SECRET)).toBe(true);
-        expect(addPlayerToGame(games, 'BACKUP', 'Alice', '🐍', ALICE, OTHER_SECRET).success).toBe(false);
-    });
 
 });

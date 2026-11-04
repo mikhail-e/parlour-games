@@ -3,6 +3,8 @@
 /* global debugLog, MAX_CHARACTER_LENGTH, isCustomAvatar, getText, serverErrorText, showNotification, AppStorage, handleApiError, PLAYER_ID, PLAYER_SECRET */
 // From wake-lock.js
 /* global keepScreenAwake */
+// From room-socket.js
+/* global RoomSocket */
 
 let socket;
 let currentGame = null;
@@ -19,15 +21,16 @@ let joinRequestModal = null;
 const joinRequestQueue = [];
 let shownJoinRequest = null;
 
-// The server takes a move only from a socket that has joined the room
-// (join-room, answered with game-state). After a reconnect - a phone waking
-// up, a server restart - the new socket joins only once the HTTP join is
-// back, so a move made meanwhile waits here instead of being refused
+// The room takes a move only from a socket that has joined it (join-room,
+// answered with game-state). After a reconnect - a phone waking up, a room
+// restarted - the new socket joins only once the HTTP join is back, so a move
+// made meanwhile waits here instead of being refused. A socket that is
+// closing sends nothing: its move waits too
 let roomJoined = false;
 const pendingMoves = [];
 
 function sendMove(eventName, data) {
-    if (roomJoined) {
+    if (roomJoined && socket.connected) {
         socket.emit(eventName, data);
     } else {
         debugLog('⏳ Waiting to rejoin the room before sending', eventName);
@@ -90,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the game room
     initializeGameRoom(roomCode);
     
-    // Initialize Socket.IO
+    // The room's socket
     initializeSocket(roomCode);
     
     // Set up event listeners
@@ -112,7 +115,7 @@ function initializeGameRoom(roomCode) {
 }
 
 function initializeSocket(roomCode) {
-    socket = io();
+    socket = new RoomSocket(`/ws/${roomCode}`, { log: debugLog });
     
     socket.on('connect', () => {
         debugLog('Connected to server');

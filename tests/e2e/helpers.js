@@ -148,6 +148,15 @@ async function waitForPlayers(page, count) {
     await expect(page.locator('.player-card')).toHaveCount(count);
 }
 
+// A room of these players, every one of them on the room page and seeing all
+async function roomWith(newPlayer, names) {
+    const players = await Promise.all(names.map(name => newPlayer(name)));
+    const code = await createRoom(players[0]);
+    for (const player of players.slice(1)) await joinRoom(player, code);
+    for (const player of players) await waitForPlayers(player.page, players.length);
+    return { players, code };
+}
+
 // Wait until the landing page has set itself up. Its buttons work only after
 // game.js has run: a click before that submits the form the old way and
 // reloads the page. The avatar grid is filled by the same setup, so 12 tiles
@@ -279,35 +288,23 @@ async function stubShare(page, behaviour) {
 
 // A slow connection: the room page draws the room from its HTTP join, but its
 // socket asks to join the room (join-room) only after releaseRoomJoin(page).
-// Call before the page loads
+// Every other message goes out at once. Call before the page loads
 async function holdRoomJoin(page) {
     await page.addInitScript(() => {
-        let realIo;
+        const send = WebSocket.prototype.send;
         let heldJoin = null;
         let released = false;
         window.releaseRoomJoin = () => {
             released = true;
             if (heldJoin) heldJoin();
         };
-        // socket.io.js sets window.io as it loads: hand game-room.js a wrapper
-        Object.defineProperty(window, 'io', {
-            configurable: true,
-            set(value) { realIo = value; },
-            get() {
-                return realIo && ((...args) => {
-                    const socket = realIo(...args);
-                    const emit = socket.emit.bind(socket);
-                    socket.emit = (event, ...rest) => {
-                        if (event === 'join-room' && !released) {
-                            heldJoin = () => emit(event, ...rest);
-                            return socket;
-                        }
-                        return emit(event, ...rest);
-                    };
-                    return socket;
-                });
-            },
-        });
+        WebSocket.prototype.send = function (message) {
+            if (!released && typeof message === 'string' && message.includes('"event":"join-room"')) {
+                heldJoin = () => send.call(this, message);
+                return;
+            }
+            send.call(this, message);
+        };
     });
 }
 
@@ -315,20 +312,15 @@ async function releaseRoomJoin(page) {
     await page.evaluate(() => window.releaseRoomJoin());
 }
 
-// Count the Socket.IO events of this name the page sends to the server, over
-// the WebSocket and over HTTP polling (used before the upgrade). Call it before
-// the player opens the room: the socket connects as the room page loads.
-// Returns a function that answers the count so far
+// Count the room socket's events of this name the page sends to the server.
+// Call it before the player opens the room: the socket connects as the room
+// page loads. Returns a function that answers the count so far
 function countSentEvents(page, eventName) {
     const marker = `"${eventName}"`;
     let count = 0;
-    const countIn = payload => {
-        if (typeof payload === 'string') count += payload.split(marker).length - 1;
-    };
-    page.on('websocket', socket => socket.on('framesent', frame => countIn(frame.payload)));
-    page.on('request', request => {
-        if (request.method() === 'POST' && request.url().includes('/socket.io/')) countIn(request.postData());
-    });
+    page.on('websocket', socket => socket.on('framesent', frame => {
+        if (typeof frame.payload === 'string') count += frame.payload.split(marker).length - 1;
+    }));
     return () => count;
 }
 
@@ -385,6 +377,7 @@ module.exports = {
     askToJoin,
     assignCharacter,
     countSentEvents,
+    roomWith,
     holdRoomJoin,
     releaseRoomJoin,
     startGame,

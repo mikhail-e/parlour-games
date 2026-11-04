@@ -32,12 +32,13 @@ const fs = require('fs');
 const path = require('path');
 const { translations, serverErrors, Localization } = require('../public/js/translations');
 
-// Every error text the server can send: game-logic.js and server.js answer in
-// English, as `error: '...'` or socket.emit('error', '...'), in either quotes
-const SERVER_ERROR_TEXTS = [...new Set(['game-logic.js', 'server.js'].flatMap(file => {
+// Every error text the server can send: game-logic.js, the Worker and the
+// room answer in English, as `error: '...'`, emit('error', '...') or
+// this.send(ws, 'error', '...'), in either quotes
+const SERVER_ERROR_TEXTS = [...new Set(['game-logic.js', 'worker/index.js', 'worker/room.js'].flatMap(file => {
     const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-    return [...source.matchAll(/error:\s*(['"])(.+?)\1|emit\(\s*(['"])error\3\s*,\s*(['"])(.+?)\4/g)]
-        .map(match => match[2] || match[5]);
+    return [...source.matchAll(/error:\s*(['"])(.+?)\1|emit\(\s*(['"])error\3\s*,\s*(['"])(.+?)\4|send\(\s*\w+\s*,\s*(['"])error\6\s*,\s*(['"])(.+?)\7/g)]
+        .map(match => match[2] || match[5] || match[8]);
 }))];
 
 describe('Real translations.js', () => {
@@ -116,7 +117,8 @@ describe('Real translations.js', () => {
     // a player reads a server error in the page's language
     describe('server errors', () => {
         test('the server texts are found', () => {
-            expect(SERVER_ERROR_TEXTS).toEqual(expect.arrayContaining(['Game has already started', 'Something went wrong, please try again']));
+            // One text of each form: error: '...' (game-logic.js) and this.send(ws, 'error', '...') (the room)
+            expect(SERVER_ERROR_TEXTS).toEqual(expect.arrayContaining(['Game has already started', 'Something went wrong, please try again', 'You are not in this game']));
         });
 
         test('every error the server sends has a Russian text', () => {

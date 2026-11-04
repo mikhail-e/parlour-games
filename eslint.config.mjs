@@ -19,9 +19,9 @@ export default [
 
     js.configs.recommended,
 
-    // Server (Node, CommonJS)
+    // The game's rules (CommonJS: Jest runs them in Node, the Worker bundles them)
     {
-        files: ["server.js", "game-logic.js", "game-backups.js"],
+        files: ["game-logic.js"],
         languageOptions: {
             sourceType: "commonjs",
             globals: {
@@ -54,7 +54,6 @@ export default [
             globals: {
                 ...globals.browser,
                 bootstrap: "readonly",
-                io: "readonly",
             },
         },
         rules: {
@@ -116,7 +115,6 @@ export default [
     {
         ignores: [
             "node_modules/",
-            "games/",
             "coverage/",
             "test-results/",
             "playwright-report/",
