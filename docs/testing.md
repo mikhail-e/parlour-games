@@ -46,7 +46,7 @@ npm run test:e2e:prod                      # браузерные тесты п�
 
 Только Chromium (решение владельца, CLAUDE.md). Playwright сам запускает два `wrangler dev` — движок Cloudflare с Worker, комнатами и файлами, как на проде, — и каждый раз заново, так что тесты всегда видят текущий код:
 - на порту 3100 — обычный, для всех тестов;
-- на порту 3101 — с короткими таймерами комнаты (`--var ROOM_EMPTY_MS:6000 --var GHOST_MS:3000`): на нём идёт только `room-timers.spec.js` (`test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL })`), остальные тесты его не трогают.
+- на порту 3101 — с короткими таймерами комнаты (`--var ROOM_EMPTY_MS:8000 --var GHOST_MS:3000`): на нём идёт только `room-timers.spec.js` (`test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL })`), остальные тесты его не трогают.
 
 Запущенный `npm start` (8787) не мешает. Хранилище комнат оба пишут во временные папки (`--persist-to`), а не в `.wrangler/`.
 

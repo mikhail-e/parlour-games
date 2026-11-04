@@ -17,7 +17,7 @@ test('a room nobody has open is gone after the empty-room time', async ({ newPla
     const code = await createRoom(alice);
     await alice.page.goto('/');
 
-    await sleep(7000);
+    await sleep(9000); // longer than the empty-room time of the fast server
     await alice.page.goto(`/game/${code}`);
 
     await expect(alice.page).toHaveURL(/\/\?error=room-not-found$/);
@@ -36,7 +36,9 @@ test('nobody leaves while every page is closed; the ghost time starts again on r
     await alice.page.close();
     await bob.page.close();
 
-    await sleep(4500); // longer than the ghost time, shorter than the empty-room time
+    // Longer than the ghost time, and well short of the empty-room time: the
+    // return below has to reach the room before it goes
+    await sleep(4500);
     const back = { name: 'Alice', page: await alice.context.newPage() };
     await joinRoom(back, code);
 

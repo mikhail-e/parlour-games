@@ -29,3 +29,19 @@ test('junk on the socket breaks nothing', async ({ newPlayer }) => {
 
     await expect(playerCard(carol.page, 'Bob').locator('.character-sticker')).toHaveText('Zorro');
 });
+
+// A desktop tab hidden for a while gets its timers once a minute (Chrome's
+// intensive throttling): its pings go a minute apart, and the room's answer
+// to the last one is a minute old by the next. That is no dead connection
+test('a page whose timers run once a minute keeps its connection', async ({ newPlayer }) => {
+    const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Bob']);
+
+    const replaced = await alice.page.evaluate(() => {
+        const before = socket.ws;
+        socket.lastHeard = Date.now() - 65_000; // the pong of the previous tick, a throttled minute ago
+        socket.checkConnection();
+        return socket.ws !== before;
+    });
+
+    expect(replaced).toBe(false);
+});

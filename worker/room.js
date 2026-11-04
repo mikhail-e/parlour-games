@@ -99,6 +99,12 @@ export class Room extends RoomBase {
             this.emptySince ??= Date.now();
         }
         await this.ctx.storage.put({ game: gameLogic.gameToStorage(this.game), emptySince: this.emptySince });
+        await this.setTimer(playerPagesOpen);
+    }
+
+    // The timer for what is due next: the room's end or a ghost's time, and
+    // the next look for silent sockets while any are open
+    async setTimer(playerPagesOpen) {
         await this.setAlarmAt([
             gameLogic.roomAlarmTime(this.game, { playerPagesOpen, emptySince: this.emptySince },
                 { emptyRoomMs: this.emptyRoomMs, ghostMs: this.ghostMs }),
@@ -110,13 +116,22 @@ export class Room extends RoomBase {
     // while somebody plays, the ghosts go. Then the silent sockets
     async alarm() {
         const playerPagesOpen = this.sockets(isPlayer).length > 0;
+        let changed = false;
         if (this.game && !playerPagesOpen && this.emptySince !== null && Date.now() >= this.emptySince + this.emptyRoomMs) {
             this.deleteRoom();
+            changed = true;
         } else if (this.game && playerPagesOpen) {
-            this.removeGhosts();
+            changed = this.removeGhosts();
         }
+        // A silent socket is gone: onSocketGone saves what that changes
         await this.sweepSilentSockets();
-        await this.afterChange();
+        // A page left open keeps the room awake once a minute: when nothing
+        // changed, there is nothing to write - the timer is only set again
+        if (changed || !this.game) {
+            await this.afterChange();
+        } else {
+            await this.setTimer(this.sockets(isPlayer).length > 0);
+        }
     }
 
     // Nobody had the room open for the empty-room time: it goes, and its code
@@ -129,9 +144,10 @@ export class Room extends RoomBase {
 
     // Players offline for longer than the ghost time leave, as if they had
     // left themselves (only while a page of a player is open: a group that
-    // took a break finds its room as it left it)
+    // took a break finds its room as it left it). True when somebody left
     removeGhosts() {
-        for (const removal of gameLogic.removeStaleDisconnectedPlayers(this.games, this.ghostMs)) {
+        const removals = gameLogic.removeStaleDisconnectedPlayers(this.games, this.ghostMs);
+        for (const removal of removals) {
             console.log(`👻 Removed ghost player ${removal.removedPlayer.id} from game ${this.roomCode} (disconnected too long)`);
             this.broadcast('player-left', {
                 playerId: removal.removedPlayer.id,
@@ -143,6 +159,7 @@ export class Room extends RoomBase {
             }, { only: isPlayer });
             this.endJoinRequests(removal.endedJoinRequests, 'retry');
         }
+        return removals.length > 0;
     }
 
     // A new game under this room's code; false when the room has one already

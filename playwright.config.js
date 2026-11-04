@@ -65,7 +65,7 @@ module.exports = defineConfig({
                 reuseExistingServer: false,
             },
             {
-                command: wranglerDev(FAST_TIMERS_PORT, 9231, 'whoami-e2e-fast', ' --var ROOM_EMPTY_MS:6000 --var GHOST_MS:3000'),
+                command: wranglerDev(FAST_TIMERS_PORT, 9231, 'whoami-e2e-fast', ' --var ROOM_EMPTY_MS:8000 --var GHOST_MS:3000'),
                 env: { WRANGLER_SEND_METRICS: 'false' },
                 url: `http://localhost:${FAST_TIMERS_PORT}/api/version`,
                 reuseExistingServer: false,

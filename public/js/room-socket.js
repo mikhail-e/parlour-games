@@ -10,8 +10,10 @@
 
 class RoomSocket {
     static PING_EVERY_MS = 25_000;
-    // Heard nothing for this long: the connection is dead
-    static SILENCE_LIMIT_MS = 60_000;
+    // Heard nothing for this long: the connection is dead. More than a minute:
+    // a desktop tab hidden for a while gets its timers once a minute, so its
+    // pings go a minute apart; less than the room's limit (room-base.js)
+    static SILENCE_LIMIT_MS = 90_000;
     // The first wait before connecting again; it doubles up to the longest
     static RETRY_FIRST_MS = 1000;
     static RETRY_LONGEST_MS = 5000;
