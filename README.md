@@ -17,11 +17,11 @@ The classic guessing party game, played remotely. Every player gets a secret cha
 
 ## How to Run
 
-Running the game needs Node.js 18 or newer; the development tools (ESLint) need Node.js 20.19+, 22.13+ or 24+.
+Running the game needs Node.js 22 or newer: `npm start` runs `wrangler dev`, the Cloudflare Workers runtime on your machine, with the game's rooms (Durable Objects) and files.
 
 ```bash
 npm install
-npm start          # http://localhost:3000
+npm start          # http://localhost:8787
 ```
 
 ## Development
@@ -42,9 +42,9 @@ The documents in `docs/` are written in Russian.
 
 ## Technologies
 
-- Server: Node.js, Express, Socket.IO
+- Server: Cloudflare Workers and Durable Objects (one per room), WebSocket
 - Browser: plain JavaScript and Bootstrap 5 — no framework, no build step
-- Checks: ESLint, Jest and supertest, Playwright and axe-core
+- Checks: ESLint, Jest, Playwright and axe-core
 - Hosting: Render
 
 ## Contributing
