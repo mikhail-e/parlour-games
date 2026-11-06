@@ -51,8 +51,8 @@ public/
     ├── game.js            # Landing page logic (avatar pool + refresh, create/join buttons)
     └── game-room.js       # Game room logic (player list, character stickers, socket handlers, a newcomer's waiting screen, the join request window; when the screen stays awake)
 tests/                     # Jest: game logic, room storage and timers, checks of deliberate copies and of how code is written
-└── e2e/                   # Playwright: the game in Chromium (phone + desktop), several players per room, the HTTP API; helpers.js
-playwright.config.js       # Browser tests: own wrangler dev on 3100 (and 3101 with short room timers), mobile + desktop, BASE_URL for production
+└── e2e/                   # Playwright: the game in Chromium (phone + desktop), several players per room, the HTTP API; helpers.js, on the kit's guard
+playwright.config.js       # Browser tests on the kit's shared config: own wrangler dev on 3100 (and 3101 with short room timers), mobile + desktop, BASE_URL for production
 docs/testing.md            # How the tests are organized and written (helpers, rules of the suite, debugging)
 docs/publishing.md         # Link previews, robots, where the site's address is written
 scripts/og-image.*         # The source of the link preview picture and the script that takes it (not served)
