@@ -41,8 +41,8 @@
 
 - [x] 6.1 Ветка `release/whoami-2.1.0` от `develop`, `npm version minor -w games/whoami --no-git-tag-version`, `npm test` из корня, коммит «Release whoami 2.1.0»; проверка — `games/whoami/package.json` и корневой lockfile показывают `2.1.0`
 - [x] 6.2 Владелец меняет настройки сборки `whoami-game` по выбранному в спайке варианту (root directory, команда выкладки, watch paths); проверка — настройки в панели совпадают с `docs/release.md`
-- [ ] 6.3 Подтверждение владельца на выкладку; слить в `master` с тегом `whoami-v2.1.0`, обратно в `develop`, удалить ветку, `git push origin master develop --tags`; проверка — в Cloudflare Deployments у `whoami-game` успешная сборка этого коммита
-- [ ] 6.4 Проверка прода: `curl -s https://whoami.escapist.club/api/version` отвечает `2.1.0`, `npm run test:e2e:prod -w games/whoami` зелёный, сайт открывается и показывает `v2.1.0` внизу, комната, открытая до выкладки, продолжает работать
+- [x] 6.3 Подтверждение владельца на выкладку; слить в `master` с тегом `whoami-v2.1.0`, обратно в `develop`, удалить ветку, `git push origin master develop --tags`; проверка — в Cloudflare Deployments у `whoami-game` успешная сборка этого коммита
+- [x] 6.4 Проверка прода: `curl -s https://whoami.escapist.club/api/version` отвечает `2.1.0`, `npm run test:e2e:prod -w games/whoami` зелёный, сайт открывается и показывает `v2.1.0` внизу, комната, открытая до выкладки, продолжает работать
 
 ## Workflow follow-up
 
