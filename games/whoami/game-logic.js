@@ -2,17 +2,14 @@
 // These functions are extracted for testing
 
 const crypto = require('crypto');
+// A room's code, a player's ID and the hash of their secret are the kit's,
+// the same in every game (packages/room-kit/shared/identity.js)
+const { isValidPlayerId, hashSecret, generateRoomCode, isValidRoomCode } = require('@parlour-games/room-kit/shared/identity');
 
 // Color palette for character stickers (must match frontend)
 const stickerColors = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo'];
 
 const MAX_PLAYERS = 12;
-
-// A player ID is a UUID, and so is a player's secret. The frontend copy lives
-// in public/js/utils.js (a stored value in another format is replaced there);
-// tests/input-limits.test.js keeps the two equal. Keep it on a single line
-// for that test.
-const PLAYER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Input limits. The frontend copy lives in public/js/utils.js (a browser
 // script cannot require() this file); tests/input-limits.test.js fails if
@@ -27,16 +24,6 @@ const MAX_CHARACTER_LENGTH = 128;
 // fails if they drift apart. Keep each on a single line for the sync tests.
 const MAX_CUSTOM_AVATAR_LENGTH = 32768; // ~24 KB of image data as base64
 const CUSTOM_AVATAR_PATTERN = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
-
-function isValidPlayerId(value) {
-    return typeof value === 'string' && PLAYER_ID_PATTERN.test(value);
-}
-
-// The server keeps a hash of a player's secret, never the secret itself: a
-// browser uses one secret in every room, and the room's storage holds the hash
-function hashSecret(secret) {
-    return crypto.createHash('sha256').update(secret).digest('hex');
-}
 
 // Count characters the way a person would: an emoji is one character,
 // not the two UTF-16 code units JavaScript's .length reports.
@@ -110,18 +97,6 @@ function assignUniqueColor(existingPlayers) {
 // The sort is stable (ES2019), so same-millisecond joins keep their order.
 function sortPlayersByJoinTime(players) {
     players.sort((a, b) => new Date(a.joinedAt || 0) - new Date(b.joinedAt || 0));
-}
-
-// Generate short room code (6 characters). The code is all that lets a
-// stranger into a room, so it comes from the cryptographic generator:
-// Math.random's next numbers can be worked out from the ones it gave before
-function generateRoomCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-        code += chars[crypto.randomInt(chars.length)];
-    }
-    return code;
 }
 
 // Create a new game. A room code given is taken as it is: the caller has
@@ -660,16 +635,6 @@ function checkPlayerSecret(game, playerId, playerSecret) {
     return isValidPlayerId(playerSecret)
         && game.players.some(p => p.id === playerId)
         && game.secrets.get(playerId) === hashSecret(playerSecret);
-}
-
-// Validate room code format
-function isValidRoomCode(code) {
-    if (!code || typeof code !== 'string') {
-        return false;
-    }
-    
-    // Must be exactly 6 characters, alphanumeric
-    return /^[A-Z0-9]{6}$/.test(code);
 }
 
 // A game as plain data, ready for JSON: what a player's page gets when its

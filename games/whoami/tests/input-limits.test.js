@@ -31,15 +31,19 @@ describe('Input limits stay in sync between server and frontend', () => {
             .toBe(gameLogic.MAX_CUSTOM_AVATAR_LENGTH);
     });
 
-    test.each(['CUSTOM_AVATAR_PATTERN', 'PLAYER_ID_PATTERN'])('%s is character-for-character identical', (name) => {
-        const readPattern = (filePath) => {
-            const source = fs.readFileSync(path.join(__dirname, '..', filePath), 'utf8');
+    // The server's copy of the player ID's pattern is the kit's (shared/identity.js)
+    test.each([
+        ['CUSTOM_AVATAR_PATTERN', path.join(__dirname, '..', 'game-logic.js')],
+        ['PLAYER_ID_PATTERN', require.resolve('@parlour-games/room-kit/shared/identity')],
+    ])('%s is character-for-character identical', (name, serverFile) => {
+        const readPattern = (file) => {
+            const source = fs.readFileSync(file, 'utf8');
             const match = source.match(new RegExp(`const\\s+${name}\\s*=\\s*(\\/[^\\n]+\\/[a-z]*);`));
-            if (!match) throw new Error(`${name} not found in ${filePath}`);
+            if (!match) throw new Error(`${name} not found in ${file}`);
             return match[1];
         };
 
-        expect(readPattern('public/js/utils.js')).toBe(readPattern('game-logic.js'));
+        expect(readPattern(path.join(__dirname, '..', 'public/js/utils.js'))).toBe(readPattern(serverFile));
     });
 
     test('the limits are the agreed values', () => {

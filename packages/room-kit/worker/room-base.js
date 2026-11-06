@@ -1,7 +1,6 @@
 // The shared base of a room: one Durable Object per room code, its pages'
-// sockets and its timer. Nothing here knows the game - no event names, no
-// texts, no rules - so the next app with rooms copies this file unchanged;
-// the game's own room (worker/room.js) builds on it.
+// sockets and its timer. Nothing here knows a game - no event names, no
+// texts, no rules - so every game's own room (its worker/room.js) builds on it.
 //
 // A room sleeps between messages and may be taken out of memory at any
 // moment, so nothing lives only in memory: whose a socket is lives in the

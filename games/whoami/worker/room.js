@@ -1,12 +1,13 @@
 // A room of the game: one Durable Object per room code (worker/index.js
-// routes to it by the code), on the shared base in room-base.js. The rules
-// are game-logic.js's; this file keeps the room's one game in its storage and
-// tells the pages what happened.
+// routes to it by the code), on the kit's shared base
+// (packages/room-kit/worker/room-base.js). The rules are game-logic.js's;
+// this file keeps the room's one game in its storage and tells the pages what
+// happened.
 //
 // game-logic.js keeps its games in a Map of every room; here the Map holds
 // this room's game only, under its code.
 import gameLogic from '../game-logic.js';
-import { RoomBase, SWEEP_EVERY_MS } from './room-base.js';
+import { RoomBase, SWEEP_EVERY_MS } from '@parlour-games/room-kit/worker/room-base.js';
 
 // A value from a request as the log gets it: short, whatever was sent (Workers
 // Logs are the owner's to read). A secret never goes into the log, nor a photo
