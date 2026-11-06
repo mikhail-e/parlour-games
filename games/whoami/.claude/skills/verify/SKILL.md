@@ -5,15 +5,15 @@ description: How to run and drive the "Who am I?" game app for end-to-end verifi
 
 # Verifying changes in the "Who am I?" game
 
-A check worth repeating belongs in a browser test (`tests/e2e/`, `docs/testing.md`): its helpers already create rooms, join players and start games (`createRoom`, `joinRoom`, `startedGame`). Drive the app by hand for what a test cannot judge — how a change looks.
+The game lives in `games/whoami/` of the parlour-games monorepo; paths below are from that folder. A check worth repeating belongs in a browser test (`tests/e2e/`, `docs/testing.md`): its helpers already create rooms, join players and start games (`createRoom`, `joinRoom`, `startedGame`). Drive the app by hand for what a test cannot judge — how a change looks.
 
 ## Launch
 
 ```bash
-npm start   # wrangler dev: background it; ready when it prints "Ready on http://localhost:8787"
+npm start -w games/whoami   # from the repository root (or `npm start` in games/whoami/): wrangler dev; background it; ready when it prints "Ready on http://localhost:8787"
 ```
 
-No build step. Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
+No build step. Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
 
 ## Drive (Playwright MCP)
 

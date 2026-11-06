@@ -41,7 +41,7 @@
 Исходник — `scripts/og-image.html`. Он лежит вне `public/`, поэтому сайт его не отдаёт, и подключает настоящие `style.css` и Bootstrap: карточки игроков, бирки персонажей и свой конверт собраны из тех же классов, что в комнате. Композиция — занавес, слева вывеска и строка «Guess your secret character with friends», справа лист с тремя карточками игроков. Вывеску в исходник не копируют: скрипт перед снимком вставляет ту, что в `public/index.html` (копия разошлась бы с рисунком на сайте). Поменялся вид игры — картинку достаточно переснять:
 
 ```bash
-node scripts/og-image.js    # снимок 1200×630 → public/img/og-image-2.jpg
+node scripts/og-image.js    # из папки игры: снимок 1200×630 → public/img/og-image-2.jpg
 ```
 
 Скрипт снимает исходник браузером Playwright (тем же, что гоняет тесты). Смайлики на снимке — из системы того компьютера, где он сделан.
@@ -56,18 +56,19 @@ Facebook и мессенджеры хранят картинку у себя п�
 
 ## Где записан адрес сайта
 
-У статичной страницы нет способа держать адрес в одном месте, поэтому он записан буквально:
+У статичной страницы нет способа держать адрес в одном месте, поэтому он записан буквально. Пути — от корня репозитория:
 
 | Файл | Что там |
 |---|---|
-| `public/index.html` | `canonical`, `og:url`, `og:image`, `twitter:image`, `url` и `screenshot` в JSON-LD |
-| `public/game.html` | `og:image`, `twitter:image` |
-| `public/llms.txt` | ссылка в разделе Links |
-| `package.json` | `test:e2e:prod`, `homepage` |
-| `wrangler.jsonc` | `routes`: домен, на котором Cloudflare отвечает игрой |
-| `README.md`, `CLAUDE.md`, `SECURITY.md`, `docs/release.md`, `docs/testing.md` | адрес прода в тексте |
+| `games/whoami/public/index.html` | `canonical`, `og:url`, `og:image`, `twitter:image`, `url` и `screenshot` в JSON-LD |
+| `games/whoami/public/game.html` | `og:image`, `twitter:image` |
+| `games/whoami/public/llms.txt` | ссылка в разделе Links |
+| `games/whoami/package.json` | `test:e2e:prod`, `homepage` |
+| `games/whoami/wrangler.jsonc` | `routes`: домен, на котором Cloudflare отвечает игрой |
+| `games/whoami/README.md`, `games/whoami/CLAUDE.md`, `games/whoami/docs/testing.md` | адрес прода в тексте |
+| `README.md`, `CLAUDE.md`, `SECURITY.md`, `docs/release.md` | то же в документах репозитория: список игр, область отчётов об уязвимостях, проверка после выкладки |
 
-Сменить адрес — значит заменить его во всех местах таблицы (`git grep -n` по прежнему домену без `https://` находит их все, маршрут в `wrangler.jsonc` тоже) и в поле Website репозитория на GitHub (`gh repo edit --homepage`): оно вне git.
+Сменить адрес — значит заменить его во всех местах таблицы (`git grep -n` из корня по прежнему домену без `https://` находит их все, маршрут в `wrangler.jsonc` тоже; планы в `openspec/` — история, их не правят) и в поле Website репозитория на GitHub (`gh repo edit --homepage`): оно вне git.
 
 ## Проверка после выкладки
 
