@@ -1,28 +1,29 @@
 # CLAUDE.md - "Who am I?" Game
 
+One game of the parlour-games monorepo: the repository's layout, commands, git flow and decisions are in the root `CLAUDE.md`. Paths here are from this folder, `games/whoami/`.
+
 ## Project Overview
 Web application to play the "Who am I?" guessing game remotely with friends and family. Players join a room by a 6-character code, assign secret characters to each other, then guess who they are. Adaptive UI works on desktop and mobile browsers; installable as a PWA.
 
 - **Production:** https://whoami.escapist.club/ (Cloudflare Workers, free plan)
-- **Repository:** https://github.com/mikhail-e/whoami-game — public, a showcase (see Decisions)
+- **Repository:** https://github.com/mikhail-e/parlour-games, folder `games/whoami/` — public, a showcase (root CLAUDE.md, Decisions)
 - **Stack:** Cloudflare Workers + Durable Objects backend (one Durable Object per room, `wrangler`); vanilla JavaScript (ES6+) + Bootstrap 5 frontend (a local copy); Jest and Playwright for tests. No build step, no frontend framework.
 
 ## Commands
+In this folder; from the repository root the npm scripts take `-w games/whoami` (`npm start -w games/whoami`). Installing the packages and the once-per-machine steps: root CLAUDE.md.
 ```bash
-npm install                        # Install dependencies (Node.js 22+: wrangler needs it)
 npm start                          # wrangler dev: the Worker, its rooms and the files on http://localhost:8787
-npm test                           # All checks: ESLint, Jest, then Playwright — run before every merge
+npm test                           # The game's checks: ESLint, Jest, then Playwright (before a merge: npm test at the root, every game's)
 npm run lint                       # ESLint only (any warning fails); npm run lint:fix fixes what it can
-npx jest tests/game-logic.test.js  # Run a single Jest file
+npx jest tests/game-logic.test.js  # Run a single Jest file (in this folder only: Jest's settings are in its package.json)
 npm run test:e2e                   # Browser tests only (Playwright); :headed and :ui variants
 npm run test:e2e:prod              # Browser tests against production (after a release)
-npx playwright install chromium    # Once per machine: the browser for the tests
-npx wrangler login                 # Once per machine: the owner's Cloudflare account, for the live log
 npx wrangler tail whoami-game      # The live log of production; production is deployed by Workers Builds from master, never by hand
 ```
 
 ## Architecture
 ```
+package.json               # The game's name, version (/api/version reads it), scripts and Jest settings; the tools are the root's devDependencies
 wrangler.jsonc             # Cloudflare: the Worker and its address (whoami.escapist.club), the static files of public/, the rooms' Durable Object class and its migrations
 worker/
 ├── index.js               # The Worker: HTTP API, room pages, room sockets, the 404 page, the security headers on its own answers
@@ -56,17 +57,14 @@ tests/                     # Jest: game logic, room storage and timers, checks o
 └── e2e/                   # Playwright: the game in Chromium (phone + desktop), several players per room, the HTTP API; helpers.js
 playwright.config.js       # Browser tests: own wrangler dev on 3100 (and 3101 with short room timers), mobile + desktop, BASE_URL for production
 docs/testing.md            # How the tests are organized and written (helpers, rules of the suite, debugging)
-docs/release.md            # Git flow, versions, release and hotfix steps, the check of production
 docs/publishing.md         # Link previews, robots, where the site's address is written
 scripts/og-image.*         # The source of the link preview picture and the script that takes it (not served)
 scripts/icon.html, icons.js # The source of the app icons and the script that takes every size and favicon.ico (not served)
 README.md                  # What the game is, how to run it
-LICENSE                    # MIT for the code; the sign, the app icon and the link preview picture are not covered (README, License)
-SECURITY.md                # How to report a vulnerability privately (GitHub's private vulnerability reporting)
-.github/FUNDING.yml        # The Sponsor button on GitHub: the owner's Buy Me a Coffee
 eslint.config.mjs          # ESLint: one block per environment (game logic, Worker, pages, service worker, tests and scripts)
-.vscode/                   # Shared VS Code settings: ESLint fixes on save, the ESLint extension recommended
+.claude/skills/verify/     # The verify skill: how to run and drive the game by hand
 ```
+Releases, the license and the security policy are the repository's: root `docs/release.md`, `LICENSE`, `SECURITY.md`.
 
 ### How it works
 - **Rooms are Durable Objects:** one per 6-character room code (e.g. `ABC123`), found by the code (`env.ROOMS.getByName(code)`); a room keeps its one game in its storage. The static files of `public/` are served without the Worker (they cost nothing of the day's request limit); `run_worker_first` in wrangler.jsonc sends `/api/*`, `/game/*` and `/ws/*` to `worker/index.js`, and `/game`, `/index`, `/404` too: the static files would answer those with a page, the game answers its 404 page
@@ -82,10 +80,10 @@ eslint.config.mjs          # ESLint: one block per environment (game logic, Work
 - **Timeout protection:** the page pings its room every 25 seconds and the room answers `pong` without waking (an auto-response); a page that has heard nothing for a minute and a half takes its connection for dead and connects a new one (more than a minute: a hidden desktop tab gets its timers once a minute), and a page coming back on screen pings at once and reconnects if no answer comes in 5 seconds (room-socket.js; reconnects wait 1 s, doubling up to 5 s, plus a random part). The room, while sockets are open, looks every minute for sockets not heard for 2 minutes and counts them gone (`sweepSilentSockets`, room-base.js) — a phone asleep with its socket open. Disconnected players are marked `isConnected: false` rather than removed, so they can reconnect. Players disconnected for over an hour (`MAX_DISCONNECTED_MS`; "ghosts" — usually the same person returning under a new playerId) are removed by the room's timer (`removeStaleDisconnectedPlayers` in game-logic.js) and broadcast as a regular `player-left` — **only while a page of a player is open**: a group whose phones all slept through a break finds its room as it left it. When the first page comes back after such a gap, every player still offline gets a fresh hour (`restartGhostClocks`); otherwise the first one back would see the others removed. An hour is the owner's decision: a player whose phone sleeps through a break stays on everyone's list; the price is a ghost in the lobby keeping Start disabled for up to that hour, unless someone gives it a character; in a started game the `recentlyLeft` snapshot still lets the same ID return
 - **Keep screen awake:** while a round is on — from Start until every envelope is open, or until Restart — the room page holds a screen wake lock (`keepScreenAwake()` in wake-lock.js, called from `updateGameDisplay()`, so a reload or a return to a started round takes it too): players look at the others' tags for minutes without a touch. No timer: a phone left on the table during the round stays lit, after the last envelope it sleeps as usual. Silent, like the owner's Western Setup: no control, no text, a browser without the API or one that refuses (battery saver) shows nothing. The browser drops the lock whenever the page leaves the screen; coming back (`visibilitychange`) and any tap ask again — the tap also covers a browser that refuses a lock asked for without one (the round starts for most players with the server's message). Permissions-Policy (`public/_headers`) must not forbid `screen-wake-lock`; `tests/e2e/wake-lock.spec.js` checks the real Chromium lock too
 - **Connection tracking:** whose a socket is lives in the socket itself — its attachment, which survives the room's sleep: `{ role: 'player', playerId }` after `join-room`, `{ role: 'waiting', playerId }` after `ask-to-join`, no role otherwise. Two tabs of one browser are one player, and on page refresh the new socket often connects *before* the old one closes: a player goes offline only when their last socket goes. "Online" means a live page: `join-room` marks the player connected (`markPlayerConnected`, and only a player of that room gets the role), the last close marks them offline; the HTTP join does neither, so a player whose room page never opens (a closed tab) becomes a ghost instead of staying "online" forever. A room that went down with its sockets (it hears none of them close) puts things right as it loads: a player marked online without a socket goes offline, a request without a waiting socket goes. `isConnected` is the server's bookkeeping only — the page does not show it
-- **The shared part:** `worker/room-base.js` and `public/js/room-socket.js` know nothing of the game — no event names, no texts, no rules — so the owner's next app with rooms copies them unchanged (the owner's decision); the game's part is `worker/index.js`, `worker/room.js`, `game-logic.js` and the pages. They have no tests of their own: the game's browser tests cover them. When unsure where code goes, it goes into the game's part
+- **The shared part:** `worker/room-base.js` and `public/js/room-socket.js` know nothing of the game — no event names, no texts, no rules — so every game of the repository can share them unchanged (root CLAUDE.md, Decisions); the game's part is `worker/index.js`, `worker/room.js`, `game-logic.js` and the pages. They have no tests of their own: the game's browser tests cover them. When unsure where code goes, it goes into the game's part
 
 ## Rules (important!)
-1. **Bump the icon cache version in `CACHE_NAME`** (public/sw.js, e.g. `whoami-game-v1.6.0` → `v1.6.1`) **when you change the icons** (drawn in `scripts/icon.html`, taken by `node scripts/icons.js`). Only icons are cached, so HTML/CSS/JS changes reach players without it. This is not the app version — that one is in package.json (`docs/release.md`)
+1. **Bump the icon cache version in `CACHE_NAME`** (public/sw.js, e.g. `whoami-game-v1.6.0` → `v1.6.1`) **when you change the icons** (drawn in `scripts/icon.html`, taken by `node scripts/icons.js`). Only icons are cached, so HTML/CSS/JS changes reach players without it. This is not the app version — that one is in package.json (root `docs/release.md`)
 2. **No code duplication across files** — shared frontend code goes to `public/js/utils.js`
 3. **Update tests whenever logic changes**: a game rule → Jest with `game-logic.js`; what the player sees or does → a browser test in `tests/e2e/` (`docs/testing.md`). Run `npm test` before committing
 4. **Localize all UI text** — every user-facing string needs both `en` and `ru` entries in `public/js/translations.js`. `tests/translations-real.test.js` fails if a key exists in only one language. An error the server sent is shown through `serverErrorText()` (utils.js). Static markup supports `data-i18n` (text), `data-i18n-placeholder`, `data-i18n-title` and `data-i18n-aria-label` (for icon-only buttons)
@@ -127,30 +125,20 @@ eslint.config.mjs          # ESLint: one block per environment (game logic, Work
 - **PWA link capturing is a platform matter, not a bug.** iOS cannot open links in an installed web app at all (Apple limitation — links always open the browser/webview; no web-side fix exists). Android (installed via Chrome) captures in-scope links because `scope: "/"` covers `/game/*`; messenger in-app browsers bypass this. `launch_handler: navigate-existing` in manifest.json makes a captured link reuse the open app window (Android/desktop). `tests/manifest.test.js` guards these fields
 - **The service worker caches icons and nothing else.** The game requires a live server (a room lives on the server), so offline support is pointless, and caching HTML/JS only ever produced "player stuck on an old version" bugs. The worker exists for installability plus free icon caching. `tests/service-worker.test.js` fails if HTML/CSS/JS is added back to the cache. Icon matching is by **exact pathname** — an earlier substring check matched every URL because `'/'` was in the list. **Any change to sw.js, even a comment, is a new worker**: browsers install it and pwa.js shows every open page the "Update available — Reload" banner, so edit sw.js only for a real reason
 
-## Git Workflow (git flow)
-Steps and commands: `docs/release.md`.
-- `master` — production. **Every push to `master` deploys**: Cloudflare's Workers Builds installs the packages and runs `npx wrangler deploy`; no other branch is built. Never commit to it directly
-- `develop` — integration branch. Never commit to it directly
-- **All changes go in feature branches**: `feature/<short-name>` from `develop`, finished with a local `git merge --no-ff` into `develop` (no Pull Requests), then the branch is deleted
-- Before every merge: `npm test` must pass
-- **Release**: `release/<x.y.z>` from `develop` → bump the version (`npm version minor --no-git-tag-version`) → merge `--no-ff` into `master`, tag `v<x.y.z>`, merge back into `develop` → push `master`, `develop` and tags. **Push to `master` only after the owner confirms** (it deploys production), then check production (`docs/release.md`)
-- **Hotfix**: `hotfix/<x.y.z>` from `master` → a test that fails on the old code, the fix, a patch bump → merge `--no-ff` into `master` (tag) and `develop`
-- A room lives in its own storage and keeps its sockets across a deploy (Gotchas): a game in progress goes on
+## Git Workflow
+Git flow, releases and hotfixes are the repository's: root CLAUDE.md and `docs/release.md`; this game's name in its branches and tags is `whoami`. A room lives in its own storage and keeps its sockets across a deploy (Gotchas): a game in progress goes on
 
 ## Decisions (why it is so)
-The owner's decisions, with the reason.
-- **No CI**: `npm test` on the developer's machine is the only check before code reaches `develop` and production
-- **The repository is public — a showcase**: anyone may read the code and learn from it; issues are welcome, pull requests are not expected (only collaborators can open them). The code is MIT (`LICENSE`); the sign, the app icon and the link preview picture are not covered (README, License). Vulnerabilities are reported privately (`SECURITY.md`). New commits use the owner's GitHub noreply address as author and committer (`includeIf` in `~/.gitconfig`); older history keeps the personal address
+The owner's decisions, with the reason. The repository's own — one repository for the games, a public showcase, no CI, Cloudflare's free plan, OpenSpec, how docs are written — are in the root CLAUDE.md.
 - **The version is written only in package.json**: the server reads it (`/api/version`), the pages ask the server — no copy to keep in sync
 - **Online only, no offline mode**: a room lives on the server (see the service worker gotcha above)
-- **Cloudflare Workers + bare Durable Objects**: the owner plans more apps with rooms, each at no extra cost. Cloudflare's free plan is per account, not per app, and over a limit the requests fail until midnight UTC — there is no bill; Workers Paid would cover every app at once. One Durable Object per room: a room's state, sockets (the WebSocket Hibernation API: a sleeping room costs nothing) and timer in one place. Bare Durable Objects, no PartyServer or partysocket: fewer dependencies, all the code in sight, and the shared room layer becomes the pattern for the next apps. What counts against the free plan: requests a day for all the owner's apps together (a socket's connection is one, the messages it sends count twenty to one; static files nothing), the rooms' time awake and the rows they write — check the current numbers on Cloudflare's pricing page before relying on them
+- **Bare Durable Objects, one per room** (on Cloudflare Workers, root CLAUDE.md): a room's state, sockets (the WebSocket Hibernation API: a sleeping room costs nothing) and timer in one place. No PartyServer or partysocket: fewer dependencies, all the code in sight, and the shared room layer becomes the pattern for the next games
 - **Locally `wrangler dev`**, the Cloudflare runtime on the Mac: the Worker, its rooms and the files together, as in production
 - **Browser tests in Chromium only** — a phone (Pixel 7) and a desktop, like the owner's other apps; WebKit (Safari) is not covered
 - **Behaviour is tested through the pages, never by searching the code**: a test that looks for `navigator.share` in a file stays green while the button is broken. Tests act like players — through pages, buttons and the server's answers, never through server memory — so the same suite runs against production, and no test keeps its own copy of the game's code. A rule about how the code is written may be checked by reading the files (`tests/code-structure.test.js`), like the checks of the deliberate copies listed in the gotchas
 - **The look follows the sign**: a parlour-game playbill — cream paper with a rule inside its edge, dark brown ink, the sign's red — on a theatre curtain; characters are tags pinned to the player cards, your own a sealed envelope; the app icon is the envelope's wax seal
 - **The link preview card is in English**, like the owner's other apps: a bot cannot pick the reader's language
 - **Bootstrap is local, not on a CDN**: the Content Security Policy allows only the game's own site, and the owner's apps share one Bootstrap (`public/vendor/bootstrap/`)
-- **Docs hold principles, not history**: CLAUDE.md, `docs/` and the skills say how things work and why; no development history, dates or measured numbers (sizes, counts, timings) — those live in the code and in git. A design spec or plan of a feature leaves the repository once the feature is merged; what stays true goes here
 
 ## Ideas for later
 - **Rate limit** on creating rooms: a script can create thousands of rooms through `/api/create-game` and use up the day's request limit, which all the owner's apps share
