@@ -132,7 +132,7 @@ function createGame(games, roomCode = null) {
 // Add or reconnect a player to a game.
 //
 // A player ID is public: every page sees the players list. What proves that a
-// browser IS a player is the secret it sends along (PLAYER_SECRET in utils.js),
+// browser IS a player is the secret it sends along (PLAYER_SECRET, the kit's app.js),
 // which the server never gives to anybody. The first join with a secret
 // records it; after that, joining as this player needs the same secret. The
 // room sends one with every join; a call without one checks nothing that is

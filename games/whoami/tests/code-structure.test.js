@@ -1,7 +1,7 @@
 /**
  * How the page code is written
  * The pages run under a Content Security Policy that allows scripts and styles
- * only from the game's own files (public/_headers). An onclick="..." attribute is
+ * only from the game's own files (public/_headers, the kit's). An onclick="..." attribute is
  * inline code and a style="..." attribute an inline style: the browser blocks
  * both. Handlers go through addEventListener, looks through classes in
  * style.css; a script may still set element.style. This test reads the files
@@ -11,28 +11,17 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { inlineCodeProblems } = require('@parlour-games/room-kit/checks');
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const JS_DIR = path.join(PUBLIC_DIR, 'js');
 
-const filesOf = (dir, extension) => fs.readdirSync(dir)
-    .filter(file => file.endsWith(extension))
-    .map(file => [path.relative(PUBLIC_DIR, path.join(dir, file)), fs.readFileSync(path.join(dir, file), 'utf8')]);
-
-const sources = [...filesOf(PUBLIC_DIR, '.html'), ...filesOf(JS_DIR, '.js')];
-
-// "file: <tag ... attribute=" for every match, for a readable failure
-const findAll = pattern => sources.flatMap(([file, source]) =>
-    [...source.matchAll(pattern)].map(match => `${file}: ${match[0].slice(0, 80)}`));
-
 test('the pages and their scripts are found', () => {
-    expect(sources.map(([file]) => file)).toEqual(expect.arrayContaining(['index.html', 'game.html', 'js/game-room.js']));
+    expect(fs.readdirSync(PUBLIC_DIR)).toEqual(expect.arrayContaining(['index.html', 'game.html']));
+    expect(fs.readdirSync(JS_DIR)).toContain('game-room.js');
 });
 
-test('no inline event handler attributes in the pages or in HTML built by public/js/', () => {
-    expect(findAll(/<[^>]*\son[a-z]+\s*=/gi)).toEqual([]);
-});
-
-test('no inline style attributes in the pages or in HTML built by public/js/', () => {
-    expect(findAll(/<[^>]*\sstyle\s*=/gi)).toEqual([]);
+// The kit's check (checks.js): every page and every script of public/js/
+test('no inline event handler or style attributes in the pages or in HTML built by public/js/', () => {
+    expect(inlineCodeProblems([PUBLIC_DIR, JS_DIR])).toEqual([]);
 });

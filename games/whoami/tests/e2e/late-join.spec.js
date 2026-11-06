@@ -6,7 +6,7 @@ const {
     assignCharacter, revealOwnCharacter,
 } = require('./helpers');
 
-/* global socket, RoomSocket, joinRequestQueue, PLAYER_ID, PLAYER_SECRET -- the room page's names (game-room.js, room-socket.js, utils.js), inside page.evaluate() */
+/* global socket, RoomSocket, joinRequestQueue, PLAYER_ID, PLAYER_SECRET -- the room page's names (game-room.js; the kit's room-socket.js and app.js), inside page.evaluate() */
 
 const requestWindow = page => page.locator('#joinRequestModal');
 const notifications = page => page.locator('.alert.position-fixed');

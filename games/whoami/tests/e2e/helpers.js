@@ -7,18 +7,22 @@ const vm = require('vm');
 const zlib = require('zlib');
 const base = require('@playwright/test');
 
-// translations.js is a page script: it waits for the page's DOMContentLoaded
-// as it loads. Run it apart, with just enough of a page, and take its texts
-function loadTranslations() {
-    const source = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'translations.js'), 'utf8');
+// translations.js and the kit's i18n.js are page scripts: they wait for the
+// page's DOMContentLoaded as they load. Run them apart, with just enough of a
+// page, and take their texts: the game's on top of the kit's, as on the page
+function loadPageScript(file) {
+    const source = fs.readFileSync(file, 'utf8');
     const sandbox = { module: { exports: {} }, document: { addEventListener() {} } };
     vm.runInNewContext(source, sandbox);
     return sandbox.module.exports;
 }
 
-const { translations, serverErrors } = loadTranslations();
+const KIT_JS = path.join(path.dirname(require.resolve('@parlour-games/room-kit/package.json')), 'public', 'kit', 'js');
+const game = loadPageScript(path.join(__dirname, '..', '..', 'public', 'js', 'translations.js'));
+const translations = loadPageScript(path.join(KIT_JS, 'i18n.js')).withKitTexts(game.translations);
+const { serverErrors } = game;
 
-// A text from translations.js, with {placeholders} filled the way
+// A text from translations.js (or the kit's), with {placeholders} filled the way
 // Localization.getText fills them: tests never type the game's texts by hand
 function text(key, lang = 'en', placeholders = {}) {
     let value = translations[lang][key] || translations.en[key];

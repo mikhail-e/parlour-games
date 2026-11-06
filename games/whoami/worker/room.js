@@ -191,7 +191,7 @@ export class Room extends RoomBase {
         }
         const gameId = this.roomCode;
 
-        // Every page sends the player's secret (PLAYER_SECRET in utils.js): it is
+        // Every page sends the player's secret (PLAYER_SECRET, the kit's app.js): it is
         // what lets only this browser act as this player (addPlayerToGame)
         if (!gameLogic.isValidPlayerId(playerSecret)) {
             console.log('Join without a player secret refused');

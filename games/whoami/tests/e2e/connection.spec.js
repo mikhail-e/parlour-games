@@ -1,4 +1,4 @@
-// The room's socket (public/js/room-socket.js and the kit's
+// The room's socket (the kit's public/kit/js/room-socket.js and
 // worker/room-base.js): a page that reloads, and messages that are not the
 // game's, change nothing for the players. A connection that drops mid-round: game.spec.js
 const { test, expect, playerCard, waitForPlayers, assignCharacter, roomWith } = require('./helpers');

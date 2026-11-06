@@ -1,7 +1,9 @@
-// The input limits (and the shapes of a custom avatar and a player ID) exist
-// twice: once on the server (game-logic.js) and once on the frontend
-// (public/js/utils.js), because a browser script cannot require() a Node module. This test fails if the two copies ever drift apart,
-// which would let the UI accept text the server silently truncates or rejects.
+// The input limits (and the shape of a custom avatar) exist twice: once on the
+// server (game-logic.js) and once on the frontend (public/js/utils.js), because
+// a browser script cannot require() a Node module. This test fails if the two
+// copies ever drift apart, which would let the UI accept text the server
+// silently truncates or rejects. (The player ID's two copies are the kit's,
+// and so is their test.)
 
 const fs = require('fs');
 const path = require('path');
@@ -31,19 +33,15 @@ describe('Input limits stay in sync between server and frontend', () => {
             .toBe(gameLogic.MAX_CUSTOM_AVATAR_LENGTH);
     });
 
-    // The server's copy of the player ID's pattern is the kit's (shared/identity.js)
-    test.each([
-        ['CUSTOM_AVATAR_PATTERN', path.join(__dirname, '..', 'game-logic.js')],
-        ['PLAYER_ID_PATTERN', require.resolve('@parlour-games/room-kit/shared/identity')],
-    ])('%s is character-for-character identical', (name, serverFile) => {
-        const readPattern = (file) => {
-            const source = fs.readFileSync(file, 'utf8');
-            const match = source.match(new RegExp(`const\\s+${name}\\s*=\\s*(\\/[^\\n]+\\/[a-z]*);`));
-            if (!match) throw new Error(`${name} not found in ${file}`);
+    test('CUSTOM_AVATAR_PATTERN is character-for-character identical', () => {
+        const readPattern = (filePath) => {
+            const source = fs.readFileSync(path.join(__dirname, '..', filePath), 'utf8');
+            const match = source.match(/const\s+CUSTOM_AVATAR_PATTERN\s*=\s*(\/[^\n]+\/[a-z]*);/);
+            if (!match) throw new Error(`CUSTOM_AVATAR_PATTERN not found in ${filePath}`);
             return match[1];
         };
 
-        expect(readPattern(path.join(__dirname, '..', 'public/js/utils.js'))).toBe(readPattern(serverFile));
+        expect(readPattern('public/js/utils.js')).toBe(readPattern('game-logic.js'));
     });
 
     test('the limits are the agreed values', () => {
