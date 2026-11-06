@@ -15,6 +15,9 @@
   "license": "MIT",
   "author": "Mikhail Elychev",
   "main": "worker/index.js",
+  "dependencies": {
+    "@parlour-games/room-kit": "*"
+  },
   "scripts": {
     "start": "wrangler dev",
     "dev": "wrangler dev",

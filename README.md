@@ -14,16 +14,16 @@ The classic guessing party game: every player gets a secret character chosen by 
 
 ## How to Run
 
-Every game is a web app on Cloudflare Workers, whole in its own folder under `games/`, with its own address. The tools are shared: one `npm install` at the root, Node.js 22 or newer.
+Every game is a web app on Cloudflare Workers, whole in its own folder under `games/`, with its own address. What the games share — the rooms' base, the page's socket, the player's identity, translations, security headers — is one package, [`packages/room-kit/`](packages/room-kit/README.md), that every game takes from. The tools are shared too: one `npm install` at the root, Node.js 22 or newer.
 
 ```bash
 npm install
 npm start -w games/whoami          # one game: http://localhost:8787
 npx playwright install chromium    # once: the browser for the browser tests
-npm test                           # every game's checks: ESLint, Jest, then the games in a real browser (Playwright)
+npm test                           # every game's and the kit's checks: ESLint, Jest, then the games in a real browser (Playwright)
 ```
 
-- `CLAUDE.md` — the repository's layout, commands, git flow and decisions; each game has its own for its architecture and rules
+- `CLAUDE.md` — the repository's layout, commands, git flow and decisions; each game and the kit have their own for their architecture and rules
 - `docs/release.md` — releasing a game, hotfixes and the check of production
 - `openspec/` — the plans of changes, finished ones in `openspec/changes/archive/`
 

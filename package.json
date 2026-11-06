@@ -13,7 +13,8 @@
   "license": "MIT",
   "author": "Mikhail Elychev",
   "workspaces": [
-    "games/*"
+    "games/*",
+    "packages/*"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",

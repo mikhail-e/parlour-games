@@ -2,6 +2,9 @@
 
 One game of the parlour-games monorepo: the repository's layout, commands, git flow and decisions are in the root `CLAUDE.md`. Paths here are from this folder, `games/whoami/`.
 
+The game is built on the shared kit, `packages/room-kit/`; the kit's rules hold here too:
+@../../packages/room-kit/CLAUDE.md
+
 ## Project Overview
 Web application to play the "Who am I?" guessing game remotely with friends and family. Players join a room by a 6-character code, assign secret characters to each other, then guess who they are. Adaptive UI works on desktop and mobile browsers; installable as a PWA.
 
