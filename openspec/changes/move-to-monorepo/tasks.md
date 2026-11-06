@@ -30,17 +30,17 @@
 
 ## 5. Документы уровня репозитория
 
-- [ ] 5.1 Корневой `README.md` — коллекция: что это, список игр (whoami со ссылкой на прод и картинкой из `games/whoami/public/img/`), участие, безопасность, лицензия и исключения брендов с путями `games/whoami/…`; README whoami — в `games/whoami/README.md` с поправленными путями и командами; проверка — все относительные ссылки и картинки открываются на GitHub в ветке
+- [x] 5.1 Корневой `README.md` — коллекция: что это, список игр (whoami со ссылкой на прод и картинкой из `games/whoami/public/img/`), участие, безопасность, лицензия и исключения брендов с путями `games/whoami/…`; README whoami — в `games/whoami/README.md` с поправленными путями и командами; проверка — все относительные ссылки и картинки открываются на GitHub в ветке
 - [x] 5.2 Корневой `CLAUDE.md`: раскладка монорепо, команды (корень и `-w`), git flow со ссылкой на `docs/release.md`, решения уровня репозитория (публичная витрина, CI нет, свой Worker и домен у каждой игры, общие лимиты Cloudflare, OpenSpec с архивом в репозитории вместо «план уходит после слияния»); из `games/whoami/CLAUDE.md` эти части убрать, ссылаясь на корень; проверка — ни одно правило не потеряно и не записано дважды (сверка старого и двух новых файлов по разделам)
 - [x] 5.3 `docs/release.md` в корне: настройки Workers Builds из спайка, ветки `release/<игра>-x.y.z` и `hotfix/<игра>-x.y.z`, теги `<игра>-vx.y.z`, `npm version … -w games/<игра>`, проверка после выкладки с `-w games/<игра>`; проверка — шаги выпуска проходят «всухую» до слияния в `master`
 - [x] 5.4 Ссылки на репозиторий: `SECURITY.md`, `README.md`, `package.json`, `CLAUDE.md`, `docs/release.md`; проверка — `git grep -n whoami-game` находит только имя Worker и пакета (`wrangler.jsonc`, `games/whoami/package.json`, `CACHE_NAME`, команды `wrangler tail whoami-game` и панель Cloudflare), но не адрес репозитория
 - [x] 5.5 Описание репозитория на GitHub (`gh repo edit --description …`, с подтверждения владельца); проверка — `gh repo view` показывает новое описание
-- [ ] 5.6 Слить `feature/monorepo` в `develop` (`git merge --no-ff`) после зелёного `npm test` из корня; перед push просканировать всю непушенную историю (`origin/develop..develop`: каждый blob, включая `openspec/`, имена файлов, сообщения коммитов) на рабочие и личные данные — ноль находок; push `develop`; проверка — сборка в Cloudflare не запускалась (собирается только `master`)
+- [x] 5.6 Слить `feature/monorepo` в `develop` (`git merge --no-ff`) после зелёного `npm test` из корня; перед push просканировать всю непушенную историю (`origin/develop..develop`: каждый blob, включая `openspec/`, имена файлов, сообщения коммитов) на рабочие и личные данные — ноль находок; push `develop`; проверка — сборка в Cloudflare не запускалась (собирается только `master`)
 
 ## 6. Выпуск `whoami-v2.1.0`
 
-- [ ] 6.1 Ветка `release/whoami-2.1.0` от `develop`, `npm version minor -w games/whoami --no-git-tag-version`, `npm test` из корня, коммит «Release whoami 2.1.0»; проверка — `games/whoami/package.json` и корневой lockfile показывают `2.1.0`
-- [ ] 6.2 Владелец меняет настройки сборки `whoami-game` по выбранному в спайке варианту (root directory, команда выкладки, watch paths); проверка — настройки в панели совпадают с `docs/release.md`
+- [x] 6.1 Ветка `release/whoami-2.1.0` от `develop`, `npm version minor -w games/whoami --no-git-tag-version`, `npm test` из корня, коммит «Release whoami 2.1.0»; проверка — `games/whoami/package.json` и корневой lockfile показывают `2.1.0`
+- [x] 6.2 Владелец меняет настройки сборки `whoami-game` по выбранному в спайке варианту (root directory, команда выкладки, watch paths); проверка — настройки в панели совпадают с `docs/release.md`
 - [ ] 6.3 Подтверждение владельца на выкладку; слить в `master` с тегом `whoami-v2.1.0`, обратно в `develop`, удалить ветку, `git push origin master develop --tags`; проверка — в Cloudflare Deployments у `whoami-game` успешная сборка этого коммита
 - [ ] 6.4 Проверка прода: `curl -s https://whoami.escapist.club/api/version` отвечает `2.1.0`, `npm run test:e2e:prod -w games/whoami` зелёный, сайт открывается и показывает `v2.1.0` внизу, комната, открытая до выкладки, продолжает работать
 
