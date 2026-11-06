@@ -21,11 +21,13 @@ test('the pages load nothing from other sites', async ({ newPlayer, baseURL }) =
 // Each address with the status of its answer. /game/ZZZZZZ is a room that
 // does not exist: its answer is a redirect home, checked itself rather than
 // the page it leads to. The files come straight from the static files, the
-// API and the rooms from the code (public/_headers and its copy)
+// kit's as well as the game's, the API and the rooms from the code
+// (public/_headers, the kit's copy, and the Worker's copy of it)
 const ADDRESSES = {
     '/': 200,
     '/js/game.js': 200,
-    '/vendor/bootstrap/bootstrap.min.css': 200,
+    '/kit/vendor/bootstrap/bootstrap.min.css': 200,
+    '/kit/fonts/fonts.css': 200,
     '/no-such/page': 404,
     '/api/version': 200,
     '/api/no-such-thing': 404,

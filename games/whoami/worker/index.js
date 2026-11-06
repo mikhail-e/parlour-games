@@ -4,7 +4,7 @@
 import pkg from '../package.json';
 import gameLogic from '../game-logic.js';
 import { forLog } from './room.js';
-import SECURITY_HEADERS from './security-headers.json';
+import SECURITY_HEADERS from '@parlour-games/room-kit/worker/security-headers.json';
 
 // Each room is a Durable Object of its own (worker/room.js)
 export { Room } from './room.js';
@@ -14,8 +14,8 @@ const MAX_BODY_BYTES = 64 * 1024;
 // Codes tried for a new room before giving up; a taken one is rare
 const CREATE_ATTEMPTS = 5;
 
-// A copy of the answer with the security headers (public/_headers has their
-// reasons and puts them on the static files)
+// A copy of the answer with the security headers (the kit's public/_headers
+// has their reasons; its copy in public/ puts them on the static files)
 export function withSecurityHeaders(response) {
     const answer = new Response(response.body, response);
     for (const [name, value] of Object.entries(SECURITY_HEADERS)) {

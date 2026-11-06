@@ -3,9 +3,8 @@ import roomKitEslint, { sharedRules } from "@parlour-games/room-kit/eslint.mjs";
 
 // The kit's blocks (packages/room-kit/eslint.mjs), and the game's own on top
 export default [
-    // public/kit/ is a copy of the kit's files: the kit checks them.
-    // Third-party code is checked by its authors, not by our rules
-    ...roomKitEslint({ ignores: ["public/kit/", "public/vendor/"] }),
+    // public/kit/ is a copy of the kit's files: the kit checks them
+    ...roomKitEslint({ ignores: ["public/kit/"] }),
 
     // The game's rules (CommonJS: Jest runs them in Node, the Worker bundles them)
     {

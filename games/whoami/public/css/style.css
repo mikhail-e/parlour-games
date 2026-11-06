@@ -1,76 +1,8 @@
 /* Who am I? Game - Custom Styles */
 
-/* Fonts. The files live in public/fonts/ (Fontsource; licenses next to them),
-   not on a CDN: the Content Security Policy allows fonts only from the game's
-   own site (font-src 'self', public/_headers).
-   Fira Sans Condensed sets all the text: narrow like a playbill, yet easy to
-   read. Latin and Cyrillic are separate files: the browser downloads Cyrillic
-   only for a page that has it. No italic files - nothing in the game is italic.
-   The sign: Ultra draws its name (no Cyrillic - that is why the sign is English
-   in both languages), Oswald its two small lines. Abril Fatface draws only the
-   seal's "?". Ultra and Abril have font-display: block - a logo flashing in a
-   fallback serif looks worse than a short pause */
-@font-face {
-  font-family: 'Fira Sans Condensed';
-  font-weight: 400;
-  font-display: swap;
-  src: url('../fonts/fira-sans-condensed-latin-400-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Fira Sans Condensed';
-  font-weight: 400;
-  font-display: swap;
-  src: url('../fonts/fira-sans-condensed-cyrillic-400-normal.woff2') format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-@font-face {
-  font-family: 'Fira Sans Condensed';
-  font-weight: 600;
-  font-display: swap;
-  src: url('../fonts/fira-sans-condensed-latin-600-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Fira Sans Condensed';
-  font-weight: 600;
-  font-display: swap;
-  src: url('../fonts/fira-sans-condensed-cyrillic-600-normal.woff2') format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-@font-face {
-  font-family: 'Fira Sans Condensed';
-  font-weight: 700;
-  font-display: swap;
-  src: url('../fonts/fira-sans-condensed-latin-700-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Fira Sans Condensed';
-  font-weight: 700;
-  font-display: swap;
-  src: url('../fonts/fira-sans-condensed-cyrillic-700-normal.woff2') format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-@font-face {
-  font-family: 'Oswald';
-  font-weight: 600;
-  font-display: swap;
-  src: url('../fonts/oswald-latin-600-normal.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Ultra';
-  font-weight: 400;
-  font-display: block;
-  src: url('../fonts/ultra-latin-400-normal.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Abril Fatface';
-  font-weight: 400;
-  font-display: block;
-  src: url('../fonts/abril-fatface-latin-400-normal.woff2') format('woff2');
-}
+/* Fonts: the kit's /kit/fonts/fonts.css (packages/room-kit/public/kit/fonts/),
+   linked before this file: Fira Sans Condensed for the text; Ultra, Oswald and
+   Abril Fatface for the sign and the seal */
 
 /* The look of a parlour-game playbill (the sign's colors): cream paper, dark
    brown ink, red - and a theatre curtain under the paper. Red is for accents

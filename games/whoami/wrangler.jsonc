@@ -8,6 +8,17 @@
   "compatibility_date": "2026-11-01",
   // game-logic.js uses Node's crypto
   "compatibility_flags": ["nodejs_compat"],
+  // The kit's files (its scripts, Bootstrap, fonts and public/_headers) are
+  // copied into public/ before wrangler serves or uploads it: `npm run build`
+  // (packages/room-kit/CLAUDE.md). wrangler runs the command in the folder it
+  // was started in - the game's for `npm start` and the browser tests, the
+  // root's for Workers Builds - so the game is named, not its path. Workers
+  // Builds runs the same copy as its own Build command (docs/release.md).
+  // `npm start` copies again when a file of the kit changes
+  "build": {
+    "command": "npm run build -w whoami-game",
+    "watch_dir": "../../packages/room-kit/public"
+  },
   // The game's address, whoami.escapist.club: a Custom Domain in a zone of
   // the owner's account (Cloudflare keeps its DNS record and certificate).
   // The only one: the browser keeps a player's name, ID and secret per

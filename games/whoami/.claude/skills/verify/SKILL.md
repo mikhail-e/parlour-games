@@ -13,7 +13,7 @@ The game lives in `games/whoami/` of the parlour-games monorepo; paths below are
 npm start -w games/whoami   # from the repository root (or `npm start` in games/whoami/): wrangler dev; background it; ready when it prints "Ready on http://localhost:8787"
 ```
 
-No build step. Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
+wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
 
 ## Drive (Playwright MCP)
 

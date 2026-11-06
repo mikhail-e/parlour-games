@@ -19,6 +19,7 @@
     "@parlour-games/room-kit": "*"
   },
   "scripts": {
+    "build": "room-kit-copy-public public",
     "start": "wrangler dev",
     "dev": "wrangler dev",
     "test": "npm run lint && jest && playwright test",

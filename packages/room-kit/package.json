@@ -13,8 +13,11 @@
   },
   "license": "MIT",
   "author": "Mikhail Elychev",
+  "bin": {
+    "room-kit-copy-public": "scripts/copy-public.js"
+  },
   "scripts": {
-    "test": "npm run lint",
+    "test": "npm run lint && jest",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix"
   }

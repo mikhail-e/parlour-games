@@ -40,7 +40,7 @@ test('every :hover rule applies only with a mouse', async ({ newPlayer }) => {
     expect(touchHover).toEqual([]);
 });
 
-// The game draws with its own fonts (public/fonts/): a missing file or a CSP
+// The game draws with its own fonts (the kit's, /kit/fonts/): a missing file or a CSP
 // block would silently fall back to a system font, Cyrillic first of all
 test('the pages draw with their own fonts, Cyrillic included', async ({ newPlayer }) => {
     const { page } = await newPlayer('Алиса', { locale: 'ru-RU' });
