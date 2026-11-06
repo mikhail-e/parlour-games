@@ -9,16 +9,16 @@
 
 - [x] 2.1 Переименовать репозиторий на GitHub (`gh repo rename parlour-games`, с подтверждения владельца) и проверить, что `gh repo view mikhail-e/whoami-game` открывает `mikhail-e/parlour-games`
 - [x] 2.2 Обновить `origin` (`git remote set-url origin git@github.com:mikhail-e/parlour-games.git`) и проверить командой `git fetch origin`
-- [ ] 2.3 Владелец проверяет в панели Cloudflare (Workers & Pages → `whoami-game` → Settings → Build), что Worker подключён к `mikhail-e/parlour-games`; если связь потеряна — подключить заново, не меняя остальных настроек
+- [x] 2.3 Владелец проверяет в панели Cloudflare (Workers & Pages → `whoami-game` → Settings → Build), что Worker подключён к `mikhail-e/parlour-games`; если связь потеряна — подключить заново, не меняя остальных настроек
 
 ## 3. Спайк Workers Builds
 
 - [x] 3.1 Подготовить ветку `spike/monorepo` от `feature/monorepo`: раскладка из группы 4 в черновом виде (`git mv` в `games/whoami/`, корневой `package.json` с workspaces и devDependencies, `npm install` в корне), а в `games/whoami/wrangler.jsonc` — имя `parlour-spike`, без `routes`, `workers_dev: true`; проверка — `npm test -w games/whoami` локально зелёный, а скан всего, что уйдёт в push (каждый новый blob, имена файлов, сообщения коммитов), не находит ни рабочих, ни личных данных: ветка публичная
-- [ ] 3.2 Владелец создаёт в Cloudflare временный Worker `parlour-spike`, подключённый к `parlour-games` с веткой `spike/monorepo` по варианту A (root directory `games/whoami`, выкладка `npx wrangler deploy`); push ветки; проверка — журнал сборки показывает установку из корневого `package-lock.json` и версию wrangler из него, выкладка успешна
-- [ ] 3.3 Проверить выложенный спайк на адресе workers.dev: `curl …/api/version` отвечает версией из `games/whoami/package.json`, `curl -X POST …/api/create-game` создаёт комнату
-- [ ] 3.4 Если 3.2 или 3.3 не прошли — повторить с вариантом B (root directory `/`, выкладка `npx wrangler deploy -c games/whoami/wrangler.jsonc`) и проверить так же
-- [ ] 3.5 Задать watch paths (`games/whoami/*`, `package.json`, `package-lock.json`), сделать push, меняющий только корневой документ, и проверить, что сборка пропущена
-- [ ] 3.6 Записать выбранный вариант и настройки в design.md (решение 5) — без поддомена workers.dev, ID аккаунта и фрагментов журнала, удалить Worker `parlour-spike` и ветку `spike/monorepo` (локально и на GitHub); проверка — Worker нет в панели, `git ls-remote origin spike/monorepo` пусто
+- [x] 3.2 Владелец создаёт в Cloudflare временный Worker `parlour-spike`, подключённый к `parlour-games` с веткой `spike/monorepo` по варианту A (root directory `games/whoami`, выкладка `npx wrangler deploy`); push ветки; проверка — журнал сборки показывает установку из корневого `package-lock.json` и версию wrangler из него, выкладка успешна
+- [x] 3.3 Проверить выложенный спайк на адресе workers.dev: `curl …/api/version` отвечает версией из `games/whoami/package.json`, `curl -X POST …/api/create-game` создаёт комнату
+- [x] 3.4 Если 3.2 или 3.3 не прошли — повторить с вариантом B (root directory `/`, выкладка `npx wrangler deploy -c games/whoami/wrangler.jsonc`) и проверить так же
+- [x] 3.5 Задать watch paths (`games/whoami/*`, `package.json`, `package-lock.json`), сделать push, меняющий только корневой документ, и проверить, что сборка пропущена
+- [x] 3.6 Записать выбранный вариант и настройки в design.md (решение 5) — без поддомена workers.dev, ID аккаунта и фрагментов журнала, удалить Worker `parlour-spike` и ветку `spike/monorepo` (локально и на GitHub); проверка — Worker нет в панели, `git ls-remote origin spike/monorepo` пусто
 
 ## 4. Перенос whoami в `games/whoami/`
 
@@ -32,9 +32,9 @@
 
 - [ ] 5.1 Корневой `README.md` — коллекция: что это, список игр (whoami со ссылкой на прод и картинкой из `games/whoami/public/img/`), участие, безопасность, лицензия и исключения брендов с путями `games/whoami/…`; README whoami — в `games/whoami/README.md` с поправленными путями и командами; проверка — все относительные ссылки и картинки открываются на GitHub в ветке
 - [x] 5.2 Корневой `CLAUDE.md`: раскладка монорепо, команды (корень и `-w`), git flow со ссылкой на `docs/release.md`, решения уровня репозитория (публичная витрина, CI нет, свой Worker и домен у каждой игры, общие лимиты Cloudflare, OpenSpec с архивом в репозитории вместо «план уходит после слияния»); из `games/whoami/CLAUDE.md` эти части убрать, ссылаясь на корень; проверка — ни одно правило не потеряно и не записано дважды (сверка старого и двух новых файлов по разделам)
-- [ ] 5.3 `docs/release.md` в корне: настройки Workers Builds из спайка, ветки `release/<игра>-x.y.z` и `hotfix/<игра>-x.y.z`, теги `<игра>-vx.y.z`, `npm version … -w games/<игра>`, проверка после выкладки с `-w games/<игра>`; проверка — шаги выпуска проходят «всухую» до слияния в `master`
-- [ ] 5.4 Ссылки на репозиторий: `SECURITY.md`, `README.md`, `package.json`, `CLAUDE.md`, `docs/release.md`; проверка — `git grep -n whoami-game` находит только имя Worker и пакета (`wrangler.jsonc`, `games/whoami/package.json`, `CACHE_NAME`, команды `wrangler tail whoami-game` и панель Cloudflare), но не адрес репозитория
-- [ ] 5.5 Описание репозитория на GitHub (`gh repo edit --description …`, с подтверждения владельца); проверка — `gh repo view` показывает новое описание
+- [x] 5.3 `docs/release.md` в корне: настройки Workers Builds из спайка, ветки `release/<игра>-x.y.z` и `hotfix/<игра>-x.y.z`, теги `<игра>-vx.y.z`, `npm version … -w games/<игра>`, проверка после выкладки с `-w games/<игра>`; проверка — шаги выпуска проходят «всухую» до слияния в `master`
+- [x] 5.4 Ссылки на репозиторий: `SECURITY.md`, `README.md`, `package.json`, `CLAUDE.md`, `docs/release.md`; проверка — `git grep -n whoami-game` находит только имя Worker и пакета (`wrangler.jsonc`, `games/whoami/package.json`, `CACHE_NAME`, команды `wrangler tail whoami-game` и панель Cloudflare), но не адрес репозитория
+- [x] 5.5 Описание репозитория на GitHub (`gh repo edit --description …`, с подтверждения владельца); проверка — `gh repo view` показывает новое описание
 - [ ] 5.6 Слить `feature/monorepo` в `develop` (`git merge --no-ff`) после зелёного `npm test` из корня; перед push просканировать всю непушенную историю (`origin/develop..develop`: каждый blob, включая `openspec/`, имена файлов, сообщения коммитов) на рабочие и личные данные — ноль находок; push `develop`; проверка — сборка в Cloudflare не запускалась (собирается только `master`)
 
 ## 6. Выпуск `whoami-v2.1.0`
