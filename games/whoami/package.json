@@ -1,0 +1,36 @@
+{
+  "name": "whoami-game",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Who am I? game for friends and family",
+  "homepage": "https://whoami.escapist.club/",
+  "bugs": {
+    "url": "https://github.com/mikhail-e/parlour-games/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikhail-e/parlour-games.git",
+    "directory": "games/whoami"
+  },
+  "license": "MIT",
+  "author": "Mikhail Elychev",
+  "main": "worker/index.js",
+  "scripts": {
+    "start": "wrangler dev",
+    "dev": "wrangler dev",
+    "test": "npm run lint && jest && playwright test",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:prod": "BASE_URL=https://whoami.escapist.club playwright test --workers=2",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/tests/e2e/"
+    ]
+  }
+}
