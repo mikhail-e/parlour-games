@@ -4,6 +4,6 @@
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
-    "superpowers@anthropic-plugin-directory": true
+    "superpowers@claude-plugins-official": false
   }
 }
