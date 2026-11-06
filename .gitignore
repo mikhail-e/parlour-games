@@ -14,11 +14,12 @@ yarn-error.log*
 # Test coverage reports (npx jest --coverage)
 coverage/
 
-# Playwright reports and traces of failed browser tests
+# Playwright reports and traces of failed browser tests. A pattern with a slash
+# inside holds only at the root, hence **/ for what a game's folder has too
 test-results/
 playwright-report/
 blob-report/
-playwright/.cache/
+**/playwright/.cache/
 
 # Logs
 logs
@@ -51,5 +52,6 @@ pids
 # Playwright MCP: page snapshots and screenshots from checking the app by hand
 .playwright-mcp/
 
-# This machine's Claude Code permissions (.claude/settings.json is shared with the project)
-.claude/settings.local.json
+# This machine's Claude Code permissions, at the root and in a game's folder
+# (.claude/settings.json is shared with the project)
+**/.claude/settings.local.json
