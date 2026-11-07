@@ -87,7 +87,7 @@ test('an empty answer or one of spaces is not sent, and the field stays open', a
     await waitForPlayers(anna.page, 2);
     await startRound([anna, boris]);
 
-    await anna.page.click('#foldAndPass');
+    await anna.page.click('#saveAndPass');
     await answer(anna, '   ');
 
     await expect(anna.page.locator('#answerForm')).toBeVisible();
@@ -103,14 +103,14 @@ test('the answer stops at 200 characters, counted as a person counts them', asyn
     // 199 letters and an emoji: 200 characters, though 201 UTF-16 units
     await field.fill(`${'a'.repeat(199)}🦜`);
     await expect(anna.page.locator('#answerCount')).toHaveText('200/200');
-    await expect(anna.page.locator('#foldAndPass')).toBeEnabled();
+    await expect(anna.page.locator('#saveAndPass')).toBeEnabled();
 
     await field.fill('a'.repeat(201));
     await expect(anna.page.locator('#answerCount')).toHaveText('201/200');
-    await expect(anna.page.locator('#foldAndPass')).toBeDisabled();
+    await expect(anna.page.locator('#saveAndPass')).toBeDisabled();
 
     await field.fill(`${'a'.repeat(199)}🦜`);
-    await anna.page.click('#foldAndPass');
+    await anna.page.click('#saveAndPass');
     await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
 });
 

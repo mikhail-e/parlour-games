@@ -248,7 +248,7 @@ function updateAnswerField() {
     const count = document.getElementById('answerCount');
     count.textContent = `${length}/${MAX_ANSWER_LENGTH}`;
     count.classList.toggle('sheet__count--over', length > MAX_ANSWER_LENGTH);
-    document.getElementById('foldAndPass').disabled = answerSending || length > MAX_ANSWER_LENGTH;
+    document.getElementById('saveAndPass').disabled = answerSending || length > MAX_ANSWER_LENGTH;
     field.style.height = 'auto';
     field.style.height = `${field.scrollHeight + 2}px`;
 }

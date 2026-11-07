@@ -44,7 +44,7 @@ async function startedRound(newPlayer, names) {
 // Write an answer on the sheet in front of the player and fold it
 async function answer(player, text) {
     await player.page.fill('#answerText', text);
-    await player.page.click('#foldAndPass');
+    await player.page.click('#saveAndPass');
 }
 
 // The answer a player writes at a step, unless a test says otherwise:
