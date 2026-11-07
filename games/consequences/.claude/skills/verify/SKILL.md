@@ -13,7 +13,7 @@ The game lives in `games/consequences/` of the parlour-games monorepo; paths bel
 npm start -w games/consequences   # from the repository root (or `npm start` in games/consequences/): wrangler dev; background it; ready when it prints "Ready on http://localhost:8788"
 ```
 
-wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"` (it stops whoami's too, if it runs). The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
+wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"` (it stops whoami's too, if it runs). The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). **Restart `npm start` after changing any file of the game**: the server reads `public/` from disk but keeps the files' ETags from its start (a file created after it is not served at all, a changed one is answered 304 to a browser holding the old copy), so a browser that loaded the page before the change keeps the old script next to the new HTML - and the room page breaks (its HTTP join fails in the drawing and the page goes home with «Connection error»). A restart drops every open socket: the pages reconnect, the rooms stay.
 
 ## Drive (Playwright MCP)
 
