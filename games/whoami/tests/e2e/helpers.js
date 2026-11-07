@@ -5,20 +5,23 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const zlib = require('zlib');
-const base = require('@playwright/test');
 
-// translations.js is a page script: it waits for the page's DOMContentLoaded
-// as it loads. Run it apart, with just enough of a page, and take its texts
-function loadTranslations() {
-    const source = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'translations.js'), 'utf8');
+// translations.js and the kit's i18n.js are page scripts: they wait for the
+// page's DOMContentLoaded as they load. Run them apart, with just enough of a
+// page, and take their texts: the game's on top of the kit's, as on the page
+function loadPageScript(file) {
+    const source = fs.readFileSync(file, 'utf8');
     const sandbox = { module: { exports: {} }, document: { addEventListener() {} } };
     vm.runInNewContext(source, sandbox);
     return sandbox.module.exports;
 }
 
-const { translations, serverErrors } = loadTranslations();
+const KIT_JS = path.join(path.dirname(require.resolve('@parlour-games/room-kit/package.json')), 'public', 'kit', 'js');
+const game = loadPageScript(path.join(__dirname, '..', '..', 'public', 'js', 'translations.js'));
+const translations = loadPageScript(path.join(KIT_JS, 'i18n.js')).withKitTexts(game.translations);
+const { serverErrors } = game;
 
-// A text from translations.js, with {placeholders} filled the way
+// A text from translations.js (or the kit's), with {placeholders} filled the way
 // Localization.getText fills them: tests never type the game's texts by hand
 function text(key, lang = 'en', placeholders = {}) {
     let value = translations[lang][key] || translations.en[key];
@@ -40,91 +43,12 @@ function serverErrorText(error, lang = 'en') {
     return serverErrors[lang][error];
 }
 
-// A trace Playwright records (a run with --trace on, docs/testing.md)
-// copies the page's images, a blob: one too, with fetch(), and the Content
-// Security Policy's connect-src 'self' blocks that. The game itself never
-// fetches a blob: address: this violation is the test tool's own
-const TRACE_RECORDER_VIOLATION = /^Connecting to 'blob:[^']*' violates the following Content Security Policy directive: "connect-src|^Content Security Policy: connect-src blocked blob$/;
-
 // A page the server answers with status 404 (404.html): the browser reports
 // that status in the console, and a test that opens such a page expects it
 const PAGE_STATUS_404 = /^Failed to load resource: the server responded with a status of 404/;
 
-// Collect what must never happen on a player's page unless the test said so:
-// a JavaScript error, a console.error, an alert/confirm dialog
-function watchForProblems(player) {
-    const { page, problems, expectedDialogs, allowedErrors } = player;
-
-    page.on('pageerror', error => problems.push(`${player.name}: page error: ${error.message}`));
-    page.on('console', message => {
-        if (message.type() !== 'error') return;
-        if (TRACE_RECORDER_VIOLATION.test(message.text())) return;
-        if (allowedErrors.some(pattern => pattern.test(message.text()))) return;
-        problems.push(`${player.name}: console.error: ${message.text()}`);
-    });
-    page.on('dialog', async dialog => {
-        const expected = expectedDialogs[0];
-        const matches = expected !== undefined && (expected instanceof RegExp
-            ? expected.test(dialog.message())
-            : dialog.message() === expected);
-        if (matches) {
-            expectedDialogs.shift();
-            await dialog.accept();
-        } else {
-            problems.push(`${player.name}: unexpected ${dialog.type()}: ${dialog.message()}`);
-            await dialog.dismiss();
-        }
-    });
-}
-
-const test = base.test.extend({
-    // newPlayer(name, { locale }) opens a new browser context on the device of
-    // the current project. After the test every context is closed, and the
-    // test fails if any player page had a problem (see watchForProblems)
-    newPlayer: async ({
-        browser, baseURL, locale, viewport, userAgent, deviceScaleFactor, isMobile, hasTouch,
-        reducedMotion, serviceWorkers,
-    }, use) => {
-        const players = [];
-
-        await use(async (name, options = {}) => {
-            const context = await browser.newContext({
-                baseURL, viewport, userAgent, deviceScaleFactor, isMobile, hasTouch, reducedMotion, serviceWorkers,
-                locale: options.locale || locale,
-            });
-            // Whatever the Content Security Policy blocks becomes a console.error,
-            // which the guard below fails on. Chromium logs a violation itself
-            // too; this line names the rule and what it blocked
-            await context.addInitScript(() => {
-                document.addEventListener('securitypolicyviolation', event => {
-                    console.error(`Content Security Policy: ${event.violatedDirective} blocked ${event.blockedURI || 'inline code'}`);
-                });
-            });
-            const page = await context.newPage();
-            const player = {
-                name, page, context,
-                problems: [], expectedDialogs: [], allowedErrors: [],
-                // The next dialog must have this text (string: exactly, RegExp: matching); it is accepted
-                expectDialog(match) { this.expectedDialogs.push(match); },
-                // console.error messages matching this pattern are part of the scenario
-                allowConsoleError(pattern) { this.allowedErrors.push(pattern); },
-            };
-            watchForProblems(player);
-            players.push(player);
-            return player;
-        });
-
-        await Promise.all(players.map(player => player.context.close()));
-        const problems = players.flatMap(player => player.problems);
-        const missedDialogs = players.flatMap(player =>
-            player.expectedDialogs.map(match => `${player.name}: expected dialog never came: ${match}`));
-        if (problems.length > 0 || missedDialogs.length > 0) {
-            throw new Error(`Problems on the players' pages:\n${[...problems, ...missedDialogs].join('\n')}`);
-        }
-    },
-});
-
-const { expect } = base;
+// The guard and the players are the kit's (packages/room-kit/e2e.js)
+const { test, expect } = require('@parlour-games/room-kit/e2e');
 
 // Put values into the player's localStorage (the app stores JSON for its own
 // keys). Leaves the player on the landing page; reload or navigate next

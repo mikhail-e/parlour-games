@@ -1,6 +1,6 @@
 // The shared socket of a room page: one WebSocket to the room
-// (worker/room-base.js), messages { event, data } as JSON. Nothing here knows
-// the game, so the next app with rooms copies this file unchanged.
+// (the kit's worker/room-base.js), messages { event, data } as JSON. Nothing
+// here knows a game, so every game's room page takes it.
 //
 // It connects again by itself, and notices a connection that died without a
 // word - a phone woken from sleep keeps a socket that looks open: the page

@@ -1,8 +1,9 @@
-// The security headers are written twice, on purpose: public/_headers puts
-// them on the static files (served without running the Worker), and
-// worker/security-headers.json on what the Worker answers itself (the API,
-// room pages, redirects). tests/e2e/site-headers.spec.js checks what a browser
-// gets; this keeps the two copies equal
+// The security headers are written twice, on purpose: public/_headers (copied
+// into each game's public/) puts them on the static files, served without
+// running the Worker, and worker/security-headers.json on what a game's Worker
+// answers itself (the API, room pages, redirects). A game's
+// tests/e2e/site-headers.spec.js checks what a browser gets; this keeps the
+// two copies equal
 const fs = require('fs');
 const path = require('path');
 

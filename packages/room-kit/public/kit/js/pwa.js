@@ -1,5 +1,7 @@
-// Who am I? Game - PWA Installation and Service Worker Management
-// debugLog and getText come from utils.js (loaded before this file)
+// PWA: registers the game's service worker (its own public/sw.js) and shows
+// the "Update available" banner when a new one is installed; checks for one
+// every 30 seconds and whenever the page comes back on screen.
+// debugLog and getText come from the kit's app.js and i18n.js (loaded before this file)
 /* global debugLog, getText */
 
 class PWAManager {
