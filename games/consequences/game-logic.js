@@ -350,6 +350,7 @@ module.exports = {
     sheetAt,
     checkAnswer,
     QUESTION_COUNT,
+    MIN_PLAYERS,
     READING_STEP,
     MAX_ANSWER_LENGTH
 };

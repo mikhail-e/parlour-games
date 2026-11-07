@@ -20,8 +20,10 @@
     "command": "npm run build -w consequences-game",
     "watch_dir": "../../packages/room-kit/public"
   },
-  // `npm start` on its own port: whoami's is 8787, and both games may run side by side
-  "dev": { "port": 8788 },
+  // `npm start` on its own port and inspector port: whoami's are 8787 and
+  // wrangler's default 9229, and the browser tests of the two games take
+  // 9230-9233 - so both games may run side by side while either's tests run
+  "dev": { "port": 8788, "inspector_port": 9238 },
   // No address yet: the game runs only locally until its Custom Domain is
   // named. The browser keeps a player's name, ID and secret per address, so
   // the game will have one address only; workers.dev and the preview

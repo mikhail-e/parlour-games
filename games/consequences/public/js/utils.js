@@ -6,9 +6,11 @@
 // The pages load their scripts as plain <script> files, so a top-level name here
 // is visible to the scripts loaded after it. ESLint checks each file on its own:
 // "exported" lists what other files use from here.
-/* exported MAX_ANSWER_LENGTH */
+/* exported MAX_ANSWER_LENGTH, MIN_PLAYERS */
 
 // The answer's limit, counted in characters as a person counts them (an emoji
-// is one). The server's is in game-logic.js (a browser script cannot require()
-// it); tests/input-limits.test.js keeps the two equal.
+// is one), and the fewest players a round starts with. The server's are in
+// game-logic.js (a browser script cannot require() it);
+// tests/input-limits.test.js keeps the copies equal.
 const MAX_ANSWER_LENGTH = 200;
+const MIN_PLAYERS = 2;
