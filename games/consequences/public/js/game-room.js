@@ -356,7 +356,7 @@ function renderStories(round) {
 // reads for it - with "Answer for" / "Read for" an absent seat's sheet for a
 // player free to take it, and the newcomers waiting for the next round
 function renderSeats(round, reading) {
-    document.getElementById('seatsTitle').textContent = say(reading ? 'sheets' : 'atTheTable');
+    document.getElementById('seatsTitle').textContent = say(reading ? 'sheets' : 'tellingTheStory');
     const mine = seatOf(round, currentPlayer.id);
     const free = Boolean(mine) && !heldSeat(round) && (reading || mine.answered);
     document.getElementById('seatList').replaceChildren(...round.seats.map(seat => seatRow(round, seat, reading, free)));
