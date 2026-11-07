@@ -15,6 +15,59 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Consequences">
+    <link rel="canonical" href="https://consequences.example/">
+
+    <!-- Link preview: the card a messenger shows for a link (docs/publishing.md).
+         Its bot runs no scripts, so the text is fixed, in English; the
+         addresses are absolute, as the bots require. game.html has the same card -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Consequences">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="https://consequences.example/">
+    <meta property="og:title" content="Consequences · the folded-paper story game for friends">
+    <meta property="og:description" content="Play the classic parlour game remotely: everyone answers the same question, folds the answer away and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta property="og:image" content="https://consequences.example/img/og-image.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Consequences sign on a theatre curtain, and a sheet folded like an accordion: five answers folded away and the sixth question, How did it all end?, being answered.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Consequences · the folded-paper story game for friends">
+    <meta name="twitter:description" content="Play the classic parlour game remotely: everyone answers the same question, folds the answer away and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta name="twitter:image" content="https://consequences.example/img/og-image.jpg">
+    <meta name="twitter:image:alt" content="Consequences sign on a theatre curtain, and a sheet folded like an accordion: five answers folded away and the sixth question, How did it all end?, being answered.">
+
+    <!-- The game described for search engines. A data block: the browser never
+         runs it, so the Content Security Policy has nothing to block -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Consequences",
+      "alternateName": "Чепуха",
+      "url": "https://consequences.example/",
+      "description": "The classic folded-paper story game, played remotely: players join a room by its code, answer eight questions on sheets that move round the table with every answer folded away, then read the stories out.",
+      "applicationCategory": "GameApplication",
+      "applicationSubCategory": "Party Game",
+      "operatingSystem": "Any (web browser)",
+      "browserRequirements": "Requires JavaScript",
+      "inLanguage": ["en", "ru"],
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Person", "name": "Mikhail E" },
+      "featureList": [
+        "Rooms joined by a six-character code or a link",
+        "Eight questions, every answer folded away before the sheet moves on",
+        "Stories read out at the end, then shown to everyone",
+        "Players away are waited for, or answered for",
+        "Phones and computers, English and Russian",
+        "Installable PWA"
+      ],
+      "screenshot": "https://consequences.example/img/og-image.jpg",
+      "keywords": "consequences, folded paper game, story game, party game, online game with friends"
+    }
+    </script>
+
     <!-- The sign's font, fetched before the stylesheet asks for it -->
     <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">

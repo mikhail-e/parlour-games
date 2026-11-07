@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Link preview picture (source)</title>
+<!-- The source of public/img/og-image.jpg: `npm run og-image` (the kit's command) takes
+     the picture (docs/publishing.md). It lies outside public/, so the site
+     never serves it, and it uses the game's own styles and classes: the card
+     shows what the link opens, and a style change reaches it with a new shot.
+     The sign is not copied here: the command puts the one from
+     public/index.html into .sign-slot before the shot. The picture is the
+     game's brand: not covered by the MIT License (README, License) -->
+<!-- Bootstrap, the fonts and the playbill look are the kit's, as on the pages -->
+<link rel="stylesheet" href="../../../packages/room-kit/public/kit/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="../../../packages/room-kit/public/kit/fonts/fonts.css">
+<link rel="stylesheet" href="../../../packages/room-kit/public/kit/css/playbill.css">
+<link rel="stylesheet" href="../public/css/style.css">
+<style>
+  /* Only the frame of the picture: 1200×630 of the curtain, the sign left, the sheet right */
+  body {
+    width: 1200px;
+    height: 630px;
+    min-height: 0;
+    padding: 0 56px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 44px;
+  }
+  .title { flex: 0 0 500px; text-align: center; }
+  .title .brand-sign { max-width: 500px; }
+  .title p { font-size: 34px; font-weight: 600; letter-spacing: .02em; line-height: 1.25; margin: 30px 0 0; color: var(--on-page); text-wrap: balance; }
+  .game-card { flex: 1; margin: 0; padding: 22px 22px 24px; }
+  .sheet { margin: 0; max-width: none; }
+  .sheet textarea { height: 104px; }
+</style>
+</head>
+<body>
+  <div class="title">
+    <div class="sign-slot"></div>
+    <p>Write a story together, one folded answer at a time</p>
+  </div>
+  <!-- The writing, as on the room page: step 6 of 8, five answers folded away -->
+  <div class="game-card">
+    <div class="step-line">
+      <span>Step 6 of 8</span>
+      <span class="step-marks"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i></span>
+    </div>
+    <div class="sheet">
+      <div class="fold"><span>1. Who?</span><span class="fold__mark">▾ folded</span></div>
+      <div class="fold"><span>2. With whom?</span><span class="fold__mark">▾ folded</span></div>
+      <div class="fold"><span>3. When?</span><span class="fold__mark">▾ folded</span></div>
+      <div class="fold"><span>4. Where?</span><span class="fold__mark">▾ folded</span></div>
+      <div class="fold"><span>5. What were they doing?</span><span class="fold__mark">▾ folded</span></div>
+      <div class="sheet__open">
+        <div class="sheet__number">Question 6 of 8</div>
+        <h2 class="sheet__question">How did it all end?</h2>
+        <textarea class="form-control">they opened a bakery on the moon and sold out by noon</textarea>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

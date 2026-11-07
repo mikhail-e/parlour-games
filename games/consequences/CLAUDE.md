@@ -24,7 +24,7 @@ npm run test:e2e                   # Browser tests only (Playwright); :headed an
 
 ## Architecture
 ```
-package.json               # The game's name, version (/api/version reads it), the kit in dependencies, scripts (build: the kit's copy; icons: the kit's room-kit-icons) and Jest settings; the tools are the root's devDependencies
+package.json               # The game's name, version (/api/version reads it), the kit in dependencies, scripts (build: the kit's copy; icons and og-image: the kit's room-kit-icons and room-kit-og-image) and Jest settings; the tools are the root's devDependencies
 wrangler.jsonc             # Cloudflare: the Worker, the kit's copy before serving (build), npm start's port (8788), the static files of public/, the rooms' Durable Object class and its migrations
 worker/
 ├── index.js               # The Worker: the kit's frame (version, HEAD, 404, failures, security headers) with the kit's room addresses (create, join, room page, socket)
@@ -33,14 +33,15 @@ game-logic.js              # Pure game logic: the round — seats, sheets, steps
 public/
 ├── kit/, _headers         # The kit's copy (its page scripts, Bootstrap, fonts, the playbill look; the static files' security headers): not in git, edited in the kit only
 ├── .assetsignore          # What in public/ is not uploaded (.DS_Store)
-├── index.html             # Landing page: the sign, the rules; the kit's form (name, avatar, create/join)
-├── game.html              # Game room page, noindex: the waiting screen, the lobby (invitation, players, Start), the writing sheet, the reading, every story, the table, New round and Leave with their windows
+├── index.html             # Landing page: the sign, the rules; the kit's form (name, avatar, create/join); the link preview card, the description for search engines
+├── game.html              # Game room page, noindex, with the same link preview card: the waiting screen, the lobby (invitation, players, Start), the writing sheet, the reading, every story, the table, New round and Leave with their windows
 ├── 404.html               # Page for an address nothing answers (sent with status 404; links start at /)
 ├── manifest.json          # PWA manifest
 ├── sw.js                  # Service worker: the icons' cache name and list, handed to the kit's logic (icons only; everything else straight to the network)
 ├── favicon.ico, icons/    # The app icon (the sheet folded like an accordion): PNG 48–512, apple-touch-icon.png, favicon.ico — taken by `npm run icons`
 ├── robots.txt             # Nothing disallowed: room pages keep out of search by their noindex
 ├── llms.txt               # The game in plain text, for assistants reading the site
+├── img/og-image.jpg       # The link preview picture (taken by `npm run og-image`); the service worker does not cache it
 ├── css/style.css          # The game's own look on the kit's playbill.css: its color (the accent and the curtain), the sign, the sheet folded like an accordion, the table, the stories
 └── js/                    # The game's page scripts; the kit's come from /kit/js/
     ├── config.js          # The game's settings for the kit's scripts: the prefix of its keys in localStorage ('consequences'), loaded first
@@ -51,8 +52,10 @@ tests/                     # Jest: game logic, the round in the room's storage, 
 └── e2e/                   # Playwright: the game in Chromium (phone + desktop), several players per room — the landing page, the room, its timers, the writing, the reading, newcomers, languages, the answers' secrecy, the site (headers, icons, 404, the service worker), accessibility (axe), the HTTP API; helpers.js, on the kit's guard and helpers, with the round's own (docs/testing.md)
 playwright.config.js       # Browser tests on the kit's shared config: own wrangler dev on 3200 (and 3201 with short room timers), mobile + desktop
 scripts/icon.html          # The source of the app icons; `npm run icons` (the kit's room-kit-icons) takes every size and favicon.ico (not served)
+scripts/og-image.html      # The source of the link preview picture; `npm run og-image` (the kit's room-kit-og-image) shoots it with the landing page's sign (not served)
 README.md                  # What the game is, how to run it
 docs/testing.md            # The game's tests: what they check by the files' text, the two test servers, the round's helpers, the special tests
+docs/publishing.md         # The link as others see it: the preview card and its picture, robots.txt, llms.txt, where the site's address is written
 .claude/skills/verify/     # How to run and drive the game to check a change by hand
 eslint.config.mjs          # ESLint: the kit's blocks per environment, and the game logic's own
 ```
@@ -90,6 +93,7 @@ Releases, the license and the security policy are the repository's: root `docs/r
 - **The game's color is bottle green**: style.css sets the kit's `--accent`, `--accent-tint`, `--curtain-top` and `--curtain-bottom` on its `:root` (the kit's CLAUDE.md, The playbill look); red stays the kit's, for what cannot be undone. The app's color `#1b4a36` (the top of the curtain) is written in the three pages' `theme-color` and in the manifest (`tests/manifest.test.js` keeps them equal to `--curtain-top`)
 - **`hidden` loses to Bootstrap's display utilities**: `.d-grid`, `.d-flex` and the like set `display` with `!important`, and so does Bootstrap's `[hidden]` — the utility comes later and wins. An element the script shows and hides (`hidden`) never carries one: put the utility on a wrapper that always shows, or use `w-100` on the button itself (`#giveSheetBack`)
 - **The answer is counted by characters in the page too**: no `maxlength` on the field (it counts UTF-16 units, an emoji two); the counter shows `n/200` as a person counts, and over the limit the button is off. An empty answer is not sent: the field keeps the focus
+- **The link preview card is written twice, in English** — `index.html` and `game.html` (without `og:url`: one file serves every room) carry the same `og:`/`twitter:` tags, a bot reads them without running the page (`docs/publishing.md`); `tests/e2e/link-preview.spec.js` keeps them equal. The addresses in them are absolute: until the site's address is named they hold `consequences.example`, a domain reserved for examples
 - **The service worker caches icons and nothing else** — the kit's logic (`packages/room-kit/CLAUDE.md`, PWA); `public/sw.js` holds only the cache name and the icons, and `tests/service-worker.test.js` fails if anything else is added to the list. **Any change to sw.js, even a comment, is a new worker** (and so is a change to the kit's `service-worker.js`): every open page shows the "Update available" banner, so edit it only for a real reason
 - **`public/` is uploaded as it is** (the kit's Gotchas): `public/.assetsignore` names `.DS_Store`; `_headers` and `.assetsignore` themselves are never served (`not-found.spec.js` checks)
 - **`npm start` listens on 8788, its inspector on 9238** (`dev` in wrangler.jsonc), the browser tests on 3200 and 3201 (inspectors 9232, 9233): whoami's are 8787 with wrangler's default 9229, 3100 and 3101 (9230, 9231), so both games can run side by side, their tests too. Without its own inspector port the second `npm start` would take 9230 and stop whoami's tests
