@@ -194,6 +194,8 @@ describe("the game's hooks", () => {
         hooked.players[0].seat = 'first';
         hooked.state = 'started';
 
+        expect(hooks.playersView(hooked)).toEqual({ players: hooked.players, count: 2 });
+
         const left = hooks.removePlayerFromGame(games, id, ID(1));
         expect(left.count).toBe(1);
         expect(kept.get(ID(1))).toBe('forgotten');

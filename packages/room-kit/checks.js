@@ -1,7 +1,8 @@
-// Checks of how a game's page code is written, for the kit's tests and every
-// game's (Jest): each takes the folders to read and returns what is wrong, an
-// empty list when nothing is. They read the files as text on purpose - the
-// rules are about the text (CLAUDE.md, Rules).
+// Checks of how a game's code is written, for the kit's tests and every
+// game's (Jest): the page code's checks take the folders to read and return
+// what is wrong, an empty list when nothing is; serverErrorTexts finds the
+// errors a server sends. They read the files as text on purpose - the rules
+// are about the text (CLAUDE.md, Rules).
 const fs = require('fs');
 const path = require('path');
 
@@ -54,4 +55,21 @@ function inlineCodeProblems(folders) {
             [...source.matchAll(pattern)].map(match => `${file}: ${match[0].slice(0, 80)}`)));
 }
 
-module.exports = { KIT_SCRIPTS, sharedNameProblems, inlineCodeProblems };
+// The kit's server code: what a game's server builds on, and so what may send
+// a page an error
+const KIT_SERVER_FILES = ['shared', 'worker']
+    .flatMap(dir => filesOf(path.join(__dirname, dir), '.js').map(([file]) => path.join(__dirname, dir, file)));
+
+// Every error text these server files send: the server answers in English,
+// as `error: '...'`, emit('error', '...') or send(ws, 'error', '...'), in
+// either quotes - written literally, never built from pieces, so the texts
+// can be found and each given a copy in the page's language
+function serverErrorTexts(files) {
+    return [...new Set(files.flatMap(file => {
+        const source = fs.readFileSync(file, 'utf8');
+        return [...source.matchAll(/error:\s*(['"])(.+?)\1|emit\(\s*(['"])error\3\s*,\s*(['"])(.+?)\4|send\(\s*\w+\s*,\s*(['"])error\6\s*,\s*(['"])(.+?)\7/g)]
+            .map(match => match[2] || match[5] || match[8]);
+    }))];
+}
+
+module.exports = { KIT_SCRIPTS, KIT_SERVER_FILES, sharedNameProblems, inlineCodeProblems, serverErrorTexts };

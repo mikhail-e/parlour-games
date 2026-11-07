@@ -6,23 +6,17 @@
 // translations.js waits for the page's DOMContentLoaded as it loads
 global.document = { addEventListener: () => {} };
 
-const fs = require('fs');
 const path = require('path');
 const { translations, serverErrors } = require('../public/js/translations');
-const { KIT_TEXTS } = require('@parlour-games/room-kit/public/kit/js/i18n');
+const { KIT_TEXTS, KIT_SERVER_ERRORS } = require('@parlour-games/room-kit/public/kit/js/i18n');
+const { KIT_SERVER_FILES, serverErrorTexts } = require('@parlour-games/room-kit/checks');
 
-// Every error text the server can send: game-logic.js, the kit's players
-// list it takes, the Worker and the room answer in English, as `error: '...'`,
-// emit('error', '...') or this.send(ws, 'error', '...'), in either quotes
-const SERVER_FILES = [
-    ...['game-logic.js', 'worker/index.js', 'worker/room.js'].map(file => path.join(__dirname, '..', file)),
-    require.resolve('@parlour-games/room-kit/shared/players')
-];
-const SERVER_ERROR_TEXTS = [...new Set(SERVER_FILES.flatMap(file => {
-    const source = fs.readFileSync(file, 'utf8');
-    return [...source.matchAll(/error:\s*(['"])(.+?)\1|emit\(\s*(['"])error\3\s*,\s*(['"])(.+?)\4|send\(\s*\w+\s*,\s*(['"])error\6\s*,\s*(['"])(.+?)\7/g)]
-        .map(match => match[2] || match[5] || match[8]);
-}))];
+// Every error text the server can send (the kit's serverErrorTexts finds them):
+// the game's own - game-logic.js, the Worker, the room - and the kit's server
+// code they build on, whose Russian copies are the kit's
+const GAME_ERROR_TEXTS = serverErrorTexts(['game-logic.js', 'worker/index.js', 'worker/room.js']
+    .map(file => path.join(__dirname, '..', file)));
+const SERVER_ERROR_TEXTS = [...new Set([...GAME_ERROR_TEXTS, ...serverErrorTexts(KIT_SERVER_FILES)])];
 
 describe('Real translations.js', () => {
     describe('language parity', () => {
@@ -51,22 +45,31 @@ describe('Real translations.js', () => {
         });
     });
 
-    // The server's English texts have a copy in serverErrors (translations.js):
-    // a player reads a server error in the page's language
+    // The server's English texts have a copy in serverErrors (translations.js)
+    // or in the kit's: a player reads a server error in the page's language
     describe('server errors', () => {
         test('the server texts are found', () => {
-            // One text of each form: error: '...' (game-logic.js) and this.send(ws, 'error', '...') (the room)
+            // The game's own (error: '...' in game-logic.js) and the kit's
+            // (this.send(ws, 'error', '...') in its room)
+            expect(GAME_ERROR_TEXTS).toEqual(expect.arrayContaining(['Need at least 2 players to start']));
             expect(SERVER_ERROR_TEXTS).toEqual(expect.arrayContaining(['Game has already started', 'Something went wrong, please try again', 'You are not in this game']));
         });
 
         test('every error the server sends has a Russian text', () => {
-            const missing = SERVER_ERROR_TEXTS.filter(text => !Object.hasOwn(serverErrors.ru, text));
+            const missing = SERVER_ERROR_TEXTS.filter(text =>
+                !Object.hasOwn(serverErrors.ru, text) && !Object.hasOwn(KIT_SERVER_ERRORS.ru, text));
             expect(missing).toEqual([]);
         });
 
-        test('every translated error is one the server sends', () => {
-            const stale = Object.keys(serverErrors.ru).filter(text => !SERVER_ERROR_TEXTS.includes(text));
+        test("every game's copy is of an error the game itself sends", () => {
+            const stale = Object.keys(serverErrors.ru).filter(text => !GAME_ERROR_TEXTS.includes(text));
             expect(stale).toEqual([]);
+        });
+
+        // The kit's copies are the kit's: a second one here would be a second
+        // place to change them
+        test("the game's copies do not repeat the kit's", () => {
+            expect(Object.keys(serverErrors.ru).filter(text => Object.hasOwn(KIT_SERVER_ERRORS.ru, text))).toEqual([]);
         });
     });
 });

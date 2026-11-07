@@ -53,7 +53,8 @@ const {
     addPlayerToGame,
     addNewPlayer,
     removePlayerFromGame,
-    removeStaleDisconnectedPlayers
+    removeStaleDisconnectedPlayers,
+    playersView
 } = players.roomPlayers({
     // Who has which character, who has revealed theirs
     fields: () => ({ characters: new Map(), revealedPlayers: new Set() }),
@@ -383,6 +384,7 @@ module.exports = {
     markPlayerConnected: players.markPlayerConnected,
     markPlayerDisconnected: players.markPlayerDisconnected,
     removeStaleDisconnectedPlayers,
+    playersView,
     restartGhostClocks: players.restartGhostClocks,
     roomAlarmTime: players.roomAlarmTime,
     gameToStorage: players.gameToStorage,

@@ -360,17 +360,12 @@ const translations = {
 };
 
 // The server answers in English (game-logic.js, worker/), and its error texts
-// are the keys here: the page shows a server error in its own language.
+// are the keys here: the page shows a server error in its own language. The
+// errors of the kit's server code have their copies in the kit (its i18n.js).
 // tests/translations-real.test.js fails if a text the server sends is missing
 const serverErrors = {
     ru: {
-        'Game not found': "Комната не найдена",
-        'Invalid player name': "Недопустимое имя игрока",
-        'Invalid avatar': "Недопустимый аватар",
-        'Game has already started': "Игра уже началась",
-        'Game is full': "В комнате нет свободных мест",
         'This request has already been answered': "На этот запрос уже ответили",
-        'Player not found in game': "Игрок не найден в комнате",
         'Assigner not found in game': "Игрок, назначающий персонажа, не найден в комнате",
         'Cannot assign character to yourself': "Нельзя назначить персонажа самому себе",
         'Cannot change characters after the game has started': "После начала игры персонажей менять нельзя",
@@ -378,11 +373,7 @@ const serverErrors = {
         'Need at least 2 players to start': "Нужно минимум 2 игрока для начала",
         'Every player needs a character to start': "Чтобы начать, назначьте персонажей всем игрокам",
         'Game has not started yet': "Игра ещё не началась",
-        'No character assigned to this player': "Этому игроку не назначен персонаж",
-        'Missing required fields': "Не заполнены обязательные поля",
-        'Something went wrong, please try again': "Что-то пошло не так, попробуйте ещё раз",
-        'You are not in this game': "Вы не участвуете в этой игре",
-        'This player is playing in another browser': "Этот игрок играет в другом браузере"
+        'No character assigned to this player': "Этому игроку не назначен персонаж"
     }
 };
 

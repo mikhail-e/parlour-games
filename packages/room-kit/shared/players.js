@@ -241,7 +241,7 @@ function roomAlarmTime(game, { playerPagesOpen, emptySince }, { emptyRoomMs = RO
 // - forget(game, playerId): the player has left; the game drops what it
 //   kept of them (a leaver of a round has their snapshot)
 // - view(game): the game's own part of what the pages get with the players
-//   list (a join's answer, a removal)
+//   list (a join's answer, a removal, playersView)
 const NO_HOOKS = {
     fields: () => ({}),
     newPlayer: () => ({}),
@@ -498,7 +498,13 @@ function roomPlayers(gameHooks = {}) {
         return removals;
     }
 
-    return { createGame, addPlayerToGame, addNewPlayer, removePlayerFromGame, removeStaleDisconnectedPlayers };
+    // The players list as the pages get it with every change of it, with the
+    // game's own part
+    function playersView(game) {
+        return { players: game.players, ...hooks.view(game) };
+    }
+
+    return { createGame, addPlayerToGame, addNewPlayer, removePlayerFromGame, removeStaleDisconnectedPlayers, playersView };
 }
 
 module.exports = {

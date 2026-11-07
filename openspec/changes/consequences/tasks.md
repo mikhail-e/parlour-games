@@ -14,10 +14,10 @@
 
 ## 3. Ядро: комната с игроками и адреса
 
-- [ ] 3.1 `packages/room-kit/worker/game-room.js` (решение 3) из `worker/room.js` whoami: загрузка, сверка, сохранение, таймер, создание, HTTP-вход, `join-room`, ожидающие страницы (`ask-to-join`, снятие, `join-request-ended`), уход сокета, `leave-game`, общие рассылки, таблица ходов игры; `Room` whoami наследует его и держит свои ходы и одобрение; проверка — `npx wrangler deploy --dry-run --outdir <временная папка>` в `games/whoami/` собирается, `connection.spec.js`, `room-timers.spec.js`, `late-join.spec.js`, `leave-and-return.spec.js`, `impersonation.spec.js`, `room.spec.js` зелёные без правок ожиданий
-- [ ] 3.2 Адреса комнат в `worker/http.js` ядра (решение 4), `worker/index.js` whoami на них; проверка — `api.spec.js`, `not-found.spec.js`, `site-headers.spec.js` зелёные без правок ожиданий
-- [ ] 3.3 Ошибки сервера ядра (решение 7): русские копии — в ядре, поиск текстов сервера идёт по файлам ядра и игры, копии whoami — только её ошибок; проверка — `translations-real.test.js` whoami и тест ядра зелёные, временный новый текст ошибки в `players.js` без копии роняет тест ядра
-- [ ] 3.4 Документы группы: в CLAUDE.md ядра — комната с игроками (роли сокетов, ожидающие страницы, ходы игры, что даёт игра), адреса комнат; в CLAUDE.md whoami — её ходы и одобрение поверх ядра; проверка — сверка разделов
+- [x] 3.1 `packages/room-kit/worker/game-room.js` (решение 3) из `worker/room.js` whoami: загрузка, сверка, сохранение, таймер, создание, HTTP-вход, `join-room`, ожидающие страницы (`ask-to-join`, снятие, `join-request-ended`), уход сокета, `leave-game`, общие рассылки, таблица ходов игры; `Room` whoami наследует его и держит свои ходы и одобрение; проверка — `npx wrangler deploy --dry-run --outdir <временная папка>` в `games/whoami/` собирается, `connection.spec.js`, `room-timers.spec.js`, `late-join.spec.js`, `leave-and-return.spec.js`, `impersonation.spec.js`, `room.spec.js` зелёные без правок ожиданий
+- [x] 3.2 Адреса комнат в `worker/http.js` ядра (решение 4), `worker/index.js` whoami на них; проверка — `api.spec.js`, `not-found.spec.js`, `site-headers.spec.js` зелёные без правок ожиданий
+- [x] 3.3 Ошибки сервера ядра (решение 7): русские копии — в ядре, поиск текстов сервера идёт по файлам ядра и игры, копии whoami — только её ошибок; проверка — `translations-real.test.js` whoami и тест ядра зелёные, временный новый текст ошибки в `players.js` без копии роняет тест ядра
+- [x] 3.4 Документы группы: в CLAUDE.md ядра — комната с игроками (роли сокетов, ожидающие страницы, ходы игры, что даёт игра), адреса комнат; в CLAUDE.md whoami — её ходы и одобрение поверх ядра; проверка — сверка разделов
 
 ## 4. Ядро: браузер
 
