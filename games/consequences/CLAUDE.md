@@ -8,7 +8,7 @@ The game is built on the shared kit, `packages/room-kit/`; the kit's rules hold 
 ## Project Overview
 Web application to play Consequences, the folded-paper story game, remotely with friends and family. Players join a room by a 6-character code; in a round every player answers the same question on the sheet in front of them, the answer is folded away and the sheets move on, eight questions in all (Who? / With whom? / When? / Where? / What were they doing? / How did it all end? / What did people say? / What is the moral?); at the end each player reads out the story that came to them. Adaptive UI works on desktop and mobile browsers.
 
-- **Production:** not published yet — the game runs only locally until its address is named (root `docs/release.md`)
+- **Production:** https://story.escapist.club/ (Cloudflare Workers, free plan), from the first release (root `docs/release.md`)
 - **Repository:** https://github.com/mikhail-e/parlour-games, folder `games/consequences/` — public, a showcase (root CLAUDE.md, Decisions)
 - **Stack:** the same as every game on the kit: Cloudflare Workers + Durable Objects (one per room, `wrangler`), vanilla JavaScript + Bootstrap 5 (the kit's local copy), Jest and Playwright. No frontend framework and no bundler: the only build step copies the kit's files into `public/` (`npm run build`, run by wrangler itself).
 
@@ -20,12 +20,13 @@ npm test                           # The game's checks: ESLint, Jest, then Playw
 npm run lint                       # ESLint only (any warning fails); npm run lint:fix fixes what it can
 npx jest tests/game-logic.test.js  # Run a single Jest file (in this folder only: Jest's settings are in its package.json)
 npm run test:e2e                   # Browser tests only (Playwright); :headed and :ui variants
+npm run test:e2e:prod              # Browser tests against production (after a release)
 ```
 
 ## Architecture
 ```
 package.json               # The game's name, version (/api/version reads it), the kit in dependencies, scripts (build: the kit's copy; icons and og-image: the kit's room-kit-icons and room-kit-og-image) and Jest settings; the tools are the root's devDependencies
-wrangler.jsonc             # Cloudflare: the Worker, the kit's copy before serving (build), npm start's port (8788), the static files of public/, the rooms' Durable Object class and its migrations
+wrangler.jsonc             # Cloudflare: the Worker and its address (story.escapist.club), the kit's copy before serving (build), npm start's port (8788), the static files of public/, the rooms' Durable Object class and its migrations
 worker/
 ├── index.js               # The Worker: the kit's frame (version, HEAD, 404, failures, security headers) with the kit's room addresses (create, join, room page, socket)
 └── room.js                # The game's room (extends the kit's GameRoom): the game's moves, round-state after every change, an open sheet's answers to who opened it
@@ -93,7 +94,7 @@ Releases, the license and the security policy are the repository's: root `docs/r
 - **The game's color is bottle green**: style.css sets the kit's `--accent`, `--accent-tint`, `--curtain-top` and `--curtain-bottom` on its `:root` (the kit's CLAUDE.md, The playbill look); red stays the kit's, for what cannot be undone. The app's color `#1b4a36` (the top of the curtain) is written in the three pages' `theme-color` and in the manifest (`tests/manifest.test.js` keeps them equal to `--curtain-top`)
 - **`hidden` loses to Bootstrap's display utilities**: `.d-grid`, `.d-flex` and the like set `display` with `!important`, and so does Bootstrap's `[hidden]` — the utility comes later and wins. An element the script shows and hides (`hidden`) never carries one: put the utility on a wrapper that always shows, or use `w-100` on the button itself (`#giveSheetBack`)
 - **The answer is counted by characters in the page too**: no `maxlength` on the field (it counts UTF-16 units, an emoji two); the counter shows `n/200` as a person counts, and over the limit the button is off. An empty answer is not sent: the field keeps the focus
-- **The link preview card is written twice, in English** — `index.html` and `game.html` (without `og:url`: one file serves every room) carry the same `og:`/`twitter:` tags, a bot reads them without running the page (`docs/publishing.md`); `tests/e2e/link-preview.spec.js` keeps them equal. The addresses in them are absolute: until the site's address is named they hold `consequences.example`, a domain reserved for examples
+- **The link preview card is written twice, in English** — `index.html` and `game.html` (without `og:url`: one file serves every room) carry the same `og:`/`twitter:` tags, a bot reads them without running the page (`docs/publishing.md`); `tests/e2e/link-preview.spec.js` keeps them equal. The addresses in them are absolute, the production one (`docs/publishing.md`, where the address is written)
 - **The service worker caches icons and nothing else** — the kit's logic (`packages/room-kit/CLAUDE.md`, PWA); `public/sw.js` holds only the cache name and the icons, and `tests/service-worker.test.js` fails if anything else is added to the list. **Any change to sw.js, even a comment, is a new worker** (and so is a change to the kit's `service-worker.js`): every open page shows the "Update available" banner, so edit it only for a real reason
 - **`public/` is uploaded as it is** (the kit's Gotchas): `public/.assetsignore` names `.DS_Store`; `_headers` and `.assetsignore` themselves are never served (`not-found.spec.js` checks)
 - **`npm start` listens on 8788, its inspector on 9238** (`dev` in wrangler.jsonc), the browser tests on 3200 and 3201 (inspectors 9232, 9233): whoami's are 8787 with wrangler's default 9229, 3100 and 3101 (9230, 9231), so both games can run side by side, their tests too. Without its own inspector port the second `npm start` would take 9230 and stop whoami's tests

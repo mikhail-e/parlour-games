@@ -5,7 +5,7 @@
 | Игра | Папка | Worker | Прод |
 |---|---|---|---|
 | Who am I? | `games/whoami/` | `whoami-game` | https://whoami.escapist.club/ |
-| Consequences | `games/consequences/` | `consequences-game` | будет выбран |
+| Consequences | `games/consequences/` | `consequences-game` | https://story.escapist.club/ |
 
 **Каждый push в `master` выкладывает те игры, чьи файлы он меняет**: Workers Builds в Cloudflare ставит пакеты и выкладывает игру; другие ветки не собираются, руками прод не выкладывают. Push в `master` — только после подтверждения владельца («выкладывай»).
 

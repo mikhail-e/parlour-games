@@ -24,10 +24,12 @@
   // wrangler's default 9229, and the browser tests of the two games take
   // 9230-9233 - so both games may run side by side while either's tests run
   "dev": { "port": 8788, "inspector_port": 9238 },
-  // No address yet: the game runs only locally until its Custom Domain is
-  // named. The browser keeps a player's name, ID and secret per address, so
-  // the game will have one address only; workers.dev and the preview
-  // addresses of versions are off
+  // The game's address, story.escapist.club: a Custom Domain in a zone of
+  // the owner's account (Cloudflare keeps its DNS record and certificate).
+  // The only one: the browser keeps a player's name, ID and secret per
+  // address, so a second address would be a second player; workers.dev and
+  // the preview addresses of versions are off
+  "routes": [{ "pattern": "story.escapist.club", "custom_domain": true }],
   "workers_dev": false,
   "preview_urls": false,
   "assets": {

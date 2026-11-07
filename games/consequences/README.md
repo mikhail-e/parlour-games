@@ -2,7 +2,7 @@
 
 The folded-paper story game, played remotely. Every player answers the same question on the sheet in front of them — who, with whom, when, where, what they were doing, how it all ended, what people said, the moral — and the answer is folded away before the sheet moves on. At the end everyone reads out the story that came to them. Create a room, send the link to friends and family, play — no accounts, nothing to install.
 
-**Play:** not published yet.
+**Play:** https://story.escapist.club/
 
 ## How to Run
 

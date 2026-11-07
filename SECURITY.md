@@ -4,7 +4,7 @@
 
 Please report security problems privately: open the **Security** tab of this repository and click **Report a vulnerability** ([direct link](https://github.com/mikhail-e/parlour-games/security/advisories/new)). Don't open a public issue for them.
 
-The scope is the code in this repository and the running games: "Who am I?" at https://whoami.escapist.club/ and Consequences (not published yet). Only the latest version of each game — the one in production — is supported.
+The scope is the code in this repository and the running games: "Who am I?" at https://whoami.escapist.club/ and Consequences at https://story.escapist.club/. Only the latest version of each game — the one in production — is supported.
 
 This is a personal project maintained in spare time: every report is read, but there is no promised response time.
 

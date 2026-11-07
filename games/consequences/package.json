@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Consequences, the folded-paper story game, for friends and family",
+  "homepage": "https://story.escapist.club/",
   "bugs": {
     "url": "https://github.com/mikhail-e/parlour-games/issues"
   },
@@ -26,6 +27,7 @@
     "test": "npm run lint && jest && playwright test",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "BASE_URL=https://story.escapist.club playwright test --workers=2",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "lint": "eslint . --max-warnings 0",

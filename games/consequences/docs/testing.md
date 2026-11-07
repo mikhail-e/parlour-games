@@ -10,6 +10,7 @@
 npm test                                   # всё: ESLint, Jest, Playwright
 npx jest tests/game-logic.test.js          # один файл Jest
 npx playwright test tests/e2e/writing.spec.js --project=desktop   # один файл в одном проекте
+npm run test:e2e:prod                      # браузерные тесты против https://story.escapist.club
 ```
 
 ## Что проверяют тесты по тексту файлов

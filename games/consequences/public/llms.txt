@@ -18,3 +18,7 @@ Key facts:
 
 Note: the site's HTML is a form to join or create a room; it does not explain
 the game in full - this file is the canonical plain-text description of the site.
+
+## Links
+
+- [Live app](https://story.escapist.club/): the app itself

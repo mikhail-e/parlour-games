@@ -48,14 +48,19 @@ Facebook и мессенджеры хранят картинку у себя п�
 
 ## Где записан адрес сайта
 
-У статичной страницы нет способа держать адрес в одном месте, поэтому он записан буквально. Пути — от папки игры:
+Адрес игры — `story.escapist.club` (выбор владельца). У статичной страницы нет способа держать адрес в одном месте, поэтому он записан буквально. Пути — от корня репозитория:
 
 | Файл | Что там |
 |---|---|
-| `public/index.html` | `canonical`, `og:url`, `og:image`, `twitter:image`, `url` и `screenshot` в JSON-LD |
-| `public/game.html` | `og:image`, `twitter:image` |
+| `games/consequences/public/index.html` | `canonical`, `og:url`, `og:image`, `twitter:image`, `url` и `screenshot` в JSON-LD |
+| `games/consequences/public/game.html` | `og:image`, `twitter:image` |
+| `games/consequences/public/llms.txt` | ссылка в разделе Links |
+| `games/consequences/package.json` | `test:e2e:prod`, `homepage` |
+| `games/consequences/wrangler.jsonc` | `routes`: домен, на котором Cloudflare отвечает игрой |
+| `games/consequences/README.md`, `games/consequences/CLAUDE.md`, `games/consequences/docs/testing.md` | адрес прода в тексте |
+| `README.md`, `CLAUDE.md`, `SECURITY.md`, `docs/release.md` | то же в документах репозитория: список игр, область отчётов об уязвимостях, проверка после выкладки |
 
-Пока адрес не назван, там стоит `consequences.example` — домен, зарезервированный для примеров: его находит `git grep -n consequences.example`, и ни один бот по нему не ходит. Сменить адрес — значит заменить его во всех местах таблицы.
+Сменить адрес — значит заменить его во всех местах таблицы (`git grep -n story.escapist.club` из корня находит их все, маршрут в `wrangler.jsonc` тоже; планы в `openspec/` — история, их не правят). Браузер хранит имя, ID и секрет игрока для каждого адреса отдельно: после смены адреса игроков узнают заново.
 
 ## Проверка после выкладки
 
