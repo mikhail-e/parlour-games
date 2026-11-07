@@ -500,3 +500,61 @@ describe('the room\'s storage', () => {
         expect(gameLogic.sheetsOpenedBy(loaded, ids[2])).toEqual(gameLogic.sheetsOpenedBy(game, ids[2]));
     });
 });
+
+describe('the round as the pages see it', () => {
+    // Every text written in the round so far
+    const textsOf = game => game.round.sheets.flat().filter(Boolean).map(answer => answer.text);
+
+    test('while writing: who has answered, who holds which sheet, who is away - and not one answer', () => {
+        const { games, game, ids } = roundOf(4);
+        const [anna, boris, vera, gleb] = ids;
+        gameLogic.writeAnswer(games, CODE, anna, 'secret of Anna');
+        markPlayerDisconnected(game, boris);
+        gameLogic.takeSheet(games, CODE, anna, boris);
+        gameLogic.removePlayerFromGame(games, CODE, gleb);
+
+        const view = gameLogic.roundView(game);
+        expect(view).toMatchObject({ step: 0, questionCount: 8, opened: 0, stories: null });
+        expect(view.seats).toEqual([
+            { playerId: anna, name: 'Anna', avatar: '🐱', absent: null, answered: true, heldBy: null, sheet: null, openedBy: null },
+            { playerId: boris, name: 'Boris', avatar: '🐱', absent: 'offline', answered: false, heldBy: anna, sheet: null, openedBy: null },
+            { playerId: vera, name: 'Vera', avatar: '🐱', absent: null, answered: false, heldBy: null, sheet: null, openedBy: null },
+            { playerId: gleb, name: 'Gleb', avatar: '🐱', absent: 'left', answered: false, heldBy: null, sheet: null, openedBy: null },
+        ]);
+        const seen = JSON.stringify(gameLogic.serializeGame(game));
+        expect(seen).not.toContain('secret of Anna');
+        expect(JSON.parse(seen).round).toEqual(view);
+    });
+
+    test('while reading: which sheet each seat reads and who opened it - still not one answer, even of an open sheet', () => {
+        const { games, game, ids } = readingOf(3);
+        gameLogic.openSheet(games, CODE, ids[0]);
+
+        const view = gameLogic.roundView(game);
+        expect(view.step).toBe(gameLogic.READING_STEP);
+        expect(view.opened).toBe(1);
+        expect(view.seats.map(seat => seat.sheet)).toEqual(ids.map((id, seat) => gameLogic.sheetAt(game.round, seat)));
+        expect(view.seats.map(seat => seat.openedBy)).toEqual([ids[0], null, null]);
+        expect(view.seats.every(seat => seat.answered === false)).toBe(true);
+        const seen = JSON.stringify(view);
+        for (const text of textsOf(game)) expect(seen).not.toContain(text);
+    });
+
+    test('once the last sheet is open, every story is in it', () => {
+        const { games, game, ids } = readingOf(2);
+        for (const id of ids) gameLogic.openSheet(games, CODE, id);
+        const view = gameLogic.roundView(game);
+        expect(view.opened).toBe(2);
+        expect(view.stories).toEqual(gameLogic.allStories(game));
+        expect(view.stories.flatMap(story => story.answers).sort()).toEqual(textsOf(game).sort());
+    });
+
+    test('the lobby has no round, and the players list carries the round with it', () => {
+        const lobby = lobbyOf(2);
+        expect(gameLogic.roundView(lobby.game)).toBeNull();
+        expect(gameLogic.playersView(lobby.game)).toEqual({ players: lobby.game.players, round: null });
+
+        const { game } = roundOf(2);
+        expect(gameLogic.playersView(game).round).toEqual(gameLogic.roundView(game));
+    });
+});

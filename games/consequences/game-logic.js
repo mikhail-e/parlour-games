@@ -46,6 +46,9 @@ const {
     snapshot: (game, player) => ({ name: player.name, avatar: player.avatar }),
     // A leaver puts down the absent players' sheets they held
     forget: (game, playerId) => releaseSheetsOf(game, playerId),
+    // The round goes with the players list (a join, a return, a leaver): a
+    // seat's presence is part of it
+    view: game => ({ round: roundView(game) }),
 });
 
 // The sheet in front of seat i at the round's step: sheet j starts at seat j
@@ -281,13 +284,48 @@ function newRound(games, gameId, playerId) {
     return { success: true, endedJoinRequests };
 }
 
-// The game as a player's page gets it (game-state): never a secret's hash
+// The round as every page gets it: the step, and for each seat whose it is,
+// whether it is here, whether its sheet has this step's answer, who holds its
+// sheet, which sheet it reads and who opened that. **No answer's text**: the
+// answers are secrets until the last sheet is open, and then every story is
+// in it. A leaver's name and avatar come from what the kit keeps of them
+function roundView(game) {
+    const round = game.round;
+    if (!round) return null;
+    const reading = round.step === READING_STEP;
+    return {
+        step: round.step,
+        questionCount: QUESTION_COUNT,
+        seats: round.seats.map((playerId, seatIndex) => {
+            const player = game.players.find(each => each.id === playerId)
+                || (game.recentlyLeft.get(playerId) || {});
+            const sheetNumber = sheetAt(round, seatIndex);
+            return {
+                playerId,
+                name: player.name || '',
+                avatar: player.avatar || '',
+                absent: !game.players.some(each => each.id === playerId) ? 'left'
+                    : (isAbsent(game, playerId) ? 'offline' : null),
+                answered: !reading && Boolean(round.sheets[sheetNumber][round.step]),
+                heldBy: round.takenBy[playerId] || null,
+                sheet: reading ? sheetNumber : null,
+                openedBy: reading ? (round.openedBy[sheetNumber] || null) : null
+            };
+        }),
+        opened: Object.keys(round.openedBy).length,
+        stories: allStories(game)
+    };
+}
+
+// The game as a player's page gets it (game-state): never a secret's hash,
+// never an answer before the stories
 function serializeGame(game) {
     return {
         id: game.id,
         players: game.players,
         state: game.state,
-        created: game.created
+        created: game.created,
+        round: roundView(game)
     };
 }
 
@@ -308,6 +346,7 @@ module.exports = {
     sheetsOpenedBy,
     allStories,
     newRound,
+    roundView,
     sheetAt,
     checkAnswer,
     QUESTION_COUNT,
