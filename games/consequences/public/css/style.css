@@ -1,3 +1,12 @@
 /* Consequences: the game's own look on the kit's playbill.css (linked before
-   this file). A draft: the game's sign and its round's screens come with the
-   look the owner picks on a variants page first. */
+   this file): its color, its sign, the sheet folded like an accordion. */
+
+/* The game's color: bottle green instead of the kit's red, on paper and in
+   the curtain. Red stays for what cannot be undone (the kit's --red). The
+   app's color (theme-color, manifest.json) is the curtain's top */
+:root {
+  --accent: #1d4f3a;
+  --accent-tint: #d6f0e5;
+  --curtain-top: #1b4a36;
+  --curtain-bottom: #102e21;
+}

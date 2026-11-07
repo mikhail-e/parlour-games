@@ -3,16 +3,22 @@
    game's own style.css, which adds its sign and its field. The kit knows no
    game: what one game draws stays in its style.css */
 
-/* The look of a parlour-game playbill: cream paper, dark brown ink, red -
-   and a theatre curtain under the paper. Red is for accents
-   and for actions that cannot be undone, never for an ordinary button */
+/* The look of a parlour-game playbill: cream paper, dark brown ink, an
+   accent - and a theatre curtain under the paper. The accent and the curtain
+   are each game's color (red unless the game's style.css sets its own); red
+   is for actions that cannot be undone in every game, never for an ordinary
+   button */
 :root {
   --paper: #efe2c4;          /* sheets, windows, alerts, the ticket */
   --paper-light: #f8f0dd;    /* fields, avatar tiles, player cards */
   --ink: #2a1d17;            /* text on paper, rules, the main button */
   --ink-hover: #4a372c;
   --ink-soft: #5e4b3e;       /* secondary text on paper */
-  --red: #b3261e;            /* accents and danger */
+  --accent: #b3261e;         /* the game's color on paper: its name, the room code, numbers, the chosen avatar */
+  --accent-tint: #f7dccf;    /* the chosen avatar's tile */
+  --curtain-top: #7e1a13;    /* the curtain, in the game's color */
+  --curtain-bottom: #5c110b;
+  --red: #b3261e;            /* danger: what cannot be undone, in every game */
   --red-deep: #8e1c16;
   --cream: #fbf3e0;          /* text on red */
   --gold: #d4a72c;           /* a highlight: a warning's edge (whoami: a revealed character) */
@@ -28,7 +34,7 @@
 
 /* The curtain shows when a phone scrolls past the page's edge */
 html {
-  background: #5c110b;
+  background: var(--curtain-bottom);
 }
 
 body {
@@ -37,11 +43,11 @@ body {
   line-height: 1.45;
   color: var(--on-page);
   /* A theatre curtain: a spotlight from above, velvet folds (200 px wide -
-     narrower ones ripple on a wide screen), deep red */
+     narrower ones ripple on a wide screen), in the game's color */
   background:
     radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255, 214, 170, .2), rgba(255, 214, 170, 0) 70%),
     repeating-linear-gradient(90deg, rgba(0, 0, 0, .24) 0, rgba(0, 0, 0, 0) 62px, rgba(255, 255, 255, .07) 100px, rgba(0, 0, 0, 0) 138px, rgba(0, 0, 0, .24) 200px),
-    linear-gradient(180deg, #7e1a13 0%, #5c110b 100%);
+    linear-gradient(180deg, var(--curtain-top) 0%, var(--curtain-bottom) 100%);
   min-height: 100vh;
   margin: 0;
   padding: 20px;
@@ -248,8 +254,8 @@ input#roomCode.prefilled {
 }
 
 .avatar-option.selected {
-  border: 3px solid var(--red);
-  background: #f7dccf;
+  border: 3px solid var(--accent);
+  background: var(--accent-tint);
 }
 
 /* Uploaded custom avatar inside a selector tile. pointer-events: none makes a
@@ -278,10 +284,10 @@ input#roomCode.prefilled {
   pointer-events: none;
 }
 
-/* A numbered list on a sheet (the rules): numbers in red */
+/* A numbered list on a sheet (the rules): numbers in the accent */
 .game-card ol li::marker {
   font-weight: 700;
-  color: var(--red);
+  color: var(--accent);
 }
 
 /* The room code in the room's header: a ticket stub */
@@ -302,7 +308,7 @@ input#roomCode.prefilled {
 }
 
 .room-ticket #roomCode {
-  color: var(--red);
+  color: var(--accent);
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: .2em;
@@ -385,10 +391,10 @@ body.waiting-for-admission .container > .game-card:not(#waitingSheet) {
   --bs-btn-color: var(--on-page);
   --bs-btn-bg: transparent;
   --bs-btn-border-color: var(--on-page);
-  --bs-btn-hover-color: #5c110b;
+  --bs-btn-hover-color: var(--curtain-bottom);
   --bs-btn-hover-bg: var(--on-page);
   --bs-btn-hover-border-color: var(--on-page);
-  --bs-btn-active-color: #5c110b;
+  --bs-btn-active-color: var(--curtain-bottom);
   --bs-btn-active-bg: var(--on-page);
   --bs-btn-active-border-color: var(--on-page);
   --bs-btn-focus-shadow-rgb: 243, 230, 200;
@@ -445,7 +451,7 @@ body.waiting-for-admission .container > .game-card:not(#waitingSheet) {
   display: flex;
   align-items: center;
   gap: .4em;
-  color: var(--red);
+  color: var(--accent);
   font-size: 1.3rem;
   font-weight: 700;
   line-height: 1.1;
