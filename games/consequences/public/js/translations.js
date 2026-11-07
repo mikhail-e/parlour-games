@@ -8,7 +8,7 @@ const translations = {
     en: {
         // The landing page
         title: "Consequences",
-        subtitle: "The folded-paper story game, for friends and family",
+        subtitle: "The classic folded-paper story game, for friends and family",
         howToPlay: "How to Play",
         rule1: "Everyone answers the same question on their own sheet, folds the answer away and passes the sheet on",
         rule2: "Eight questions: who, with whom, when, where, what they were doing, how it ended, what people said, the moral",
@@ -23,9 +23,9 @@ const translations = {
     ru: {
         // The landing page
         title: "Чепуха",
-        subtitle: "Игра на сложенных листах — для друзей и семьи",
+        subtitle: "«Чепуха» — классическая игра на сложенных листах, для друзей и семьи",
         howToPlay: "Как играть",
-        rule1: "Все отвечают на один вопрос каждый на своём листе, загибают ответ и передают лист дальше",
+        rule1: "Все отвечают на один вопрос — каждый на своём листе, — загибают ответ и передают лист дальше",
         rule2: "Восемь вопросов: кто, с кем, когда, где, что делали, чем всё закончилось, что сказали люди, какая мораль",
         rule3: "В конце каждый читает вслух историю, которая к нему пришла",
 

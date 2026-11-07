@@ -33,10 +33,10 @@ game-logic.js              # Pure game logic: the round — seats, sheets, steps
 public/
 ├── kit/, _headers         # The kit's copy (its page scripts, Bootstrap, fonts, the playbill look; the static files' security headers): not in git, edited in the kit only
 ├── .assetsignore          # What in public/ is not uploaded (.DS_Store)
-├── index.html             # Landing page: the rules; the kit's form (name, avatar, create/join)
+├── index.html             # Landing page: the sign, the rules; the kit's form (name, avatar, create/join)
 ├── game.html              # Game room page, noindex
 ├── 404.html               # Page for an address nothing answers (sent with status 404; links start at /)
-├── css/style.css          # The game's own look on the kit's playbill.css
+├── css/style.css          # The game's own look on the kit's playbill.css: its color (the accent and the curtain), the sign
 └── js/                    # The game's page scripts; the kit's come from /kit/js/
     ├── config.js          # The game's settings for the kit's scripts: the prefix of its keys in localStorage ('consequences'), loaded first
     ├── translations.js    # The game's texts (en/ru) and the Russian copies of the server's errors; the kit's i18n.js shows them
@@ -76,6 +76,8 @@ Releases, the license and the security policy are the repository's: root `docs/r
 - **The answer's length limit (200) exists twice** — the server's in `game-logic.js` and `public/js/utils.js` for the browser (a browser script cannot `require()` a Node module); `tests/input-limits.test.js` fails if they drift apart. Counted by character, not UTF-16 code unit, like a name: an emoji counts as one
 - **The list's order is the order of first joins** (the kit's): Jest tests that join several players advance fake time between the joins, as people never join in one millisecond — with equal join times a returning leaver would not get their place back
 - `game-logic.js` must stay free of Cloudflare imports (CommonJS) so Jest tests it in Node; its functions take a `Map` of games, and a room passes a Map of its one game
+- **The sign** ("CONSEQUENCES", in whoami's frame) is an inline `<svg class="brand-sign">` in three deliberate copies — index.html and game.html (the `h1`), 404.html (a `<p>`: its `h1` is "Page not found"); `tests/brand-sign.test.js` keeps them equal (the kit's `brandSignProblems`). It is a logo: English in both languages (Oswald, its face, has no Cyrillic), `aria-label="Consequences"`, and its `h1` carries **no** `data-i18n` — the Russian name, «Чепуха», is in the subtitle and the tab's title. Its fonts come from style.css by class (a `<style>` inside the SVG is inline code the CSP blocks); the name's fill is written in the markup, the same color as `--accent`. Oswald has a `preload` in the three pages
+- **The game's color is bottle green**: style.css sets the kit's `--accent`, `--accent-tint`, `--curtain-top` and `--curtain-bottom` on its `:root` (the kit's CLAUDE.md, The playbill look); red stays the kit's, for what cannot be undone. The app's color `#1b4a36` (the top of the curtain) is written in the three pages' `theme-color`
 - **`npm start` listens on 8788**, the browser tests on 3200 and 3201: whoami's are 8787, 3100 and 3101, so both games can run side by side
 
 ## Git Workflow
@@ -84,5 +86,5 @@ Git flow, releases and hotfixes are the repository's: root CLAUDE.md and `docs/r
 ## Decisions (why it is so)
 The owner's decisions, with the reason. The repository's own are in the root CLAUDE.md, the kit's in its CLAUDE.md.
 - **The version is written only in package.json**: the server reads it (`/api/version`), the pages ask the server — no copy to keep in sync
-- **The look is the kit's playbill**, like whoami's: the games are one collection; the game's own sign and field are its brand
+- **The look is the kit's playbill**, like whoami's: the games are one collection; the game's own sign and field are its brand. The owner picked it on pages of variants (OpenSpec, `consequences` design, decision 11): the sheet folded like an accordion, the name in Oswald, bottle green with the curtain in its tone — the games of the collection differ by color, whoami keeps red
 - **Entering works as in whoami**: the kit's landing form, room codes and links, the player's browser as the player

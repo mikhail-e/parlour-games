@@ -10,3 +10,37 @@
   --curtain-top: #1b4a36;
   --curtain-bottom: #102e21;
 }
+
+/* The sign: the h1 of the landing page and the room, a picture on 404. Its
+   name is filled in the markup with the same color as --accent */
+.brand {
+  margin: 0 0 10px;
+}
+
+.brand-sign {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin-inline: auto;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45));
+}
+
+/* Smaller in the room: the sheet should fit the first screen of a phone */
+.brand--room .brand-sign {
+  max-width: 300px;
+}
+
+@media (min-width: 768px) {
+  .brand--room .brand-sign {
+    max-width: 360px;
+  }
+}
+
+/* Font sizes inside the SVG are viewBox units: the sign scales as a whole.
+   Oswald (the kit's fonts) draws the name and the two small lines */
+.brand-sign__name,
+.brand-sign__small {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+}

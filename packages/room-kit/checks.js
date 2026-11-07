@@ -1,7 +1,7 @@
 // Checks of how a game's code is written, for the kit's tests and every
-// game's (Jest): the page code's checks take the folders to read and return
-// what is wrong, an empty list when nothing is; serverErrorTexts finds the
-// errors a server sends. They read the files as text on purpose - the rules
+// game's (Jest): the page code's and the sign's checks take what to read and
+// return what is wrong, an empty list when nothing is; serverErrorTexts finds
+// the errors a server sends. They read the files as text on purpose - the rules
 // are about the text (CLAUDE.md, Rules).
 const fs = require('fs');
 const path = require('path');
@@ -72,4 +72,24 @@ function serverErrorTexts(files) {
     }))];
 }
 
-module.exports = { KIT_SCRIPTS, KIT_SERVER_FILES, sharedNameProblems, inlineCodeProblems, serverErrorTexts };
+// A game's sign is drawn right in the markup of its pages, an inline
+// <svg class="brand-sign"> (an inline SVG takes the page's fonts, an <img>
+// could not): deliberate copies, one per page, that must stay the same
+// drawing. It is a logo, one picture for a screen reader, named `label`; its
+// stars are drawn, never typed (no font of the games has ★: the system font
+// would draw it differently on every phone). "page: what is wrong" per problem
+function brandSignProblems(publicFolder, pages, label) {
+    const signs = pages.map(page => [page, (fs.readFileSync(path.join(publicFolder, page), 'utf8')
+        .match(/<svg class="brand-sign"[\s\S]*?<\/svg>/g) || [])
+        .map(svg => svg.replace(/\s+/g, ' '))]);
+    const [[firstPage, [first = '']]] = signs;
+    return [
+        ...signs.filter(([, found]) => found.length !== 1).map(([page, found]) => `${page}: the sign ${found.length} times, not once`),
+        ...signs.filter(([, [sign]]) => sign && sign !== first).map(([page]) => `${page}: another drawing than ${firstPage}'s`),
+        ...(first && !/role="img"/.test(first) ? [`${firstPage}: the sign is not one picture (role="img")`] : []),
+        ...(first && !first.includes(`aria-label="${label}"`) ? [`${firstPage}: the sign is not named "${label}"`] : []),
+        ...signs.filter(([, found]) => found.some(sign => sign.includes('★'))).map(([page]) => `${page}: a typed star in the sign`),
+    ];
+}
+
+module.exports = { KIT_SCRIPTS, KIT_SERVER_FILES, sharedNameProblems, inlineCodeProblems, serverErrorTexts, brandSignProblems };

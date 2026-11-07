@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="title">Consequences</title>
     <meta name="description" content="The folded-paper story game, for friends and family">
+    <meta name="theme-color" content="#1b4a36">
+    <!-- The sign's font, fetched before the stylesheet asks for it -->
+    <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="/kit/fonts/fonts.css" rel="stylesheet">
     <link href="/kit/css/playbill.css" rel="stylesheet">
@@ -19,9 +22,30 @@
 <body>
     <div class="container">
         <header class="text-center mb-4">
-            <!-- The sign comes with the game's look (a variants page first) -->
-            <h1 class="brand" data-i18n="title">Consequences</h1>
-            <p class="tagline" data-i18n="subtitle">The folded-paper story game, for friends and family</p>
+            <!-- The sign, in the frame of whoami's: the name in Oswald, in the
+                 game's color (--accent in style.css). It is a logo, so it stays
+                 English in both languages (Oswald has no Cyrillic; the Russian
+                 name, «Чепуха», is in the subtitle and the tab's title) and
+                 carries no data-i18n: a translation would replace the drawing
+                 with text. The same drawing is in game.html and 404.html
+                 (tests/brand-sign.test.js keeps the three equal). Its fonts come
+                 from style.css by class: a <style> inside the SVG is inline code
+                 the Content Security Policy blocks. The stars are polygons, not ★:
+                 no font of the game has the star, the system font would draw it -->
+            <h1 class="brand">
+                <svg class="brand-sign" viewBox="0 0 600 232" role="img" aria-label="Consequences" focusable="false">
+                    <rect x="2" y="2" width="596" height="228" fill="#efe2c4" stroke="#2a1d17" stroke-width="4"/>
+                    <rect x="12" y="12" width="576" height="208" fill="none" stroke="#2a1d17" stroke-width="1.5"/>
+                    <polygon transform="translate(127 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                    <text class="brand-sign__small" x="302.5" y="45" text-anchor="middle" font-size="17" letter-spacing="5" fill="#2a1d17">THE PARLOUR STORY GAME</text>
+                    <polygon transform="translate(473 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                    <line x1="60" y1="58" x2="540" y2="58" stroke="#2a1d17" stroke-width="1.5"/>
+                    <text class="brand-sign__name" x="300" y="150" text-anchor="middle" font-size="92" textLength="500" lengthAdjust="spacingAndGlyphs" fill="#1d4f3a">CONSEQUENCES</text>
+                    <line x1="60" y1="174" x2="540" y2="174" stroke="#2a1d17" stroke-width="1.5"/>
+                    <text class="brand-sign__small" x="302" y="203" text-anchor="middle" font-size="16" letter-spacing="4" fill="#2a1d17">FOR FRIENDS &amp; FAMILY · PLAYED ONLINE</text>
+                </svg>
+            </h1>
+            <p class="tagline" data-i18n="subtitle">The classic folded-paper story game, for friends and family</p>
         </header>
 
         <div class="game-card">
