@@ -134,8 +134,12 @@
                     <form id="answerForm" novalidate>
                         <div class="sheet__number" id="questionNumber"></div>
                         <h2 class="sheet__question" id="questionText"></h2>
-                        <textarea class="form-control" id="answerText" rows="3" data-i18n-aria-label="yourAnswer" aria-label="Your answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer"></textarea>
-                        <div class="sheet__count" id="answerCount"></div>
+                        <textarea class="form-control" id="answerText" rows="3" enterkeyhint="send" data-i18n-aria-label="yourAnswer" aria-label="Your answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer"></textarea>
+                        <!-- The keys, for a computer's keyboard only (style.css), and the count -->
+                        <div class="sheet__under">
+                            <span class="sheet__keys" data-i18n="answerKeys">Enter to send · Shift + Enter for a new line</span>
+                            <span class="sheet__count" id="answerCount"></span>
+                        </div>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg" id="saveAndPass" data-i18n="saveAndPass">Save and pass on →</button>
                         </div>

@@ -96,6 +96,48 @@ test('an empty answer or one of spaces is not sent, and the field stays open', a
     await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusWriting'));
 });
 
+test('Enter sends the answer, Shift + Enter breaks a line in it, and the story keeps the line', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    const sentAnswers = countSentEvents(anna.page, 'write-answer');
+    const boris = await newPlayer('Boris');
+    const code = await createRoom(anna);
+    await joinRoom(boris, code);
+    await waitForPlayers(anna.page, 2);
+    await startRound([anna, boris]);
+
+    const field = anna.page.locator('#answerText');
+    await field.focus();
+    await anna.page.keyboard.type('Anna');
+    await anna.page.keyboard.press('Shift+Enter');
+    await anna.page.keyboard.type('and her cat');
+    await expect(field).toHaveValue('Anna\nand her cat');
+    expect(sentAnswers()).toBe(0);
+
+    await anna.page.keyboard.press('Enter');
+
+    await expect(anna.page.locator('#answerForm')).toBeHidden();
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
+    expect(sentAnswers()).toBe(1);
+    // The rest of the round: with two players Anna's own sheet comes back to her
+    await answer(boris, 'Boris 1');
+    await waitForStep([anna, boris], 1);
+    for (let step = 1; step < 8; step++) await answerStep([anna, boris], step);
+    await anna.page.locator('#readingCard .closed-sheet').first().click();
+    await expect(anna.page.locator('#readingCard .story__answer').first()).toHaveJSProperty('innerText', 'Anna\nand her cat');
+});
+
+test('under the field a computer shows the keys - Enter sends, Shift + Enter breaks a line; a phone does not', async ({ newPlayer, isMobile }) => {
+    const { players: [anna] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+
+    const keys = anna.page.locator('#answerForm .sheet__keys');
+    if (isMobile) {
+        await expect(keys).toBeHidden();
+    } else {
+        await expect(keys).toBeVisible();
+        await expect(keys).toHaveText(text('answerKeys'));
+    }
+});
+
 test('the answer stops at 200 characters, counted as a person counts them', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     const field = anna.page.locator('#answerText');

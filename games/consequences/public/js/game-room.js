@@ -401,6 +401,13 @@ function setUpRoomGame() {
 
     document.getElementById('answerForm').addEventListener('submit', sendAnswer);
     document.getElementById('answerText').addEventListener('input', updateAnswerField);
+    // Enter sends the answer as the button does, Shift + Enter starts a new
+    // line in it. An Enter that ends a word of an input method is not one
+    // (Safari reports it as key code 229)
+    document.getElementById('answerText').addEventListener('keydown', event => {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
+        sendAnswer(event);
+    });
     document.getElementById('giveSheetBack').addEventListener('click', () => {
         const held = currentGame && currentGame.round ? heldSeat(currentGame.round) : null;
         if (held) sendMove('return-sheet', { playerId: held.playerId });
