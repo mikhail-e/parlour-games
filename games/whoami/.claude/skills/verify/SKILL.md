@@ -13,7 +13,7 @@ The game lives in `games/whoami/` of the parlour-games monorepo; paths below are
 npm start -w games/whoami   # from the repository root (or `npm start` in games/whoami/): wrangler dev; background it; ready when it prints "Ready on http://localhost:8787"
 ```
 
-wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
+wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). **Restart `npm start` after changing any file of the game**: the server reads `public/` from disk but keeps the files' ETags from its start (a file created after it is not served at all, a changed one is answered 304 to a browser holding the old copy), so a browser that loaded the page before the change keeps the old script next to the new HTML, and the page breaks. A restart drops every open socket: the pages reconnect, the rooms stay.
 
 ## Drive (Playwright MCP)
 

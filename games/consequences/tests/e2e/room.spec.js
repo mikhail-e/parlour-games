@@ -46,6 +46,32 @@ test('a reload keeps the player at their place, without a double', async ({ newP
     await waitForPlayers(anna.page, 3);
 });
 
+test('a page that fails to draw as it enters stays in the room, and its error is not called a connection error', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    // The first drawing after the reload finds no answer button, as a page does
+    // whose browser kept an old script next to new markup
+    await boris.page.addInitScript(() => {
+        const getElementById = document.getElementById.bind(document);
+        let missing = true;
+        document.getElementById = id => {
+            if (id === 'saveAndPass' && missing) {
+                missing = false;
+                return null;
+            }
+            return getElementById(id);
+        };
+    });
+    boris.allowConsoleError(/^Drawing the room failed/);
+
+    await boris.page.reload();
+
+    // Still in the room at his question, and his page is in the room again:
+    // his answer goes through
+    await expect(boris.page).toHaveURL(/\/game\/[A-Z0-9]{6}$/);
+    await expect(boris.page.locator('#questionText')).toHaveText(text('question1'));
+    await answerStep([anna, boris], 0);
+});
+
 test("another browser with a player's ID is refused: that player plays in another browser", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna');
     const code = await createRoom(anna);
