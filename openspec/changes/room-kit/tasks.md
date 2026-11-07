@@ -51,9 +51,9 @@
 
 ## 8. Выпуск `whoami-v2.2.0`
 
-- [ ] 8.1 Ветка `release/whoami-2.2.0` от `develop`, `npm version minor -w games/whoami --no-git-tag-version`, `npm test` в корне, коммит «Release whoami 2.2.0»; проверка — `games/whoami/package.json` и корневой lockfile показывают `2.2.0`
-- [ ] 8.2 До выкладки сохранить состояние браузера на проде (Playwright `storageState` страницы, побывавшей в комнате на 2.1.0) и открыть комнату, которая должна пережить выкладку; проверка — файл состояния сохранён во временной папке (не в репозитории), комната открыта
-- [ ] 8.3 Владелец меняет в настройках сборки `whoami-game` Build command на `npm run build -w games/whoami` и добавляет `packages/*` в watch paths; проверка — настройки в панели совпадают с `docs/release.md`
+- [x] 8.1 Ветка `release/whoami-2.2.0` от `develop`, `npm version minor -w games/whoami --no-git-tag-version`, `npm test` в корне, коммит «Release whoami 2.2.0»; проверка — `games/whoami/package.json` и корневой lockfile показывают `2.2.0`
+- [x] 8.2 До выкладки сохранить состояние браузера на проде (Playwright `storageState` страницы, побывавшей в комнате на 2.1.0) и открыть комнату, которая должна пережить выкладку; проверка — файл состояния сохранён во временной папке (не в репозитории), комната открыта
+- [x] 8.3 Владелец меняет в настройках сборки `whoami-game` Build command на `npm run build -w games/whoami` и добавляет `packages/*` в watch paths; проверка — настройки в панели совпадают с `docs/release.md`
 - [ ] 8.4 Подтверждение владельца на выкладку; слить в `master` с тегом `whoami-v2.2.0`, обратно в `develop`, удалить ветку, `git push origin master develop --tags`; проверка — в Deployments у `whoami-game` успешная сборка этого коммита
 - [ ] 8.5 Проверка прода: `curl -s https://whoami.escapist.club/api/version` отвечает `2.2.0`, `npm run test:e2e:prod -w games/whoami` зелёный, сайт показывает `v2.2.0` внизу, `/kit/js/room-socket.js` отдаётся с заголовками; комната из 8.2 жива и слышит новый вход; браузер с состоянием из 8.2 — тот же `PLAYER_ID` и тот же язык
 
