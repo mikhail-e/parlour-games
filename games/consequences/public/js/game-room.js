@@ -222,12 +222,8 @@ function renderWriting(round) {
 
 // The answered questions of the sheet, a pleat each: the question, never the answer
 function renderFolds(count) {
-    document.getElementById('folds').replaceChildren(...Array.from({ length: count }, (_, index) => {
-        const fold = element('div', 'fold');
-        fold.append(element('span', '', `${index + 1}. ${say(`question${index + 1}`)}`),
-            element('span', 'fold__mark', `▾ ${say('folded')}`));
-        return fold;
-    }));
+    document.getElementById('folds').replaceChildren(...Array.from({ length: count },
+        (_, index) => element('div', 'fold', `${index + 1}. ${say(`question${index + 1}`)}`)));
 }
 
 // Under the folded answer: who answers (or answered) for this player at this

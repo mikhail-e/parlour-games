@@ -160,8 +160,6 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   min-height: 30px;
   padding: 4px 20px;
   border-bottom: 1px solid rgba(42, 29, 23, .25);
@@ -175,13 +173,6 @@
 
 .fold:nth-child(even) {
   background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 45%, var(--fold-light) 100%);
-}
-
-.fold__mark {
-  flex: none;
-  font-weight: 400;
-  letter-spacing: .06em;
-  text-transform: none;
 }
 
 /* The table: who writes or reads, who is away, who is done */

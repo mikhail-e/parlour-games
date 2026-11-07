@@ -53,9 +53,10 @@ test("each player sees the question in their page's language", async ({ newPlaye
     await expect(anna.page.locator('#questionText')).toHaveText(text('question4', 'ru'));
     await expect(anna.page.locator('#questionNumber')).toHaveText(text('questionOf', 'ru', { number: 4, count: 8 }));
     await expect(boris.page.locator('#questionText')).toHaveText(text('question4', 'en'));
-    // The answered questions are folded, a pleat each: the question, never its answer
+    // The answered questions are folded, a pleat each: its number and question
+    // only - never its answer, nor a mark on it
     await expect(anna.page.locator('#folds .fold')).toHaveCount(3);
-    await expect(anna.page.locator('#folds .fold').nth(2)).toContainText(text('question3', 'ru'));
+    await expect(anna.page.locator('#folds .fold').nth(2)).toHaveText(`3. ${text('question3', 'ru')}`);
     await expect(anna.page.locator('#writingCard')).not.toContainText('Anna 3');
     await expect(anna.page.locator('#writingCard')).not.toContainText('Boris 3');
 });
