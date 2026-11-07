@@ -1,7 +1,7 @@
 // The texts of Who am I?, English and Russian: the kit's i18n.js (loaded after
 // this file) shows them in the page's language. The texts of the shared parts
-// (the landing form, entering and leaving a room, the invitation, notifications)
-// are the kit's, in its i18n.js.
+// (the landing form, entering and leaving a room, the invitation, notifications,
+// the 404 page) are the kit's, in its i18n.js.
 /* exported translations, serverErrors */
 
 const translations = {
@@ -128,12 +128,7 @@ const translations = {
         // Language switcher
         language: "Language",
         english: "English",
-        russian: "Русский",
-
-        // Page for an address with nothing on it (404.html)
-        notFoundTitle: "Page not found",
-        notFoundText: "There is nothing at this address. The game is on the main page.",
-        openGame: "Open the game"
+        russian: "Русский"
     },
     
     ru: {
@@ -259,12 +254,7 @@ const translations = {
         // Language switcher
         language: "Язык",
         english: "English",
-        russian: "Русский",
-
-        // Page for an address with nothing on it (404.html)
-        notFoundTitle: "Страница не найдена",
-        notFoundText: "По этому адресу ничего нет. Игра — на главной странице.",
-        openGame: "Открыть игру"
+        russian: "Русский"
     }
 };
 

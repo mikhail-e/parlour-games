@@ -37,8 +37,8 @@
 
 ## 6. Consequences: каркас
 
-- [ ] 6.1 `games/consequences/`: `package.json` (`consequences-game`, версия 0.1.0, ядро в `dependencies`, скрипты как у whoami), `wrangler.jsonc` (решение 12, без `routes`, свой порт `npm start` — 8788, чтобы не спорить с whoami), `worker/index.js` и `worker/room.js` на ядре, `game-logic.js` с полями игры, `public/js/config.js` (префикс `consequences`), черновые `translations.js` и страницы на скриптах и стиле ядра, `eslint.config.mjs`, `playwright.config.js` (порты 3200 и 3201); `npm install` в корне; проверка — `npm start -w games/consequences` открывает главную, комната создаётся, вторая вкладка входит в лобби, `/api/version` отвечает 0.1.0, корневой `npm test` запускает проверки игры
-- [ ] 6.2 Документы группы: `games/consequences/CLAUDE.md` (подключает CLAUDE.md ядра), `README.md`; в корне — игра в `CLAUDE.md` (Games, Layout), `README.md`, `SECURITY.md` (область), `docs/release.md` (таблица игр с адресом «будет выбран», выпуск нескольких игр сразу — решение 15); проверка — ссылки и импорт CLAUDE.md ведут к файлам
+- [x] 6.1 `games/consequences/`: `package.json` (`consequences-game`, версия 0.1.0, ядро в `dependencies`, скрипты как у whoami), `wrangler.jsonc` (решение 12, без `routes`, свой порт `npm start` — 8788, чтобы не спорить с whoami), `worker/index.js` и `worker/room.js` на ядре, `game-logic.js` с полями игры, `public/js/config.js` (префикс `consequences`), черновые `translations.js` и страницы на скриптах и стиле ядра, `eslint.config.mjs`, `playwright.config.js` (порты 3200 и 3201); `npm install` в корне; проверка — `npm start -w games/consequences` открывает главную, комната создаётся, вторая вкладка входит в лобби, `/api/version` отвечает 0.1.0, корневой `npm test` запускает проверки игры
+- [x] 6.2 Документы группы: `games/consequences/CLAUDE.md` (подключает CLAUDE.md ядра), `README.md`; в корне — игра в `CLAUDE.md` (Games, Layout), `README.md`, `SECURITY.md` (область), `docs/release.md` (таблица игр с адресом «будет выбран», выпуск нескольких игр сразу — решение 15); проверка — ссылки и импорт CLAUDE.md ведут к файлам
 
 ## 7. Consequences: правила раунда
 

@@ -12,7 +12,8 @@
 
 // The texts of the shared parts: what the kit's scripts show, and the words of
 // the markup they work with (the landing form, the leave window, the waiting
-// screen, the invitation: the markup is each game's, its words are the kit's).
+// screen, the invitation, the 404 page: the markup is each game's, its words
+// are the kit's).
 // A game's dictionary may give its own text under the same key instead
 const KIT_TEXTS = {
     en: {
@@ -66,7 +67,13 @@ const KIT_TEXTS = {
         close: "Close",
         updateAvailable: "🆕 Update Available!",
         updateDescription: "A new version of the app is ready. Reload to get the latest features.",
-        updateNow: "Update Now"
+        updateNow: "Update Now",
+
+        // The 404 page: the frame answers every address nothing else does with
+        // a game's 404.html (worker/http.js)
+        notFoundTitle: "Page not found",
+        notFoundText: "There is nothing at this address. The game is on the main page.",
+        openGame: "Open the game"
     },
     ru: {
         // The landing page: the name, the avatar, creating and joining (landing.js)
@@ -119,7 +126,13 @@ const KIT_TEXTS = {
         close: "Закрыть",
         updateAvailable: "🆕 Доступно обновление!",
         updateDescription: "Новая версия приложения готова. Перезагрузите, чтобы получить последние функции.",
-        updateNow: "Обновить сейчас"
+        updateNow: "Обновить сейчас",
+
+        // The 404 page: the frame answers every address nothing else does with
+        // a game's 404.html (worker/http.js)
+        notFoundTitle: "Страница не найдена",
+        notFoundText: "По этому адресу ничего нет. Игра — на главной странице.",
+        openGame: "Открыть игру"
     }
 };
 

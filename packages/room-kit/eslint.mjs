@@ -101,7 +101,7 @@ export default function roomKitEslint({ ignores = [] } = {}) {
         // Browser tests, their configs and the developer's scripts (Node, CommonJS):
         // callbacks passed to page.evaluate() run in the page, where browser names exist
         {
-            files: ["tests/e2e/**/*.js", "playwright.config.js", "playwright.js", "e2e.js", "checks.js", "scripts/*.js"],
+            files: ["tests/e2e/**/*.js", "playwright.config.js", "playwright.js", "e2e.js", "e2e-helpers.js", "checks.js", "scripts/*.js"],
             languageOptions: {
                 sourceType: "commonjs",
                 globals: {

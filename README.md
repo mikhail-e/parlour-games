@@ -12,13 +12,19 @@ The classic guessing party game: every player gets a secret character chosen by 
 
 **Play:** https://whoami.escapist.club/ · **Code:** [`games/whoami/`](games/whoami/README.md)
 
+### Consequences
+
+The folded-paper story game: every player answers the same question on their sheet — who, with whom, when, where, what they were doing, how it ended, what people said, the moral — folds the answer away and passes the sheet on; at the end everyone reads out the story that came to them.
+
+**Play:** not published yet · **Code:** [`games/consequences/`](games/consequences/README.md)
+
 ## How to Run
 
 Every game is a web app on Cloudflare Workers, whole in its own folder under `games/`, with its own address. What the games share — the rooms' base, the page's socket, the player's identity, translations, security headers — is one package, [`packages/room-kit/`](packages/room-kit/README.md), that every game takes from. The tools are shared too: one `npm install` at the root, Node.js 22 or newer.
 
 ```bash
 npm install
-npm start -w games/whoami          # one game: http://localhost:8787
+npm start -w games/whoami          # one game: http://localhost:8787 (games/consequences: 8788)
 npx playwright install chromium    # once: the browser for the browser tests
 npm test                           # every game's and the kit's checks: ESLint, Jest, then the games in a real browser (Playwright)
 ```

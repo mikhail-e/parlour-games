@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Consequences</title>
+    <meta name="robots" content="noindex">
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
+    <link href="/kit/css/playbill.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/kit/js/app.js"></script>
+    <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
+    <script src="/kit/js/limits.js"></script>
+    <script src="/kit/js/notify.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="brand" data-i18n="title">Consequences</h1>
+            <!-- The room code as a ticket stub (the kit's invitation fills it in) -->
+            <div class="room-ticket">
+                <span data-i18n="roomCode">Room Code</span>
+                <span id="roomCode"></span>
+            </div>
+        </div>
+
+        <!-- A newcomer to a started round waits here for the lobby (the kit's
+             room page shows it and hides the room) -->
+        <div class="game-card waiting-sheet" id="waitingSheet" hidden>
+            <h6 class="sheet-title" data-i18n="gameAlreadyOn">The game is already on</h6>
+            <div class="waiting-sheet__avatar" id="waitingAvatar"></div>
+            <div class="waiting-sheet__name" id="waitingName"></div>
+            <button type="button" class="btn btn-outline-primary" id="cancelJoinRequest" data-i18n="cancel">Cancel</button>
+        </div>
+
+        <div class="game-card mb-3" id="shareCard">
+            <h6 class="sheet-title" data-i18n="inviteFriends">Invite Friends</h6>
+            <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="shareLink" readonly data-i18n-aria-label="shareLinkLabel" aria-label="Room link">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
+                        📋 <span data-i18n="copyLink">Copy Link</span>
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-primary w-100" id="shareButton">
+                        📤 <span data-i18n="share">Share</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-card">
+            <h5 class="sheet-title"><span data-i18n="players">Players</span> (<span id="playerCount">0</span>/12)</h5>
+            <p class="text-muted mb-3" data-i18n="waitingForPlayers">Waiting for players to join...</p>
+            <div class="player-list" id="playerList"></div>
+        </div>
+
+        <div class="game-card text-center">
+            <button type="button" class="btn btn-outline-secondary" id="leaveGame">
+                🚪 <span data-i18n="leaveGame">Leave Game</span>
+            </button>
+        </div>
+    </div>
+
+    <footer class="page-foot text-center small pb-3">
+        <span data-app-version></span>
+    </footer>
+
+    <div class="modal fade" id="leaveModal" tabindex="-1" aria-labelledby="leaveModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leaveModalLabel" data-i18n="leaveModalTitle">🚪 Leave Game</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p data-i18n="leaveConfirmText">Are you sure you want to leave this game?</p>
+                </div>
+                <div class="modal-footer mobile-modal-footer">
+                    <button type="button" class="btn btn-secondary mobile-modal-btn" data-bs-dismiss="modal" data-i18n="cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger mobile-modal-btn" id="confirmLeave" data-i18n="confirmLeave">Yes, Leave Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/kit/js/room-socket.js"></script>
+    <script src="/kit/js/wake-lock.js"></script>
+    <script src="/kit/js/invite.js"></script>
+    <script src="/kit/js/room-page.js"></script>
+    <script src="/js/game-room.js"></script>
+</body>
+</html>

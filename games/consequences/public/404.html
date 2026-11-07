@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- The site sends this page, with status 404, for any address nothing else
+         answers. It can be shown at any depth (/a/b/c), so every link starts at
+         the site root. -->
+    <title data-i18n="notFoundTitle">Page not found</title>
+    <meta name="robots" content="noindex">
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
+    <link href="/kit/css/playbill.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="game-card text-center">
+            <h1 class="sheet-title" data-i18n="notFoundTitle">Page not found</h1>
+            <p data-i18n="notFoundText">There is nothing at this address. The game is on the main page.</p>
+            <a href="/" class="btn btn-primary btn-lg" data-i18n="openGame">Open the game</a>
+        </div>
+    </div>
+</body>
+</html>

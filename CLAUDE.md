@@ -5,6 +5,7 @@ Parlour games to play remotely with friends and family. Each game is a web app w
 - **Repository:** https://github.com/mikhail-e/parlour-games — public, a showcase (see Decisions)
 - **Games:**
   - `games/whoami/` — "Who am I?", https://whoami.escapist.club/ (the Worker `whoami-game`). Its architecture, rules and gotchas: `games/whoami/CLAUDE.md`, which Claude Code reads when working in that folder
+  - `games/consequences/` — Consequences, the folded-paper story game: not published yet (the Worker `consequences-game`). Its architecture, rules and gotchas: `games/consequences/CLAUDE.md`
 - **The kit:** `packages/room-kit/` — what every game with rooms shares (`@parlour-games/room-kit`). Its layout and rules: `packages/room-kit/CLAUDE.md`, which every game's CLAUDE.md imports
 
 ## Layout
@@ -29,7 +30,7 @@ npm install                        # At the root only (Node.js 22+: wrangler nee
 npm test                           # Every game's checks (ESLint, Jest, then Playwright) and the kit's — run before every merge
 npm run lint                       # Every game's and the kit's ESLint
 npm run test:e2e                   # Every game's browser tests
-npm start -w games/whoami          # One game: any of its scripts with -w games/<game>, or run in its folder
+npm start -w games/whoami          # One game: any of its scripts with -w games/<game>, or run in its folder (whoami on 8787, consequences on 8788)
 npm test -w games/whoami           # One game's checks
 npm test -w packages/room-kit      # The kit's checks
 npx playwright install chromium    # Once per machine: the browser for the tests

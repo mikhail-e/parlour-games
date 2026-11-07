@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Consequences</title>
+    <meta name="description" content="The folded-paper story game, for friends and family">
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
+    <link href="/kit/css/playbill.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/kit/js/app.js"></script>
+    <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
+    <script src="/kit/js/limits.js"></script>
+    <script src="/kit/js/notify.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-4">
+            <!-- The sign comes with the game's look (a variants page first) -->
+            <h1 class="brand" data-i18n="title">Consequences</h1>
+            <p class="tagline" data-i18n="subtitle">The folded-paper story game, for friends and family</p>
+        </header>
+
+        <div class="game-card">
+            <h3 class="sheet-title" data-i18n="joinCreateGame">Join or Create a Game</h3>
+            
+            <!-- Player Setup Form -->
+            <form id="playerForm">
+                <div class="mb-4">
+                    <label for="playerName" class="form-label" data-i18n="yourName">Your Name</label>
+                    <!-- maxlength is set from MAX_NAME_LENGTH by the kit's landing.js -->
+                    <input type="text" class="form-control" id="playerName" required data-i18n-placeholder="enterName" placeholder="Enter your name" autofocus>
+                </div>
+
+                <!-- Avatar Selection -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0" data-i18n="chooseAvatar">Choose Your Avatar</label>
+                        <div class="d-flex gap-2">
+                            <!-- type="button" is required on both buttons: they sit inside the
+                                 form, a default submit button would join the game on click -->
+                            <button type="button" class="btn btn-sm btn-outline-primary avatar-shuffle-btn"
+                                    id="uploadAvatar"
+                                    data-i18n-title="uploadAvatar"
+                                    data-i18n-aria-label="uploadAvatar"
+                                    title="Upload your own avatar photo"
+                                    aria-label="Upload your own avatar photo">
+                                <!-- Bootstrap Icons "camera" (MIT), inlined to avoid a CDN -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"
+                                     fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4z"/>
+                                    <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5m0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary avatar-shuffle-btn"
+                                    id="shuffleAvatars"
+                                    data-i18n-title="shuffleAvatars"
+                                    data-i18n-aria-label="shuffleAvatars"
+                                    title="Show a different set of avatars"
+                                    aria-label="Show a different set of avatars">
+                                <!-- Bootstrap Icons "arrow-clockwise" (MIT), inlined to avoid a CDN -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"
+                                     fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="avatar-selector" id="avatarSelector">
+                        <!-- Avatar options will be populated dynamically -->
+                    </div>
+                    <input type="hidden" id="selectedAvatar" value="😀">
+                    <!-- Hidden file picker for the custom avatar; opened by #uploadAvatar.
+                         A hidden input can still be .click()ed programmatically -->
+                    <input type="file" id="avatarFileInput" accept="image/*" hidden>
+                </div>
+
+                <!-- Game Options -->
+                <div class="mb-3">
+                    <label for="roomCode" class="form-label" data-i18n="roomCode">Room Code (optional)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" class="form-control text-center" id="roomCode" data-i18n-placeholder="roomCodePlaceholder" placeholder="ABC123" maxlength="6">
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-primary w-100" id="joinBtn" data-i18n="joinGame">Join Game</button>
+                        </div>
+                    </div>
+                    <div class="form-text" data-i18n="roomCodeHelp">Enter 6-character room code to join existing game</div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="button" class="btn btn-primary" id="createNewGame" data-i18n="createNewGame">Create New Game</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="game-card">
+            <h5 class="sheet-title" data-i18n="howToPlay">How to Play</h5>
+            <ol>
+                <li data-i18n="rule1">Everyone answers the same question on their own sheet, folds the answer away and passes the sheet on</li>
+                <li data-i18n="rule2">Eight questions: who, with whom, when, where, what they were doing, how it ended, what people said, the moral</li>
+                <li data-i18n="rule3">At the end everyone reads out the story that came to them</li>
+            </ol>
+        </div>
+    </div>
+
+    <footer class="page-foot text-center small pb-3">
+        <!-- A plain link, not Buy Me a Coffee's widget: the widget is a script
+             from another site, and the pages run only their own (CSP, public/_headers).
+             A small playbill plate, English in both languages like the sign; its
+             name is the words it shows. The cup is Buy Me a Coffee's logo file
+             as they ship it: their terms forbid changing their marks -->
+        <a href="https://www.buymeacoffee.com/mikhail.e" target="_blank" rel="noopener noreferrer" class="bmc-button" lang="en">
+            <span class="bmc-button__top" aria-hidden="true">Intermission</span>
+            <span class="bmc-button__main"><img src="/kit/img/bmc-cup.svg" alt="" class="bmc-button__cup">Buy me a coffee</span>
+        </a>
+        <div><span data-app-version></span></div>
+    </footer>
+
+    <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/kit/js/landing.js"></script>
+</body>
+</html>
