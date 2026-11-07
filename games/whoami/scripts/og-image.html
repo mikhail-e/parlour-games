@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>Link preview picture (source)</title>
-<!-- The source of public/img/og-image-2.jpg: `node scripts/og-image.js` takes
+<!-- The source of public/img/og-image-2.jpg: `npm run og-image` (the kit's command) takes
      the picture (docs/publishing.md). It lies outside public/, so the site
      never serves it, and it uses the game's own styles and classes: the card
      shows what the link opens, and a style change reaches it with a new shot.
-     The sign is not copied here: og-image.js puts the one from
+     The sign is not copied here: the command puts the one from
      public/index.html into .sign-slot before the shot. The picture is the
      game's brand: not covered by the MIT License (README, License) -->
-<!-- Bootstrap and the fonts are the kit's, as on the pages -->
+<!-- Bootstrap, the fonts and the playbill look are the kit's, as on the pages -->
 <link rel="stylesheet" href="../../../packages/room-kit/public/kit/vendor/bootstrap/bootstrap.min.css">
 <link rel="stylesheet" href="../../../packages/room-kit/public/kit/fonts/fonts.css">
+<link rel="stylesheet" href="../../../packages/room-kit/public/kit/css/playbill.css">
 <link rel="stylesheet" href="../public/css/style.css">
 <style>
   /* Only the frame of the picture: 1200×630 of the curtain, the sign left, the players right */

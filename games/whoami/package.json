@@ -20,6 +20,8 @@
   },
   "scripts": {
     "build": "room-kit-copy-public public",
+    "icons": "room-kit-icons",
+    "og-image": "room-kit-og-image",
     "start": "wrangler dev",
     "dev": "wrangler dev",
     "test": "npm run lint && jest && playwright test",

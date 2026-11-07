@@ -1,6 +1,7 @@
 // The texts of Who am I?, English and Russian: the kit's i18n.js (loaded after
-// this file) shows them in the page's language. The texts the kit's own code
-// shows are the kit's.
+// this file) shows them in the page's language. The texts of the shared parts
+// (the landing form, entering and leaving a room, the invitation, notifications,
+// the 404 page) are the kit's, in its i18n.js.
 /* exported translations, serverErrors */
 
 const translations = {
@@ -8,20 +9,6 @@ const translations = {
         // Main page
         title: "Who am I?",
         subtitle: "Play the classic guessing game with friends and family!",
-        joinCreateGame: "Join or Create a Game",
-        yourName: "Your Name",
-        enterName: "Enter your name",
-        chooseAvatar: "Choose Your Avatar",
-        shuffleAvatars: "Show a different set of avatars",
-        uploadAvatar: "Upload your own avatar photo",
-        avatarNotImage: "Please choose an image file.",
-        avatarReadFailed: "Could not read this image. Try a different photo.",
-        avatarTooLarge: "This image could not be compressed enough. Try a different photo.",
-        roomCode: "Room Code",
-        roomCodePlaceholder: "ABC123",
-        roomCodeHelp: "Enter 6-character room code to join existing game",
-        joinGame: "Join Game",
-        createNewGame: "Create New Game",
         
         // Game rules
         howToPlay: "How to Play",
@@ -36,11 +23,7 @@ const translations = {
         playerCount: "Player Count",
         shareRoom: "Share Room",
         shareLink: "Share Link",
-        shareLinkLabel: "Room link",
-        copyLink: "Copy Link",
-        copyRoomLink: "Copy Link",
         copied: "✅ Copied!",
-        share: "Share",
         shareText: "Join my \"Who am I?\" game!",
         
         // Game states
@@ -68,7 +51,6 @@ const translations = {
         // Modals
         revealTitle: "Reveal Your Character?",
         revealMessage: "Are you sure you want to see who you are? This will end the game for you!",
-        cancel: "Cancel",
         revealCharacter: "Reveal Character",
         
         restartTitle: "Restart Game?",
@@ -80,18 +62,9 @@ const translations = {
         
         // Errors
         invalidRoom: "Invalid room code",
-        connectionError: "Connection error. Please try again.",
-        roomNotFound: "Room not found",
-        pleaseEnterName: "Please enter your name first",
-        roomCodeLength: "Room code must be exactly 6 characters",
-        failedCreateGame: "Failed to create game. Please try again.",
-        failedJoinGame: "Failed to join game",
-        readyToJoin: "Ready to join room",
-        enterNameAvatar: "Just enter your name and avatar!",
         clickToEdit: "click to edit",
         
         // Game room additional
-        inviteFriends: "Invite Friends",
         inviteDuringGame: "The game is on: a newcomer will ask to join, and any of you can let them in.",
         characterAssignment: "Character Assignment",
         clickPlus: "Press “Assign character”",
@@ -122,14 +95,8 @@ const translations = {
         restartNote: "All players will be able to see this action.",
 
         // Leave game
-        leaveGame: "Leave Game",
-        leaveModalTitle: "🚪 Leave Game",
-        leaveConfirmText: "Are you sure you want to leave this game?",
         leaveNote: "Your card and character will disappear for everyone. The other players can keep playing.",
-        confirmLeave: "Yes, Leave Game",
-        playerLeftNotification: "👋 {playerName} left the game",
-        // Joining a started game (game-room.js, game.js)
-        gameAlreadyOn: "The game is already on",
+        // Joining a started game (game-room.js)
         waitingForAdmission: "Waiting for the players to let you in. They have your request.",
         joinRequestTitle: "🚪 Asking to join",
         joinRequestText: "wants to join the game",
@@ -137,7 +104,6 @@ const translations = {
         admitPlayer: "Let in",
         declinePlayer: "Decline",
         playerAdmittedNotification: "👋 {playerName} is in the game now",
-        joinDeclined: "The players did not let you into the game",
         envelopeEmpty: "empty for now",
         noCharacterYet: "No character yet - another player will give you one",
         waitingForCharacter: "Game in progress - waiting for someone to give you a character",
@@ -155,50 +121,20 @@ const translations = {
         characterReadOnly: "Character: {character} (read-only during game)",
         characterClickToEdit: "Character: {character} (click to edit)",
         someoneNeedsToAssign: "Someone needs to assign you a character!",
-        copiedSuccess: "✅ Copied!",
 
         // Error messages
-        invalidRoomCode: "Invalid room code",
         connectionErrorTryAgain: "Please try again.",
 
         // Language switcher
         language: "Language",
         english: "English",
-        russian: "Русский",
-
-        // Dynamic UI updates
-        roomCodeJoining: "Room Code (joining game)",
-        clearRoomCodeToCreate: "Clear room code to create a new game",
-        creating: "Creating...",
-
-        // PWA messages
-
-        // Footer of the landing page
-
-        // Page for an address with nothing on it (404.html)
-        notFoundTitle: "Page not found",
-        notFoundText: "There is nothing at this address. The game is on the main page.",
-        openGame: "Open the game"
+        russian: "Русский"
     },
     
     ru: {
         // Main page
         title: "Кто я?",
         subtitle: "Играйте в классическую игру-угадайку с друзьями и семьёй!",
-        joinCreateGame: "Присоединиться или создать игру",
-        yourName: "Ваше имя",
-        enterName: "Введите ваше имя",
-        chooseAvatar: "Выберите аватар",
-        shuffleAvatars: "Показать другие аватары",
-        uploadAvatar: "Загрузить свою фотографию для аватара",
-        avatarNotImage: "Пожалуйста, выберите файл с изображением.",
-        avatarReadFailed: "Не удалось открыть это изображение. Попробуйте другое фото.",
-        avatarTooLarge: "Не удалось сжать это изображение. Попробуйте другое фото.",
-        roomCode: "Код комнаты",
-        roomCodePlaceholder: "ABC123",
-        roomCodeHelp: "Введите 6-символьный код комнаты для присоединения к существующей игре",
-        joinGame: "Войти в игру",
-        createNewGame: "Создать новую игру",
         
         // Game rules
         howToPlay: "Как играть",
@@ -213,11 +149,7 @@ const translations = {
         playerCount: "Количество игроков",
         shareRoom: "Поделиться комнатой",
         shareLink: "Ссылка для друзей",
-        shareLinkLabel: "Ссылка на комнату",
-        copyLink: "Скопировать",
-        copyRoomLink: "Скопировать ссылку",
         copied: "✅ Скопировано!",
-        share: "Поделиться",
         shareText: "Присоединяйся к моей игре «Кто я?»!",
         
         // Game states
@@ -245,7 +177,6 @@ const translations = {
         // Modals
         revealTitle: "Раскрыть вашего персонажа?",
         revealMessage: "Вы уверены, что хотите узнать, кто вы? Это завершит игру для вас!",
-        cancel: "Отмена",
         revealCharacter: "Раскрыть персонажа",
         
         restartTitle: "Начать новую игру?",
@@ -257,18 +188,9 @@ const translations = {
         
         // Errors
         invalidRoom: "Неверный код комнаты",
-        connectionError: "Ошибка соединения. Попробуйте ещё раз.",
-        roomNotFound: "Комната не найдена",
-        pleaseEnterName: "Пожалуйста, введите ваше имя",
-        roomCodeLength: "Код комнаты должен содержать ровно 6 символов",
-        failedCreateGame: "Не удалось создать игру. Попробуйте ещё раз.",
-        failedJoinGame: "Не удалось присоединиться к игре",
-        readyToJoin: "Готов присоединиться к комнате",
-        enterNameAvatar: "Просто введите ваше имя и выберите аватар!",
         clickToEdit: "нажмите для редактирования",
         
         // Game room additional
-        inviteFriends: "Пригласить друзей",
         inviteDuringGame: "Игра уже идёт: новичок попросится войти, и впустить его сможет любой из вас.",
         characterAssignment: "Назначение персонажей",
         clickPlus: "Нажмите «Задать персонажа»",
@@ -299,14 +221,8 @@ const translations = {
         restartNote: "Это действие повлияет на всех игроков",
 
         // Leave game
-        leaveGame: "Покинуть игру",
-        leaveModalTitle: "🚪 Покинуть игру",
-        leaveConfirmText: "Вы уверены, что хотите покинуть игру?",
         leaveNote: "Ваша карточка и персонаж исчезнут у всех игроков. Остальные смогут продолжить игру.",
-        confirmLeave: "Да, покинуть игру",
-        playerLeftNotification: "👋 {playerName} покинул(а) игру",
-        // Joining a started game (game-room.js, game.js)
-        gameAlreadyOn: "Игра уже идёт",
+        // Joining a started game (game-room.js)
         waitingForAdmission: "Ждём, пока игроки вас впустят. Им уже пришёл ваш запрос.",
         joinRequestTitle: "🚪 Просится в игру",
         joinRequestText: "хочет войти в игру",
@@ -314,7 +230,6 @@ const translations = {
         admitPlayer: "Впустить",
         declinePlayer: "Отказать",
         playerAdmittedNotification: "👋 {playerName} теперь в игре",
-        joinDeclined: "Игроки не впустили вас в игру",
         envelopeEmpty: "пока пусто",
         noCharacterYet: "Персонажа пока нет — его даст другой игрок",
         waitingForCharacter: "Игра идёт — ждём, пока вам дадут персонажа",
@@ -332,45 +247,24 @@ const translations = {
         characterReadOnly: "Персонаж: {character} (нельзя изменить во время игры)",
         characterClickToEdit: "Персонаж: {character} (нажмите, чтобы изменить)",
         someoneNeedsToAssign: "Кто-то должен назначить вам персонажа!",
-        copiedSuccess: "✅ Скопировано!",
 
         // Error messages
-        invalidRoomCode: "Неверный код комнаты",
         connectionErrorTryAgain: "Попробуйте еще раз.",
 
         // Language switcher
         language: "Язык",
         english: "English",
-        russian: "Русский",
-
-        // Dynamic UI updates
-        roomCodeJoining: "Код комнаты (присоединение к игре)",
-        clearRoomCodeToCreate: "Очистите код комнаты для создания новой игры",
-        creating: "Создание...",
-
-        // PWA messages
-
-        // Footer of the landing page
-
-        // Page for an address with nothing on it (404.html)
-        notFoundTitle: "Страница не найдена",
-        notFoundText: "По этому адресу ничего нет. Игра — на главной странице.",
-        openGame: "Открыть игру"
+        russian: "Русский"
     }
 };
 
 // The server answers in English (game-logic.js, worker/), and its error texts
-// are the keys here: the page shows a server error in its own language.
+// are the keys here: the page shows a server error in its own language. The
+// errors of the kit's server code have their copies in the kit (its i18n.js).
 // tests/translations-real.test.js fails if a text the server sends is missing
 const serverErrors = {
     ru: {
-        'Game not found': "Комната не найдена",
-        'Invalid player name': "Недопустимое имя игрока",
-        'Invalid avatar': "Недопустимый аватар",
-        'Game has already started': "Игра уже началась",
-        'Game is full': "В комнате нет свободных мест",
         'This request has already been answered': "На этот запрос уже ответили",
-        'Player not found in game': "Игрок не найден в комнате",
         'Assigner not found in game': "Игрок, назначающий персонажа, не найден в комнате",
         'Cannot assign character to yourself': "Нельзя назначить персонажа самому себе",
         'Cannot change characters after the game has started': "После начала игры персонажей менять нельзя",
@@ -378,11 +272,7 @@ const serverErrors = {
         'Need at least 2 players to start': "Нужно минимум 2 игрока для начала",
         'Every player needs a character to start': "Чтобы начать, назначьте персонажей всем игрокам",
         'Game has not started yet': "Игра ещё не началась",
-        'No character assigned to this player': "Этому игроку не назначен персонаж",
-        'Missing required fields': "Не заполнены обязательные поля",
-        'Something went wrong, please try again': "Что-то пошло не так, попробуйте ещё раз",
-        'You are not in this game': "Вы не участвуете в этой игре",
-        'This player is playing in another browser': "Этот игрок играет в другом браузере"
+        'No character assigned to this player': "Этому игроку не назначен персонаж"
     }
 };
 

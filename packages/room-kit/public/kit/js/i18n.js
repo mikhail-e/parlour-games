@@ -3,36 +3,175 @@
 // texts with {placeholders}, the markup's data-i18n* attributes, the language
 // button, and the server's errors in the page's language. The texts are the
 // game's (its translations.js: `translations` and `serverErrors`, loaded before
-// this file) on top of the kit's own below - the texts the kit's code shows.
+// this file) on top of the kit's own below - the texts the kit's code shows
+// and the errors its server code sends.
 // i18n, getText and serverErrorText are used by the scripts loaded after this
 // one (see the note at the top of app.js).
 /* exported i18n, getText, serverErrorText */
 /* global APP_STORAGE_PREFIX, translations, serverErrors */
 
-// The texts the kit's own code shows (pwa.js's update banner, the close button
-// of an alert); a game's dictionary may give its own instead
+// The texts of the shared parts: what the kit's scripts show, and the words of
+// the markup they work with (the landing form, the leave window, the waiting
+// screen, the invitation, the 404 page: the markup is each game's, its words
+// are the kit's).
+// A game's dictionary may give its own text under the same key instead
 const KIT_TEXTS = {
     en: {
+        // The landing page: the name, the avatar, creating and joining (landing.js)
+        joinCreateGame: "Join or Create a Game",
+        yourName: "Your Name",
+        enterName: "Enter your name",
+        chooseAvatar: "Choose Your Avatar",
+        shuffleAvatars: "Show a different set of avatars",
+        uploadAvatar: "Upload your own avatar photo",
+        avatarNotImage: "Please choose an image file.",
+        avatarReadFailed: "Could not read this image. Try a different photo.",
+        avatarTooLarge: "This image could not be compressed enough. Try a different photo.",
+        roomCode: "Room Code",
+        roomCodePlaceholder: "ABC123",
+        roomCodeHelp: "Enter 6-character room code to join existing game",
+        joinGame: "Join Game",
+        createNewGame: "Create New Game",
+        roomCodeJoining: "Room Code (joining game)",
+        clearRoomCodeToCreate: "Clear room code to create a new game",
+        readyToJoin: "Ready to join room",
+        enterNameAvatar: "Just enter your name and avatar!",
+        pleaseEnterName: "Please enter your name first",
+        roomCodeLength: "Room code must be exactly 6 characters",
+        creating: "Creating...",
+        roomNotFound: "Room not found",
+        failedCreateGame: "Failed to create game. Please try again.",
+        failedJoinGame: "Failed to join game",
+        joinDeclined: "The players did not let you into the game",
+
+        // The room page: entering, leaving, the newcomer's waiting screen (room-page.js)
+        invalidRoomCode: "Invalid room code",
+        gameAlreadyOn: "The game is already on",
+        leaveGame: "Leave Game",
+        leaveModalTitle: "🚪 Leave Game",
+        leaveConfirmText: "Are you sure you want to leave this game?",
+        confirmLeave: "Yes, Leave Game",
+        cancel: "Cancel",
+        playerLeftNotification: "👋 {playerName} left the game",
+
+        // The invitation (invite.js)
+        inviteFriends: "Invite Friends",
+        shareLinkLabel: "Room link",
+        copyLink: "Copy Link",
+        copyRoomLink: "Copy Link",
+        share: "Share",
+        copiedSuccess: "✅ Copied!",
+
+        // Notifications (notify.js) and the update banner (pwa.js)
+        connectionError: "Connection error. Please try again.",
         close: "Close",
         updateAvailable: "🆕 Update Available!",
         updateDescription: "A new version of the app is ready. Reload to get the latest features.",
-        updateNow: "Update Now"
+        updateNow: "Update Now",
+
+        // The 404 page: the frame answers every address nothing else does with
+        // a game's 404.html (worker/http.js)
+        notFoundTitle: "Page not found",
+        notFoundText: "There is nothing at this address. The game is on the main page.",
+        openGame: "Open the game"
     },
     ru: {
+        // The landing page: the name, the avatar, creating and joining (landing.js)
+        joinCreateGame: "Присоединиться или создать игру",
+        yourName: "Ваше имя",
+        enterName: "Введите ваше имя",
+        chooseAvatar: "Выберите аватар",
+        shuffleAvatars: "Показать другие аватары",
+        uploadAvatar: "Загрузить свою фотографию для аватара",
+        avatarNotImage: "Пожалуйста, выберите файл с изображением.",
+        avatarReadFailed: "Не удалось открыть это изображение. Попробуйте другое фото.",
+        avatarTooLarge: "Не удалось сжать это изображение. Попробуйте другое фото.",
+        roomCode: "Код комнаты",
+        roomCodePlaceholder: "ABC123",
+        roomCodeHelp: "Введите 6-символьный код комнаты для присоединения к существующей игре",
+        joinGame: "Войти в игру",
+        createNewGame: "Создать новую игру",
+        roomCodeJoining: "Код комнаты (присоединение к игре)",
+        clearRoomCodeToCreate: "Очистите код комнаты для создания новой игры",
+        readyToJoin: "Готов присоединиться к комнате",
+        enterNameAvatar: "Просто введите ваше имя и выберите аватар!",
+        pleaseEnterName: "Пожалуйста, введите ваше имя",
+        roomCodeLength: "Код комнаты должен содержать ровно 6 символов",
+        creating: "Создание...",
+        roomNotFound: "Комната не найдена",
+        failedCreateGame: "Не удалось создать игру. Попробуйте ещё раз.",
+        failedJoinGame: "Не удалось присоединиться к игре",
+        joinDeclined: "Игроки не впустили вас в игру",
+
+        // The room page: entering, leaving, the newcomer's waiting screen (room-page.js)
+        invalidRoomCode: "Неверный код комнаты",
+        gameAlreadyOn: "Игра уже идёт",
+        leaveGame: "Покинуть игру",
+        leaveModalTitle: "🚪 Покинуть игру",
+        leaveConfirmText: "Вы уверены, что хотите покинуть игру?",
+        confirmLeave: "Да, покинуть игру",
+        cancel: "Отмена",
+        playerLeftNotification: "👋 {playerName} покинул(а) игру",
+
+        // The invitation (invite.js)
+        inviteFriends: "Пригласить друзей",
+        shareLinkLabel: "Ссылка на комнату",
+        copyLink: "Скопировать",
+        copyRoomLink: "Скопировать ссылку",
+        share: "Поделиться",
+        copiedSuccess: "✅ Скопировано!",
+
+        // Notifications (notify.js) and the update banner (pwa.js)
+        connectionError: "Ошибка соединения. Попробуйте ещё раз.",
         close: "Закрыть",
         updateAvailable: "🆕 Доступно обновление!",
         updateDescription: "Новая версия приложения готова. Перезагрузите, чтобы получить последние функции.",
-        updateNow: "Обновить сейчас"
+        updateNow: "Обновить сейчас",
+
+        // The 404 page: the frame answers every address nothing else does with
+        // a game's 404.html (worker/http.js)
+        notFoundTitle: "Страница не найдена",
+        notFoundText: "По этому адресу ничего нет. Игра — на главной странице.",
+        openGame: "Открыть игру"
     }
 };
 
-// The game's texts on top of the kit's, language by language
-function withKitTexts(gameTexts) {
-    const texts = {};
-    for (const lang of new Set([...Object.keys(KIT_TEXTS), ...Object.keys(gameTexts)])) {
-        texts[lang] = { ...KIT_TEXTS[lang], ...gameTexts[lang] };
+// The errors the kit's server code sends (shared/players.js, worker/), in
+// Russian: the server answers in English, and a page shows them in its
+// language. A game's serverErrors holds the copies of its own errors only;
+// the kit's test keeps this list and the kit's server texts equal
+const KIT_SERVER_ERRORS = {
+    ru: {
+        'Game not found': "Комната не найдена",
+        'Invalid player name': "Недопустимое имя игрока",
+        'Invalid avatar': "Недопустимый аватар",
+        'Game has already started': "Игра уже началась",
+        'Game is full': "В комнате нет свободных мест",
+        'Player not found in game': "Игрок не найден в комнате",
+        'Missing required fields': "Не заполнены обязательные поля",
+        'Something went wrong, please try again': "Что-то пошло не так, попробуйте ещё раз",
+        'You are not in this game': "Вы не участвуете в этой игре",
+        'This player is playing in another browser': "Этот игрок играет в другом браузере"
     }
-    return texts;
+};
+
+// A game's dictionary on top of the kit's, language by language
+function withKit(kitDictionary, gameDictionary) {
+    const merged = {};
+    for (const lang of new Set([...Object.keys(kitDictionary), ...Object.keys(gameDictionary)])) {
+        merged[lang] = { ...kitDictionary[lang], ...gameDictionary[lang] };
+    }
+    return merged;
+}
+
+// The game's texts on top of the kit's
+function withKitTexts(gameTexts) {
+    return withKit(KIT_TEXTS, gameTexts);
+}
+
+// The game's copies of the server's errors on top of the kit's
+function withKitServerErrors(gameErrors) {
+    return withKit(KIT_SERVER_ERRORS, gameErrors);
 }
 
 // The page's language and its texts. Built on DOMContentLoaded below, as `i18n`;
@@ -40,7 +179,7 @@ function withKitTexts(gameTexts) {
 class Localization {
     constructor(gameTexts = translations, gameErrors = serverErrors) {
         this.texts = withKitTexts(gameTexts);
-        this.errors = gameErrors;
+        this.errors = withKitServerErrors(gameErrors);
         this.storageKey = `${APP_STORAGE_PREFIX}-language`;
         this.currentLanguage = this.detectLanguage();
         this.init();
@@ -92,8 +231,8 @@ class Localization {
         return text;
     }
 
-    // A server error in the current language (the game's serverErrors); a text
-    // the list does not know, like a network error, is shown as it came
+    // A server error in the current language (the game's serverErrors and the
+    // kit's); a text the lists do not know, like a network error, is shown as it came
     serverErrorText(error) {
         const texts = this.errors[this.currentLanguage];
         return texts && Object.prototype.hasOwnProperty.call(texts, error) ? texts[error] : error;
@@ -207,5 +346,5 @@ document.addEventListener('DOMContentLoaded', () => {
 // the browser there is no `module`
 /* global module */
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { KIT_TEXTS, withKitTexts, Localization };
+    module.exports = { KIT_TEXTS, KIT_SERVER_ERRORS, withKitTexts, withKitServerErrors, Localization };
 }

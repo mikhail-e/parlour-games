@@ -1,7 +1,8 @@
 // The game only works online, so the service worker must never serve the app
-// itself from cache - only the icons, which never change. These tests guard
-// that rule: caching HTML or JS again would resurrect the "player stuck on an
-// old version" class of bugs.
+// itself from cache - only the icons, which never change. What the worker does
+// is the kit's (its tests/service-worker.test.js); these tests guard the game's
+// part, public/sw.js: caching HTML or JS again would resurrect the "player
+// stuck on an old version" class of bugs.
 
 const fs = require('fs');
 const path = require('path');
@@ -41,18 +42,11 @@ describe('Service Worker caching policy', () => {
         });
     });
 
-    test('the worker responds to icon requests only', () => {
-        // A single respondWith(), and it serves icons from cache. Anything else
-        // (app files, the room's socket, /api/) falls through to the browser untouched.
-        const respondWithCalls = swSource.match(/event\.respondWith\(/g) || [];
-
-        expect(respondWithCalls).toHaveLength(1);
-        expect(swSource).toMatch(/isIconAsset\(request\.url\)[\s\S]{0,120}event\.respondWith\(cacheFirstStrategy\(request\)\)/);
-    });
-
-    test('cache-first is the only caching strategy left', () => {
-        expect(swSource).toContain('cacheFirstStrategy');
-        expect(swSource).not.toContain('networkFirstStrategy');
+    test("the worker is the kit's, given the game's cache and icons", () => {
+        expect(swSource).toContain("importScripts('/kit/js/service-worker.js');");
+        expect(swSource).toContain('cacheIconsOnly(CACHE_NAME, iconAssets);');
+        // No logic of its own next to the kit's: no listener, no cache
+        expect(swSource).not.toMatch(/addEventListener|caches\./);
     });
 
     test('the cache version is bumped past the caching rewrite', () => {

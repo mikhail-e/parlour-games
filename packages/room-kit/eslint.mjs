@@ -57,6 +57,7 @@ export default function roomKitEslint({ ignores = [] } = {}) {
         // Browser pages: classic <script> files, no modules and no build step
         {
             files: ["public/js/**/*.js", "public/kit/js/**/*.js"],
+            ignores: ["public/kit/js/service-worker.js"],
             languageOptions: {
                 sourceType: "script",
                 globals: {
@@ -71,9 +72,10 @@ export default function roomKitEslint({ ignores = [] } = {}) {
             },
         },
 
-        // Service worker — its own global scope
+        // Service worker — its own global scope: a game's sw.js and the kit's
+        // logic it loads
         {
-            files: ["public/sw.js"],
+            files: ["public/sw.js", "public/kit/js/service-worker.js"],
             languageOptions: {
                 sourceType: "script",
                 globals: {
@@ -99,7 +101,7 @@ export default function roomKitEslint({ ignores = [] } = {}) {
         // Browser tests, their configs and the developer's scripts (Node, CommonJS):
         // callbacks passed to page.evaluate() run in the page, where browser names exist
         {
-            files: ["tests/e2e/**/*.js", "playwright.config.js", "playwright.js", "e2e.js", "checks.js", "scripts/*.js"],
+            files: ["tests/e2e/**/*.js", "playwright.config.js", "playwright.js", "e2e.js", "e2e-helpers.js", "checks.js", "scripts/*.js"],
             languageOptions: {
                 sourceType: "commonjs",
                 globals: {

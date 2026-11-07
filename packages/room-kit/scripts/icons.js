@@ -1,13 +1,19 @@
-// Takes the app's icons from scripts/icon.html: the PNGs the manifest names,
-// the iPhone's home-screen icon and favicon.ico. Run it after a change to the
-// drawing: node scripts/icons.js
+#!/usr/bin/env node
+// Takes a game's app icons from its drawing, scripts/icon.html: the PNGs the
+// manifest names, the iPhone's home-screen icon and favicon.ico, into the
+// game's public/. Run in the game's folder after a change to the drawing:
+//
+//   npm run icons            (the game's script: room-kit-icons)
+//
+// The drawing is the game's (its brand); the sizes are every game's.
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { chromium } = require('@playwright/test');
 
-const SOURCE = path.join(__dirname, 'icon.html');
-const PUBLIC = path.join(__dirname, '..', 'public');
+const GAME = process.cwd();
+const SOURCE = path.join(GAME, 'scripts', 'icon.html');
+const PUBLIC = path.join(GAME, 'public');
 
 // The manifest's icons (public/manifest.json), the iPhone's (an SVG there is
 // ignored: apple-touch-icon must be a PNG) and the favicon's sizes
@@ -44,6 +50,10 @@ function icoFrom(pngs) {
 }
 
 async function main() {
+    if (!fs.existsSync(SOURCE)) {
+        console.error(`No ${path.relative(GAME, SOURCE)} here: run this in a game's folder`);
+        process.exit(1);
+    }
     const browser = await chromium.launch();
     const page = await browser.newPage();
     await page.goto(pathToFileURL(SOURCE).href);
@@ -57,6 +67,7 @@ async function main() {
     }
     await browser.close();
 
+    fs.mkdirSync(path.join(PUBLIC, 'icons'), { recursive: true });
     for (const [size, file] of Object.entries(PNGS)) {
         fs.writeFileSync(path.join(PUBLIC, file), shots[size]);
         console.log(`Saved public/${file}`);

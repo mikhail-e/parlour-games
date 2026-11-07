@@ -10,11 +10,11 @@
 # styles only from its files - no inline scripts, styles or style attributes
 # (a script may still set element.style; the kit's tests and each game's
 # check the files). Images may be data:
-# (Bootstrap draws its icons so; whoami's photo avatars are data:image URLs)
-# and blob: (whoami opens an uploaded photo at a blob: address before it
-# shrinks it). connect-src 'self' covers the room's WebSocket. No plugins, no
-# <base>, and no other site may show a game in a frame. A new source here is a
-# deliberate decision, written down here.
+# (Bootstrap draws its icons so; the photo avatars of the kit's landing page
+# are data:image URLs) and blob: (the landing page opens an uploaded photo at
+# a blob: address before it shrinks it). connect-src 'self' covers the room's
+# WebSocket. No plugins, no <base>, and no other site may show a game in a
+# frame. A new source here is a deliberate decision, written down here.
 #
 # Referrer-Policy: a link to another site tells it only the game's address,
 # never the page: a room's address holds its code. The coffee link sends

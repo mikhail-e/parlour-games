@@ -1,0 +1,369 @@
+// The writing of a round (the consequences/writing spec): Start, the question
+// of each step in the player's language, the answer and its limit, the sheets
+// moving on when everyone has answered, who is still writing, answering for
+// an absent player, a leaver's seat, a new round in the middle of one, and the
+// screen kept awake. That no page gets an answer's text is secret.spec.js's
+const {
+    test, expect, text, roomWith, waitForPlayers, createRoom, joinRoom, leaveGame, countSentEvents,
+    startedRound, startRound, answer, answerStep, waitForStep, returnToRound, seatRow, roundStep,
+} = require('./helpers');
+
+const answerFor = (page, name) => seatRow(page, name).getByRole('button', { name: text('answerFor', 'en', { name }) });
+
+test('Start waits for a second player and says so', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    const code = await createRoom(anna);
+
+    await expect(anna.page.locator('#startRound')).toBeDisabled();
+    await expect(anna.page.locator('#startHint')).toHaveText(text('needAnotherPlayer'));
+
+    const boris = await newPlayer('Boris');
+    await joinRoom(boris, code);
+    await expect(anna.page.locator('#startRound')).toBeEnabled();
+    await expect(anna.page.locator('#startHint')).toBeHidden();
+});
+
+test('Start gives every player the first question, "Who?"', async ({ newPlayer }) => {
+    const { players } = await roomWith(newPlayer, ['Anna', 'Boris', 'Vera']);
+
+    await players[1].page.click('#startRound');
+
+    for (const player of players) {
+        await expect(player.page.locator('#questionText')).toHaveText(text('question1'));
+        await expect(player.page.locator('#questionNumber')).toHaveText(text('questionOf', 'en', { number: 1, count: 8 }));
+        await expect(player.page.locator('#stepLabel')).toHaveText(text('stepOf', 'en', { step: 1, count: 8 }));
+        // No lobby in a round: the invitation and the list give way to the sheet and the table
+        await expect(player.page.locator('#playersCard')).toBeHidden();
+        await expect(player.page.locator('#shareCard')).toBeHidden();
+        await expect(player.page.locator('#seatsCard')).toBeVisible();
+    }
+});
+
+test("each player sees the question in their page's language", async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna', { locale: 'ru-RU' });
+    const boris = await newPlayer('Boris', { locale: 'en-GB' });
+    const code = await createRoom(anna);
+    await joinRoom(boris, code);
+    await waitForPlayers(anna.page, 2);
+    const players = [anna, boris];
+    await startRound(players);
+
+    for (let step = 0; step < 3; step++) await answerStep(players, step);
+
+    await expect(anna.page.locator('#questionText')).toHaveText(text('question4', 'ru'));
+    await expect(anna.page.locator('#questionNumber')).toHaveText(text('questionOf', 'ru', { number: 4, count: 8 }));
+    await expect(boris.page.locator('#questionText')).toHaveText(text('question4', 'en'));
+    // The answered questions are folded, a pleat each: the question, never its answer
+    await expect(anna.page.locator('#folds .fold')).toHaveCount(3);
+    await expect(anna.page.locator('#folds .fold').nth(2)).toContainText(text('question3', 'ru'));
+    await expect(anna.page.locator('#writingCard')).not.toContainText('Anna 3');
+    await expect(anna.page.locator('#writingCard')).not.toContainText('Boris 3');
+});
+
+test('a sent answer is folded away: the field closes, and the player sees who is still writing', async ({ newPlayer }) => {
+    const { players: [anna, boris, vera] } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
+
+    await answer(anna, 'A pirate grandmother');
+
+    await expect(anna.page.locator('#answerForm')).toBeHidden();
+    await expect(anna.page.locator('#sheetHint')).toHaveText(text('answerFolded', 'en', { name: 'Boris' }));
+    await expect(anna.page.locator('#folds .fold')).toHaveCount(1);
+    await expect(seatRow(anna.page, 'Anna')).toContainText(text('statusDone'));
+    await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusWriting'));
+    await expect(seatRow(anna.page, 'Vera')).toContainText(text('statusWriting'));
+    // The others see that she is done, and still have their own question
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
+    await expect(vera.page.locator('#answerForm')).toBeVisible();
+    expect(await roundStep(anna.page)).toBe(0);
+});
+
+test('an empty answer or one of spaces is not sent, and the field stays open', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    const sentAnswers = countSentEvents(anna.page, 'write-answer');
+    const boris = await newPlayer('Boris');
+    const code = await createRoom(anna);
+    await joinRoom(boris, code);
+    await waitForPlayers(anna.page, 2);
+    await startRound([anna, boris]);
+
+    await anna.page.click('#foldAndPass');
+    await answer(anna, '   ');
+
+    await expect(anna.page.locator('#answerForm')).toBeVisible();
+    await expect(anna.page.locator('#answerText')).toBeFocused();
+    expect(sentAnswers()).toBe(0);
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusWriting'));
+});
+
+test('the answer stops at 200 characters, counted as a person counts them', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const field = anna.page.locator('#answerText');
+
+    // 199 letters and an emoji: 200 characters, though 201 UTF-16 units
+    await field.fill(`${'a'.repeat(199)}🦜`);
+    await expect(anna.page.locator('#answerCount')).toHaveText('200/200');
+    await expect(anna.page.locator('#foldAndPass')).toBeEnabled();
+
+    await field.fill('a'.repeat(201));
+    await expect(anna.page.locator('#answerCount')).toHaveText('201/200');
+    await expect(anna.page.locator('#foldAndPass')).toBeDisabled();
+
+    await field.fill(`${'a'.repeat(199)}🦜`);
+    await anna.page.click('#foldAndPass');
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
+});
+
+test('the answer field grows with its text', async ({ newPlayer }) => {
+    const { players: [anna] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const field = anna.page.locator('#answerText');
+    const height = async () => (await field.boundingBox()).height;
+    const empty = await height();
+
+    // Six lines on any screen
+    await field.fill('on the roof\nof a tram\nthat left its rails\nand drove along\nthe embankment\nto the opera');
+
+    expect(await height()).toBeGreaterThan(empty);
+    // Nothing hidden: the field is as tall as its text
+    expect(await field.evaluate(element => element.scrollHeight <= element.clientHeight)).toBe(true);
+});
+
+test("an answer being typed survives the others' moves", async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
+
+    await anna.page.fill('#answerText', 'Half an answ');
+    await answer(boris, 'Boris 1');
+    await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusDone'));
+
+    await expect(anna.page.locator('#answerText')).toHaveValue('Half an answ');
+});
+
+test("the last answer of a step moves every sheet on to the next seat, and opens the next question", async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
+    await answerStep(players, 0);
+
+    for (const player of players) await answer(player, `${player.name} 2`);
+
+    await waitForStep(players, 2);
+    for (const player of players) {
+        await expect(player.page.locator('#questionText')).toHaveText(text('question3'));
+        await expect(player.page.locator('#folds .fold')).toHaveCount(2);
+    }
+    // Which sheet went where is read in the stories: reading.spec.js
+});
+
+test('a slow player online is waited for, and nobody may answer for them', async ({ newPlayer }) => {
+    const { players: [anna, boris, vera] } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
+
+    await answer(anna, 'Anna 1');
+    await answer(boris, 'Boris 1');
+
+    await expect(seatRow(anna.page, 'Vera')).toContainText(text('statusWriting'));
+    await expect(seatRow(anna.page, 'Vera').getByRole('button')).toHaveCount(0);
+    await expect(seatRow(boris.page, 'Vera').getByRole('button')).toHaveCount(0);
+    expect(await roundStep(anna.page)).toBe(0);
+    await answer(vera, 'Vera 1');
+    await waitForStep([anna, boris, vera], 1);
+});
+
+test('after answering a player sees who is writing and who is offline', async ({ newPlayer }) => {
+    const { players: [anna, , petya] } = await startedRound(newPlayer, ['Anna', 'Masha', 'Petya']);
+
+    await petya.page.close();
+    await answer(anna, 'Anna 1');
+
+    await expect(seatRow(anna.page, 'Masha')).toContainText(text('statusWriting'));
+    await expect(seatRow(anna.page, 'Petya')).toContainText(text('statusOffline'));
+    await expect(seatRow(anna.page, 'Petya')).not.toContainText(text('statusWriting'));
+});
+
+test("Katya answers for Petya: she gets his sheet with this step's question, the others see who writes for him", async ({ newPlayer }) => {
+    const { players: [katya, masha, petya] } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    await petya.page.close();
+
+    // Only a player who has answered may answer for him
+    await expect(seatRow(katya.page, 'Petya')).toContainText(text('statusOffline'));
+    await expect(answerFor(katya.page, 'Petya')).toHaveCount(0);
+    await answer(katya, 'Katya 1');
+    await answerFor(katya.page, 'Petya').click();
+
+    await expect(katya.page.locator('#writingTitle')).toBeVisible();
+    await expect(katya.page.locator('#writingTitle')).toHaveText(text('sheetOfPlayer', 'en', { name: 'Petya' }));
+    await expect(katya.page.locator('#questionText')).toHaveText(text('question1'));
+    await expect(katya.page.locator('#answerText')).toHaveValue('');
+    await expect(seatRow(masha.page, 'Petya')).toContainText(text('statusAnsweringFor', 'en', { name: 'Katya' }));
+
+    await answer(katya, 'for Petya 1');
+    await answer(masha, 'Masha 1');
+    await waitForStep([katya, masha], 1);
+    await expect(katya.page.locator('#writingTitle')).toBeHidden();
+    await expect(katya.page.locator('#questionText')).toHaveText(text('question2'));
+});
+
+test('a sheet taken for an absent player goes back on the table with "Give the sheet back"', async ({ newPlayer }) => {
+    const { players: [katya, masha, petya] } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    await petya.page.close();
+    await answer(katya, 'Katya 1');
+    await answerFor(katya.page, 'Petya').click();
+    await expect(katya.page.locator('#writingTitle')).toBeVisible();
+
+    await katya.page.click('#giveSheetBack');
+
+    await expect(katya.page.locator('#answerForm')).toBeHidden();
+    await expect(katya.page.locator('#giveSheetBack')).toBeHidden();
+    await expect(answerFor(katya.page, 'Petya')).toBeVisible();
+    await answer(masha, 'Masha 1');
+    await expect(answerFor(masha.page, 'Petya')).toBeVisible();
+});
+
+test('two players press "Answer for" at once: one gets the sheet, the other sees who writes', async ({ newPlayer }) => {
+    const { players: [katya, masha, petya] } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    await petya.page.close();
+    await answer(katya, 'Katya 1');
+    await answer(masha, 'Masha 1');
+    await expect(answerFor(katya.page, 'Petya')).toBeVisible();
+    await expect(answerFor(masha.page, 'Petya')).toBeVisible();
+
+    // Both taps leave before either page hears the room's answer. A click by
+    // Playwright would wait for the button the room's answer takes away
+    const tap = player => player.page.evaluate(name => {
+        [...document.querySelectorAll('#seatList button')].find(button => button.textContent === name).click();
+    }, text('answerFor', 'en', { name: 'Petya' }));
+    await Promise.all([tap(katya), tap(masha)]);
+
+    const holding = async player => player.page.locator('#writingTitle').isVisible();
+    await expect.poll(async () => (await holding(katya)) !== (await holding(masha))).toBe(true);
+    const [winner, other] = (await holding(katya)) ? [katya, masha] : [masha, katya];
+    await expect(seatRow(other.page, 'Petya')).toContainText(text('statusAnsweringFor', 'en', { name: winner.name }));
+    await expect(answerFor(other.page, 'Petya')).toHaveCount(0);
+});
+
+test('the sheet of a taker whose page goes is free again', async ({ newPlayer }) => {
+    const { players: [katya, masha, petya] } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    await petya.page.close();
+    await answer(katya, 'Katya 1');
+    await answer(masha, 'Masha 1');
+    await answerFor(katya.page, 'Petya').click();
+    await expect(seatRow(masha.page, 'Petya')).toContainText(text('statusAnsweringFor', 'en', { name: 'Katya' }));
+
+    await katya.page.close();
+
+    await expect(answerFor(masha.page, 'Petya')).toBeVisible();
+    await expect(seatRow(masha.page, 'Petya')).not.toContainText(text('statusAnsweringFor', 'en', { name: 'Katya' }));
+});
+
+test('Petya back while Katya writes for him sees it, and answers himself from the next step', async ({ newPlayer }) => {
+    const { players: [katya, masha, petya], code } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    await petya.page.close();
+    await answer(katya, 'Katya 1');
+    await answerFor(katya.page, 'Petya').click();
+    await expect(katya.page.locator('#writingTitle')).toBeVisible();
+
+    const back = { name: 'Petya', page: await petya.context.newPage() };
+    await returnToRound(back, code);
+
+    await expect(back.page.locator('#answerForm')).toBeHidden();
+    await expect(back.page.locator('#sheetHint')).toBeVisible();
+    await expect(back.page.locator('#sheetHint')).toHaveText(text('answeredForYou', 'en', { name: 'Katya' }));
+    await answer(katya, 'for Petya 1');
+    await answer(masha, 'Masha 1');
+    await waitForStep([katya, masha, back], 1);
+    await expect(back.page.locator('#questionText')).toHaveText(text('question2'));
+    await answerStep([katya, masha, back], 1);
+});
+
+test('Petya leaves in the middle of a round and comes back two steps later to his seat', async ({ newPlayer }) => {
+    const { players: [katya, masha, petya], code } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+
+    await leaveGame(petya);
+    await expect(seatRow(katya.page, 'Petya')).toContainText(text('statusLeft'));
+    for (let step = 0; step < 2; step++) {
+        await answer(katya, `Katya ${step + 1}`);
+        await answer(masha, `Masha ${step + 1}`);
+        await answerFor(katya.page, 'Petya').click();
+        await answer(katya, `for Petya ${step + 1}`);
+        await waitForStep([katya, masha], step + 1);
+    }
+
+    await returnToRound(petya, code);
+
+    await expect(seatRow(katya.page, 'Petya')).not.toContainText(text('statusLeft'));
+    await expect(petya.page.locator('#seatList .seat-name')).toHaveText(['Katya', 'Masha', /^Petya/]);
+    await expect(petya.page.locator('#questionText')).toHaveText(text('question3'));
+    await answerStep([katya, masha, petya], 2);
+});
+
+test('a player who left for good is answered for to the end of the round', async ({ newPlayer }) => {
+    const { players: [katya, masha, petya] } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+
+    await leaveGame(petya);
+    for (let step = 0; step < 8; step++) {
+        await answer(katya, `Katya ${step + 1}`);
+        await answer(masha, `Masha ${step + 1}`);
+        // Each step another player takes his sheet
+        const taker = step % 2 === 0 ? katya : masha;
+        await answerFor(taker.page, 'Petya').click();
+        await answer(taker, `for Petya ${step + 1}`);
+        await waitForStep([katya, masha], step + 1);
+    }
+
+    await expect(katya.page.locator('#readingCard')).toBeVisible();
+});
+
+test('New round in the middle of one asks first, then takes everyone back to the lobby', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await answerStep([anna, boris], 0);
+    await answerStep([anna, boris], 1);
+
+    // Cancel keeps the round
+    await anna.page.click('#newRound');
+    await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+    await expect(anna.page.locator('#newRoundModal .modal-body')).toHaveText(text('newRoundText'));
+    await anna.page.locator('#newRoundModal').getByRole('button', { name: text('cancel') }).click();
+    await expect(anna.page.locator('#newRoundModal')).toBeHidden();
+    expect(await roundStep(anna.page)).toBe(2);
+
+    await anna.page.click('#newRound');
+    await anna.page.click('#confirmNewRound');
+
+    for (const player of [anna, boris]) {
+        await expect(player.page.locator('#playersCard')).toBeVisible();
+        await waitForPlayers(player.page, 2);
+        await expect(player.page.locator('#writingCard')).toBeHidden();
+        await expect(player.page.locator('#newRound')).toBeHidden();
+    }
+    // The next round starts with blank sheets
+    await startRound([boris, anna]);
+    await expect(anna.page.locator('#folds .fold')).toHaveCount(0);
+});
+
+test('the screen stays awake while the round is on, and may sleep in the lobby', async ({ newPlayer }) => {
+    // The real browser's lock, the permission granted; the request is wrapped,
+    // so the test sees the very locks the browser handed out
+    const withRealWakeLock = async name => {
+        const player = await newPlayer(name);
+        await player.context.grantPermissions(['screen-wake-lock']);
+        await player.page.addInitScript(() => {
+            const request = navigator.wakeLock.request.bind(navigator.wakeLock);
+            window.realLocks = [];
+            navigator.wakeLock.request = async type => {
+                const lock = await request(type);
+                window.realLocks.push(lock);
+                return lock;
+            };
+        });
+        return player;
+    };
+    const locksHeld = player => player.page.evaluate(() =>
+        window.realLocks.filter(lock => lock.type === 'screen' && !lock.released).length);
+    const { players: [anna, boris] } = await roomWith(withRealWakeLock, ['Anna', 'Boris']);
+    expect(await locksHeld(anna)).toBe(0);
+
+    await startRound([anna, boris]);
+    await expect.poll(() => locksHeld(anna)).toBe(1);
+    await expect.poll(() => locksHeld(boris)).toBe(1);
+
+    await boris.page.click('#newRound');
+    await boris.page.click('#confirmNewRound');
+    await expect.poll(() => locksHeld(anna)).toBe(0);
+    await expect.poll(() => locksHeld(boris)).toBe(0);
+});

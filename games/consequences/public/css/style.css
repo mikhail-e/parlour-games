@@ -1,0 +1,401 @@
+/* Consequences: the game's own look on the kit's playbill.css (linked before
+   this file): its color, its sign, the sheet folded like an accordion. */
+
+/* The game's color: bottle green instead of the kit's red, on paper and in
+   the curtain. Red stays for what cannot be undone (the kit's --red). The
+   app's color (theme-color, manifest.json) is the curtain's top */
+:root {
+  --accent: #1d4f3a;
+  --accent-tint: #d6f0e5;
+  --curtain-top: #1b4a36;
+  --curtain-bottom: #102e21;
+}
+
+/* The sign: the h1 of the landing page and the room, a picture on 404. Its
+   name is filled in the markup with the same color as --accent */
+.brand {
+  margin: 0 0 10px;
+}
+
+.brand-sign {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin-inline: auto;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45));
+}
+
+/* Smaller in the room: the sheet should fit the first screen of a phone */
+.brand--room .brand-sign {
+  max-width: 300px;
+}
+
+@media (min-width: 768px) {
+  .brand--room .brand-sign {
+    max-width: 360px;
+  }
+}
+
+/* Font sizes inside the SVG are viewBox units: the sign scales as a whole.
+   Oswald (the kit's fonts) draws the name and the two small lines */
+.brand-sign__name,
+.brand-sign__small {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+}
+
+/* ===== The round ===== */
+
+/* The sheet's paper and its pleats: lighter than the kit's cards, so the
+   sheet lies on the card like a sheet on a table */
+:root {
+  --sheet-paper: #fbf5e6;
+  --fold-light: #f3e8cd;
+  --fold-dark: #dccaa1;
+}
+
+/* The step: "Step 4 of 8" and eight marks, the one being answered in the
+   game's color */
+.step-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: var(--ink-soft);
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.step-marks {
+  display: flex;
+  gap: 5px;
+}
+
+.step-marks i {
+  display: block;
+  width: 18px;
+  height: 6px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 1px;
+  background: var(--paper-light);
+}
+
+.step-marks i.done {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.step-marks i.now {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* The sheet: the answered questions folded under, a pleat each, and the
+   open part with the question */
+.sheet {
+  position: relative;
+  max-width: 560px;
+  margin: 4px auto 6px;
+  background: var(--sheet-paper);
+  color: var(--ink);
+  box-shadow: 0 6px 16px rgba(42, 29, 23, .28), 0 1px 0 rgba(255, 255, 255, .6) inset;
+}
+
+.sheet__open {
+  padding: 18px 20px 20px;
+}
+
+.sheet__number {
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.sheet__question {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* The answer's field grows with its text (game-room.js sets its height) */
+.sheet textarea {
+  min-height: 96px;
+  resize: none;
+  overflow: hidden;
+  border: 1px solid var(--ink-soft);
+  border-radius: 4px;
+  background: #fffdf6;
+  padding: 10px 12px;
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+.sheet__count {
+  margin: 4px 0 12px;
+  color: var(--ink-soft);
+  font-size: .85rem;
+  text-align: right;
+}
+
+.sheet__count--over {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.sheet__hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: .95rem;
+}
+
+.fold {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding: 4px 20px;
+  border-bottom: 1px solid rgba(42, 29, 23, .25);
+  background: linear-gradient(to bottom, var(--fold-light) 0%, var(--fold-light) 55%, var(--fold-dark) 100%);
+  color: rgba(42, 29, 23, .7);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.fold:nth-child(even) {
+  background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 45%, var(--fold-light) 100%);
+}
+
+.fold__mark {
+  flex: none;
+  font-weight: 400;
+  letter-spacing: .06em;
+  text-transform: none;
+}
+
+/* The table: who writes or reads, who is away, who is done */
+.seat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seat-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(42, 29, 23, .18);
+}
+
+.seat-list li:last-child {
+  border-bottom: 0;
+}
+
+.seat-avatar {
+  width: 36px;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.seat-avatar img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.seat-name {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.seat-status {
+  flex: 1 1 auto;
+  color: var(--ink-soft);
+}
+
+.seat-status > span + span::before {
+  content: ' · ';
+  color: var(--ink-soft);
+}
+
+/* Done in ink with a tick, never in green: the game's color is green, and
+   "away" is drawn in it */
+.seat-status .done {
+  color: var(--ink);
+}
+
+.seat-status .away {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.seat-list .btn {
+  margin-left: auto;
+}
+
+.waiting-newcomers {
+  color: var(--ink-soft);
+}
+
+/* The reading: the player's sheet and the ones they read for the absent */
+.reading-sheet + .reading-sheet {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(42, 29, 23, .35);
+}
+
+.reading-sheet__title {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.lead-on-sheet {
+  margin: 0 0 14px;
+}
+
+/* A closed sheet: a folded packet of pleats, a button */
+.closed-sheet {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 6px auto 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.packet {
+  position: relative;
+  display: block;
+  height: 150px;
+}
+
+.packet span {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  height: 26px;
+  border: 1px solid rgba(42, 29, 23, .25);
+  background: linear-gradient(to bottom, var(--fold-light), var(--fold-dark));
+  box-shadow: 0 2px 3px rgba(42, 29, 23, .2);
+}
+
+.packet span:nth-child(odd) { transform: skewX(-8deg); }
+.packet span:nth-child(even) { transform: skewX(8deg); }
+.packet span:nth-child(1) { top: 10px; }
+.packet span:nth-child(2) { top: 36px; }
+.packet span:nth-child(3) { top: 62px; }
+.packet span:nth-child(4) { top: 88px; }
+.packet span:nth-child(5) { top: 114px; }
+
+.closed-sheet__label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.reading-sheet > .btn {
+  display: block;
+  margin: 0 auto;
+}
+
+.opened-count {
+  margin: 18px 0 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* An open sheet: every question with its answer under it */
+.story {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.story li {
+  padding: 8px 20px 10px;
+  border-bottom: 1px dashed rgba(42, 29, 23, .3);
+}
+
+.story li:last-child {
+  border-bottom: 0;
+}
+
+.story__question {
+  display: block;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.story__answer {
+  display: block;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+/* Every story: one column on a phone, two from a tablet */
+.stories {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 768px) {
+  .stories {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.stories .sheet {
+  max-width: none;
+  margin: 0;
+}
+
+.stories .story li {
+  padding-top: 5px;
+  padding-bottom: 6px;
+}
+
+.stories .story__answer {
+  font-size: 1.05rem;
+}
+
+.story-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(42, 29, 23, .25);
+  font-weight: 600;
+}
+
+.story-head small {
+  color: var(--ink-soft);
+  font-weight: 400;
+  text-align: right;
+}

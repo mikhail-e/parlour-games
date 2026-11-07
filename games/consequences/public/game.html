@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Consequences</title>
+    <!-- A room lives for one game: search engines leave it out of their
+         results. Its link preview below still works: noindex closes search,
+         not previews (robots.txt would close both) -->
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#1b4a36">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <!-- The installed app: its manifest, the iPhone's home-screen name and icon -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Consequences">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Consequences">
+
+    <!-- Link preview: the same card as on index.html (docs/publishing.md),
+         without og:url — one file serves every room, and an address here
+         would send the card to another page than the room it was shared for -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Consequences">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="Consequences · the folded-paper story game for friends">
+    <meta property="og:description" content="Play the classic parlour game remotely: everyone answers the same question, folds the answer away and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta property="og:image" content="https://story.escapist.club/img/og-image.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Consequences sign on a theatre curtain, and a sheet folded like an accordion: five answers folded away and the sixth question, How did it all end?, being answered.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Consequences · the folded-paper story game for friends">
+    <meta name="twitter:description" content="Play the classic parlour game remotely: everyone answers the same question, folds the answer away and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta name="twitter:image" content="https://story.escapist.club/img/og-image.jpg">
+    <meta name="twitter:image:alt" content="Consequences sign on a theatre curtain, and a sheet folded like an accordion: five answers folded away and the sixth question, How did it all end?, being answered.">
+
+    <!-- The sign's font, fetched before the stylesheet asks for it -->
+    <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
+    <link href="/kit/css/playbill.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/kit/js/app.js"></script>
+    <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
+    <script src="/kit/js/limits.js"></script>
+    <script src="/kit/js/notify.js"></script>
+    <script src="/js/utils.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <!-- The sign: the same drawing as index.html's, smaller (style.css) -->
+            <h1 class="brand brand--room">
+                <svg class="brand-sign" viewBox="0 0 600 232" role="img" aria-label="Consequences" focusable="false">
+                    <rect x="2" y="2" width="596" height="228" fill="#efe2c4" stroke="#2a1d17" stroke-width="4"/>
+                    <rect x="12" y="12" width="576" height="208" fill="none" stroke="#2a1d17" stroke-width="1.5"/>
+                    <polygon transform="translate(127 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                    <text class="brand-sign__small" x="302.5" y="45" text-anchor="middle" font-size="17" letter-spacing="5" fill="#2a1d17">THE PARLOUR STORY GAME</text>
+                    <polygon transform="translate(473 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                    <line x1="60" y1="58" x2="540" y2="58" stroke="#2a1d17" stroke-width="1.5"/>
+                    <text class="brand-sign__name" x="300" y="150" text-anchor="middle" font-size="92" textLength="500" lengthAdjust="spacingAndGlyphs" fill="#1d4f3a">CONSEQUENCES</text>
+                    <line x1="60" y1="174" x2="540" y2="174" stroke="#2a1d17" stroke-width="1.5"/>
+                    <text class="brand-sign__small" x="302" y="203" text-anchor="middle" font-size="16" letter-spacing="4" fill="#2a1d17">FOR FRIENDS &amp; FAMILY · PLAYED ONLINE</text>
+                </svg>
+            </h1>
+            <!-- The room code as a ticket stub (the kit's invitation fills it in) -->
+            <div class="room-ticket">
+                <span data-i18n="roomCode">Room Code</span>
+                <span id="roomCode"></span>
+            </div>
+        </div>
+
+        <!-- A newcomer to a round waits here for the lobby (the kit's room page
+             shows it and hides the room's cards; the room lets them in when the
+             next round begins) -->
+        <div class="game-card waiting-sheet" id="waitingSheet" hidden>
+            <h6 class="sheet-title" data-i18n="gameAlreadyOn">The game is already on</h6>
+            <div class="waiting-sheet__avatar" id="waitingAvatar"></div>
+            <div class="waiting-sheet__name" id="waitingName"></div>
+            <p role="status" data-i18n="waitForNextRound">A round is on. You will join the room when the next one begins.</p>
+            <button type="button" class="btn btn-outline-primary" id="cancelJoinRequest" data-i18n="cancel">Cancel</button>
+        </div>
+
+        <!-- The room's cards are the .container's children, each shown by
+             game-room.js for its part of the game: the lobby (the invitation,
+             the players, Start), the writing (the sheet in front of the player,
+             the table), the reading (the sheets, the table), every story -->
+        <div class="game-card mb-3" id="shareCard" hidden>
+            <h6 class="sheet-title" data-i18n="inviteFriends">Invite Friends</h6>
+            <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="shareLink" readonly data-i18n-aria-label="shareLinkLabel" aria-label="Room link">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
+                        📋 <span data-i18n="copyLink">Copy Link</span>
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-primary w-100" id="shareButton">
+                        📤 <span data-i18n="share">Share</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-card" id="playersCard" hidden>
+            <h5 class="sheet-title"><span data-i18n="players">Players</span> (<span id="playerCount">0</span>/12)</h5>
+            <div class="player-list" id="playerList"></div>
+            <div class="d-grid mt-3">
+                <button type="button" class="btn btn-primary btn-lg" id="startRound" data-i18n="startRound">Start</button>
+            </div>
+            <p class="form-text text-center mt-2 mb-0" id="startHint" data-i18n="needAnotherPlayer">One more player is needed: send them the link</p>
+        </div>
+
+        <!-- The writing: the sheet the player answers on - their own, or the
+             absent player's they took. The form stays in the page while the
+             table changes around it, so an answer being typed is never lost -->
+        <div class="game-card" id="writingCard" hidden>
+            <div class="step-line">
+                <span id="stepLabel"></span>
+                <span class="step-marks" id="stepMarks" aria-hidden="true"></span>
+            </div>
+            <h6 class="sheet-title" id="writingTitle" hidden></h6>
+            <div class="sheet">
+                <div id="folds"></div>
+                <div class="sheet__open">
+                    <form id="answerForm" novalidate>
+                        <div class="sheet__number" id="questionNumber"></div>
+                        <h2 class="sheet__question" id="questionText"></h2>
+                        <textarea class="form-control" id="answerText" rows="3" data-i18n-aria-label="yourAnswer" aria-label="Your answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer"></textarea>
+                        <div class="sheet__count" id="answerCount"></div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="foldAndPass" data-i18n="foldAndPass">Fold and pass on →</button>
+                        </div>
+                    </form>
+                    <p class="sheet__hint" id="sheetHint" role="status"></p>
+                    <!-- Not in a .d-grid: its display: grid !important would beat hidden -->
+                    <button type="button" class="btn btn-outline-primary w-100 mt-3" id="giveSheetBack" data-i18n="giveSheetBack" hidden>Give the sheet back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- The reading: the player's sheet, closed until they tap it, and the
+             sheets they read for the absent (game-room.js draws them) -->
+        <div class="game-card text-center" id="readingCard" hidden></div>
+
+        <!-- Every story, once the last sheet is open -->
+        <div class="game-card" id="storiesCard" hidden>
+            <h6 class="sheet-title" data-i18n="allStories">Every story</h6>
+            <div class="stories" id="storyList"></div>
+            <div class="d-grid mt-4">
+                <button type="button" class="btn btn-primary btn-lg" id="anotherRound" data-i18n="anotherRound">Another round</button>
+            </div>
+        </div>
+
+        <!-- The table: every seat of the round, who is writing or reading, who
+             is away and who answers or reads for them -->
+        <div class="game-card" id="seatsCard" hidden>
+            <h6 class="sheet-title" id="seatsTitle"></h6>
+            <ul class="seat-list" id="seatList"></ul>
+            <p class="waiting-newcomers mb-0 mt-2" id="waitingNewcomers" hidden></p>
+        </div>
+
+        <div class="game-card text-center">
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <button type="button" class="btn btn-outline-danger" id="newRound" hidden>
+                    🔄 <span data-i18n="newRound">New round</span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="leaveGame">
+                    🚪 <span data-i18n="leaveGame">Leave Game</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="page-foot text-center small pb-3">
+        <span data-app-version></span>
+    </footer>
+
+    <div class="modal fade" id="leaveModal" tabindex="-1" aria-labelledby="leaveModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leaveModalLabel" data-i18n="leaveModalTitle">🚪 Leave Game</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p data-i18n="leaveConfirmText">Are you sure you want to leave this game?</p>
+                </div>
+                <div class="modal-footer mobile-modal-footer">
+                    <button type="button" class="btn btn-secondary mobile-modal-btn" data-bs-dismiss="modal" data-i18n="cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger mobile-modal-btn" id="confirmLeave" data-i18n="confirmLeave">Yes, Leave Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A new round in the middle of one: its sheets are lost, so it asks first -->
+    <div class="modal fade" id="newRoundModal" tabindex="-1" aria-labelledby="newRoundModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newRoundModalLabel">🔄 <span data-i18n="newRound">New round</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p data-i18n="newRoundText">The sheets of this round will be lost. Start a new round?</p>
+                </div>
+                <div class="modal-footer mobile-modal-footer">
+                    <button type="button" class="btn btn-secondary mobile-modal-btn" data-bs-dismiss="modal" data-i18n="cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger mobile-modal-btn" id="confirmNewRound" data-i18n="confirmNewRound">Yes, a new round</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/kit/js/pwa.js"></script>
+    <script src="/kit/js/room-socket.js"></script>
+    <script src="/kit/js/wake-lock.js"></script>
+    <script src="/kit/js/invite.js"></script>
+    <script src="/kit/js/room-page.js"></script>
+    <script src="/js/game-room.js"></script>
+</body>
+</html>
