@@ -10,16 +10,112 @@
 /* exported i18n, getText, serverErrorText */
 /* global APP_STORAGE_PREFIX, translations, serverErrors */
 
-// The texts the kit's own code shows (pwa.js's update banner, the close button
-// of an alert); a game's dictionary may give its own instead
+// The texts of the shared parts: what the kit's scripts show, and the words of
+// the markup they work with (the landing form, the leave window, the waiting
+// screen, the invitation: the markup is each game's, its words are the kit's).
+// A game's dictionary may give its own text under the same key instead
 const KIT_TEXTS = {
     en: {
+        // The landing page: the name, the avatar, creating and joining (landing.js)
+        joinCreateGame: "Join or Create a Game",
+        yourName: "Your Name",
+        enterName: "Enter your name",
+        chooseAvatar: "Choose Your Avatar",
+        shuffleAvatars: "Show a different set of avatars",
+        uploadAvatar: "Upload your own avatar photo",
+        avatarNotImage: "Please choose an image file.",
+        avatarReadFailed: "Could not read this image. Try a different photo.",
+        avatarTooLarge: "This image could not be compressed enough. Try a different photo.",
+        roomCode: "Room Code",
+        roomCodePlaceholder: "ABC123",
+        roomCodeHelp: "Enter 6-character room code to join existing game",
+        joinGame: "Join Game",
+        createNewGame: "Create New Game",
+        roomCodeJoining: "Room Code (joining game)",
+        clearRoomCodeToCreate: "Clear room code to create a new game",
+        readyToJoin: "Ready to join room",
+        enterNameAvatar: "Just enter your name and avatar!",
+        pleaseEnterName: "Please enter your name first",
+        roomCodeLength: "Room code must be exactly 6 characters",
+        creating: "Creating...",
+        roomNotFound: "Room not found",
+        failedCreateGame: "Failed to create game. Please try again.",
+        failedJoinGame: "Failed to join game",
+        joinDeclined: "The players did not let you into the game",
+
+        // The room page: entering, leaving, the newcomer's waiting screen (room-page.js)
+        invalidRoomCode: "Invalid room code",
+        gameAlreadyOn: "The game is already on",
+        leaveGame: "Leave Game",
+        leaveModalTitle: "🚪 Leave Game",
+        leaveConfirmText: "Are you sure you want to leave this game?",
+        confirmLeave: "Yes, Leave Game",
+        cancel: "Cancel",
+        playerLeftNotification: "👋 {playerName} left the game",
+
+        // The invitation (invite.js)
+        inviteFriends: "Invite Friends",
+        shareLinkLabel: "Room link",
+        copyLink: "Copy Link",
+        copyRoomLink: "Copy Link",
+        share: "Share",
+        copiedSuccess: "✅ Copied!",
+
+        // Notifications (notify.js) and the update banner (pwa.js)
+        connectionError: "Connection error. Please try again.",
         close: "Close",
         updateAvailable: "🆕 Update Available!",
         updateDescription: "A new version of the app is ready. Reload to get the latest features.",
         updateNow: "Update Now"
     },
     ru: {
+        // The landing page: the name, the avatar, creating and joining (landing.js)
+        joinCreateGame: "Присоединиться или создать игру",
+        yourName: "Ваше имя",
+        enterName: "Введите ваше имя",
+        chooseAvatar: "Выберите аватар",
+        shuffleAvatars: "Показать другие аватары",
+        uploadAvatar: "Загрузить свою фотографию для аватара",
+        avatarNotImage: "Пожалуйста, выберите файл с изображением.",
+        avatarReadFailed: "Не удалось открыть это изображение. Попробуйте другое фото.",
+        avatarTooLarge: "Не удалось сжать это изображение. Попробуйте другое фото.",
+        roomCode: "Код комнаты",
+        roomCodePlaceholder: "ABC123",
+        roomCodeHelp: "Введите 6-символьный код комнаты для присоединения к существующей игре",
+        joinGame: "Войти в игру",
+        createNewGame: "Создать новую игру",
+        roomCodeJoining: "Код комнаты (присоединение к игре)",
+        clearRoomCodeToCreate: "Очистите код комнаты для создания новой игры",
+        readyToJoin: "Готов присоединиться к комнате",
+        enterNameAvatar: "Просто введите ваше имя и выберите аватар!",
+        pleaseEnterName: "Пожалуйста, введите ваше имя",
+        roomCodeLength: "Код комнаты должен содержать ровно 6 символов",
+        creating: "Создание...",
+        roomNotFound: "Комната не найдена",
+        failedCreateGame: "Не удалось создать игру. Попробуйте ещё раз.",
+        failedJoinGame: "Не удалось присоединиться к игре",
+        joinDeclined: "Игроки не впустили вас в игру",
+
+        // The room page: entering, leaving, the newcomer's waiting screen (room-page.js)
+        invalidRoomCode: "Неверный код комнаты",
+        gameAlreadyOn: "Игра уже идёт",
+        leaveGame: "Покинуть игру",
+        leaveModalTitle: "🚪 Покинуть игру",
+        leaveConfirmText: "Вы уверены, что хотите покинуть игру?",
+        confirmLeave: "Да, покинуть игру",
+        cancel: "Отмена",
+        playerLeftNotification: "👋 {playerName} покинул(а) игру",
+
+        // The invitation (invite.js)
+        inviteFriends: "Пригласить друзей",
+        shareLinkLabel: "Ссылка на комнату",
+        copyLink: "Скопировать",
+        copyRoomLink: "Скопировать ссылку",
+        share: "Поделиться",
+        copiedSuccess: "✅ Скопировано!",
+
+        // Notifications (notify.js) and the update banner (pwa.js)
+        connectionError: "Ошибка соединения. Попробуйте ещё раз.",
         close: "Закрыть",
         updateAvailable: "🆕 Доступно обновление!",
         updateDescription: "Новая версия приложения готова. Перезагрузите, чтобы получить последние функции.",

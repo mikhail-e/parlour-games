@@ -84,6 +84,8 @@
     <script src="/kit/js/app.js"></script>
     <script src="js/translations.js"></script>
     <script src="/kit/js/i18n.js"></script>
+    <script src="/kit/js/limits.js"></script>
+    <script src="/kit/js/notify.js"></script>
     <script src="js/utils.js"></script>
 </head>
 <body>
@@ -121,7 +123,7 @@
             <form id="playerForm">
                 <div class="mb-4">
                     <label for="playerName" class="form-label" data-i18n="yourName">Your Name</label>
-                    <!-- maxlength is set from MAX_NAME_LENGTH in js/game.js -->
+                    <!-- maxlength is set from MAX_NAME_LENGTH by the kit's landing.js -->
                     <input type="text" class="form-control" id="playerName" required data-i18n-placeholder="enterName" placeholder="Enter your name" autofocus>
                 </div>
 
@@ -216,7 +218,7 @@
 
     <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/kit/js/pwa.js"></script>
-    <script src="js/game.js"></script>
+    <script src="/kit/js/landing.js"></script>
 
 </body>
 </html>

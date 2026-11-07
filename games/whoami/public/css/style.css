@@ -168,7 +168,7 @@ input#roomCode {
   font-size: 1.2rem;
 }
 
-/* A code that came with the room link (/?join=CODE): game.js marks it */
+/* A code that came with the room link (/?join=CODE): the kit's landing.js marks it */
 input#roomCode.prefilled {
   background-color: #fff3cd;
 }
@@ -205,7 +205,7 @@ input#roomCode.prefilled {
 }
 
 /* Secondary buttons are an ink outline. btn-secondary is the windows' Cancel
-   and the landing page's Join/Create while they are off (game.js) */
+   and the landing page's Join/Create while they are off (the kit's landing.js) */
 .btn-outline-primary,
 .btn-outline-secondary,
 .btn-secondary {
@@ -805,8 +805,8 @@ body.waiting-for-admission .container > .game-card:not(#waitingSheet) {
   border-left-color: var(--gold);
 }
 
-/* A notification in the room (showNotification in utils.js): pinned to the
-   top right corner, over the page and below the windows */
+/* A notification in the room (the kit's showNotification, notify.js):
+   pinned to the top right corner, over the page and below the windows */
 .alert.notification {
   top: 20px;
   right: 20px;

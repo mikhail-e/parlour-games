@@ -84,9 +84,9 @@ async function roomWith(newPlayer, names) {
 }
 
 // Wait until the landing page has set itself up. Its buttons work only after
-// game.js has run: a click before that submits the form the old way and
-// reloads the page. The avatar grid is filled by the same setup, so 12 tiles
-// mean the buttons are ready - the moment a person would see the page
+// the kit's landing.js has run: a click before that submits the form the old
+// way and reloads the page. The avatar grid is filled by the same setup, so 12
+// tiles mean the buttons are ready - the moment a person would see the page
 async function waitForLanding(page) {
     await expect(page.locator('#avatarSelector .avatar-option')).toHaveCount(12);
 }
