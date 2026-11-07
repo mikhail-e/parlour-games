@@ -68,7 +68,7 @@ whoami импортирует серверные модули по пути в �
 
 Скрипт ядра (`bin` пакета) накладывает `packages/room-kit/public/` на `public/` игры: появляются `public/_headers` и `public/kit/`. Это копии: в git их нет (`.gitignore`: `games/*/public/kit/`, `games/*/public/_headers`), правят их только в ядре. Копирование:
 - **локально** запускает сам wrangler: в `games/whoami/wrangler.jsonc` раздел `build` — `command: "npm run build"`, `watch_dir` — папка `public/` ядра. Значит, `npm start` и оба сервера браузерных тестов (Playwright запускает `wrangler dev`) всегда стартуют со свежей копией, а `npm start` копирует заново, когда меняется файл ядра;
-- **в Workers Builds** — Build command `npm run build -w games/whoami`: раздел `build` из `wrangler.jsonc` Workers Builds, по документации, не выполняет. Если wrangler в Workers Builds всё же выполнит его ещё раз, это безвредно: копирование идемпотентно. Спайк покажет, сколько раз оно идёт, и это записывается в `docs/release.md`;
+- **в Workers Builds** — Build command `npm run build -w games/whoami`: раздел `build` из `wrangler.jsonc` Workers Builds, по документации, не выполняет. Спайк показал: `wrangler deploy` в Workers Builds выполняет его ещё раз. Это безвредно: копирование идемпотентно, второй раз ничего не пишет (`docs/release.md`);
 - пишет только изменившиеся файлы и каждый — через временный файл и переименование, удаляет из `public/kit/` то, чего в ядре больше нет. Два `wrangler dev` браузерных тестов копируют одновременно, и ни один не должен увидеть недописанный файл.
 
 Страницы подключают файлы ядра по адресам `/kit/js/...`, `/kit/vendor/bootstrap/...`, `/kit/fonts/...`. Для игрока меняются только адреса: содержимое файлов то же.
@@ -126,6 +126,14 @@ Bootstrap переезжает в `public/kit/vendor/bootstrap/` как есть
 Настройки `whoami-game` после выпуска: Build command `npm run build -w games/whoami`; build watch paths — include `games/whoami/*`, `packages/*`, `package.json`, `package-lock.json`. Остальное как было. `packages/*` — а не только `packages/room-kit/*`: любой общий пакет может касаться всех игр, лишняя сборка ничего не стоит, а пропущенная оставила бы прод на старом ядре.
 
 Спайк — как в move-to-monorepo: временный Worker `parlour-spike` с веткой прода `spike/room-kit`, в ней готовая ветка этого change, а в `games/whoami/wrangler.jsonc` имя `parlour-spike`, без `routes`, `workers_dev: true`. Проверяется: журнал сборки (Build command скопировал файлы; выполнил ли wrangler раздел `build` ещё раз), выкладка прошла, `/api/version` и `POST /api/create-game` отвечают, `/kit/js/room-socket.js` отдаётся с заголовками, весь браузерный набор whoami проходит против адреса спайка (`BASE_URL`), push с правкой только в `packages/` запускает сборку. Затем Worker и ветка удаляются. В репозиторий записываются только выбранные настройки и вывод: без поддомена workers.dev, ID аккаунта и фрагментов журнала.
+
+**Итог спайка.** Всё подтвердилось, менять план не пришлось:
+- Сборку запустил push с правкой только в `packages/room-kit/README.md`: watch path `packages/*` работает.
+- Пакеты поставил `npm clean-install` в корне по корневому `package-lock.json`. Ссылка на ядро и его bin `room-kit-copy-public` на месте, wrangler взят из lockfile.
+- Build command скопировал файлы ядра в `games/whoami/public/`.
+- `wrangler deploy` выполнил раздел `build` из `wrangler.jsonc` ещё раз (custom build) и ничего не скопировал: всё уже было на месте. Значит, в Workers Builds копирование идёт дважды и безвредно. Build command всё равно остаётся, потому что этот путь документирован; раздел `build` нужен для `npm start` и тестов.
+- Выкладка загрузила файлы `/kit/` и прошла. `/api/version` ответил версией whoami. `/game/<несуществующий код>` дал 302. `/kit/js/room-socket.js` и `/kit/fonts/fonts.css` отдались со статусом 200 и CSP. `POST /api/create-game` создал комнату.
+- Браузерный набор whoami против адреса спайка (`BASE_URL`) прошёл. Исключение одно, и оно по замыслу: тест «the cards name the site they are served from» сверяет адреса в карточках ссылки с адресом сайта, а карточки держат адрес прода.
 Альтернатива — сразу на прод: при ошибке копирования прод остался бы со страницами без скриптов и заголовков до отката. Отклонена.
 
 ### 12. Правила ядра — в его CLAUDE.md, игра их подключает

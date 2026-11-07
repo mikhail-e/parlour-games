@@ -8,7 +8,8 @@
 //   room-kit-copy-public <the game's public folder>
 //
 // A game runs it as its `build` script: wrangler runs that before `wrangler dev`
-// (wrangler.jsonc, "build"), Workers Builds as its Build command.
+// and `wrangler deploy` (wrangler.jsonc, "build"), Workers Builds as its Build
+// command as well.
 //
 // Two copies may run at once (the browser tests start two `wrangler dev`), so a
 // file is written only when it differs, through a temporary file renamed into

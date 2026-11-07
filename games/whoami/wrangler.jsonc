@@ -13,7 +13,8 @@
   // (packages/room-kit/CLAUDE.md). wrangler runs the command in the folder it
   // was started in - the game's for `npm start` and the browser tests, the
   // root's for Workers Builds - so the game is named, not its path. Workers
-  // Builds runs the same copy as its own Build command (docs/release.md).
+  // Builds runs the same copy first, as its own Build command, and `wrangler
+  // deploy` then finds the files in place (docs/release.md).
   // `npm start` copies again when a file of the kit changes
   "build": {
     "command": "npm run build -w whoami-game",

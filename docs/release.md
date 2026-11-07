@@ -15,9 +15,9 @@
 - репозиторий `mikhail-e/parlour-games`;
 - ветка прода — `master` (сама Cloudflare предлагает `main`: с ней push в `master` молча ничего не выкладывал бы); Preview Builds выключены;
 - Root directory — `/`, корень репозитория. Только там Workers Builds ставит пакеты из корневого `package-lock.json`. С папкой игры в Root directory npm ставит лишь пакеты самой игры, wrangler не находится, и `npx` скачивает его последнюю версию вместо закреплённой: выкладка проходит, но не тем инструментом;
-- команда сборки пустая. Если игре понадобится шаг сборки, он пишется сюда: `[build]` из `wrangler.jsonc` Workers Builds не выполняет;
+- команда сборки — `npm run build -w games/<игра>`: она копирует файлы ядра (`packages/room-kit/public/`) в `public/` игры, в git этих копий нет. Потом команда выкладки сама выполняет раздел `build` из `wrangler.jsonc`, то есть то же копирование ещё раз. Второе ничего не пишет: файлы уже на месте. Команду сборки в панели всё равно оставляют: по документации Cloudflare раздел `build` из `wrangler.jsonc` Workers Builds не выполняет;
 - команда выкладки — `npx wrangler deploy -c games/<игра>/wrangler.jsonc`;
-- Build watch paths: include `games/<игра>/*`, `package.json`, `package-lock.json`; exclude пусто. `*` захватывает и вложенные папки. Правка другой игры, `openspec/` или документов в корне игру не собирает; правка корневых `package.json` и `package-lock.json` собирает все игры.
+- Build watch paths: include `games/<игра>/*`, `packages/*`, `package.json`, `package-lock.json`; exclude пусто. `*` захватывает и вложенные папки. Правка другой игры, `openspec/` или документов в корне игру не собирает; правка общего кода в `packages/` и корневых `package.json` и `package-lock.json` собирает все игры. Именно `packages/*`, а не одна папка ядра: лишняя сборка ничего не стоит, а пропущенная оставила бы игру на старом общем коде.
 
 Имя Worker в панели совпадает с `name` в `games/<игра>/wrangler.jsonc`, иначе сборка падает.
 
