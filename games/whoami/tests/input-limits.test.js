@@ -1,6 +1,7 @@
 // The input limits (and the shape of a custom avatar) exist twice: once on the
-// server (game-logic.js) and once on the frontend (public/js/utils.js), because
-// a browser script cannot require() a Node module. This test fails if the two
+// server (game-logic.js; the name's and the photo's are the kit's players.js)
+// and once on the frontend (public/js/utils.js), because a browser script
+// cannot require() a Node module. This test fails if the two
 // copies ever drift apart, which would let the UI accept text the server
 // silently truncates or rejects. (The player ID's two copies are the kit's,
 // and so is their test.)
@@ -35,13 +36,14 @@ describe('Input limits stay in sync between server and frontend', () => {
 
     test('CUSTOM_AVATAR_PATTERN is character-for-character identical', () => {
         const readPattern = (filePath) => {
-            const source = fs.readFileSync(path.join(__dirname, '..', filePath), 'utf8');
+            const source = fs.readFileSync(filePath, 'utf8');
             const match = source.match(/const\s+CUSTOM_AVATAR_PATTERN\s*=\s*(\/[^\n]+\/[a-z]*);/);
             if (!match) throw new Error(`CUSTOM_AVATAR_PATTERN not found in ${filePath}`);
             return match[1];
         };
 
-        expect(readPattern('public/js/utils.js')).toBe(readPattern('game-logic.js'));
+        expect(readPattern(path.join(__dirname, '..', 'public/js/utils.js')))
+            .toBe(readPattern(require.resolve('@parlour-games/room-kit/shared/players')));
     });
 
     test('the limits are the agreed values', () => {

@@ -11,11 +11,15 @@ const path = require('path');
 const { translations, serverErrors } = require('../public/js/translations');
 const { KIT_TEXTS } = require('@parlour-games/room-kit/public/kit/js/i18n');
 
-// Every error text the server can send: game-logic.js, the Worker and the
-// room answer in English, as `error: '...'`, emit('error', '...') or
-// this.send(ws, 'error', '...'), in either quotes
-const SERVER_ERROR_TEXTS = [...new Set(['game-logic.js', 'worker/index.js', 'worker/room.js'].flatMap(file => {
-    const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+// Every error text the server can send: game-logic.js, the kit's players
+// list it takes, the Worker and the room answer in English, as `error: '...'`,
+// emit('error', '...') or this.send(ws, 'error', '...'), in either quotes
+const SERVER_FILES = [
+    ...['game-logic.js', 'worker/index.js', 'worker/room.js'].map(file => path.join(__dirname, '..', file)),
+    require.resolve('@parlour-games/room-kit/shared/players')
+];
+const SERVER_ERROR_TEXTS = [...new Set(SERVER_FILES.flatMap(file => {
+    const source = fs.readFileSync(file, 'utf8');
     return [...source.matchAll(/error:\s*(['"])(.+?)\1|emit\(\s*(['"])error\3\s*,\s*(['"])(.+?)\4|send\(\s*\w+\s*,\s*(['"])error\6\s*,\s*(['"])(.+?)\7/g)]
         .map(match => match[2] || match[5] || match[8]);
 }))];
