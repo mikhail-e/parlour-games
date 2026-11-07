@@ -9,12 +9,17 @@ The shared kit of the parlour games with rooms: one npm workspace package, `@par
 
 ## Layout
 ```
-package.json               # The package (private, no version), its bin (room-kit-copy-public), scripts and Jest settings; the tools are the root's devDependencies
-scripts/copy-public.js     # The copy of public/ into a game's public/ (the bin; a game's `npm run build`)
+package.json               # The package (private, no version), its bins (room-kit-copy-public, room-kit-icons, room-kit-og-image), scripts and Jest settings; the tools are the root's devDependencies
+scripts/
+├── copy-public.js         # The copy of public/ into a game's public/ (room-kit-copy-public; a game's `npm run build`)
+├── icons.js               # A game's app icons from its scripts/icon.html (room-kit-icons; a game's `npm run icons`)
+└── og-image.js            # A game's link preview picture from its scripts/og-image.html (room-kit-og-image; a game's `npm run og-image`)
 public/                    # Copied into every game's public/, at the same paths
 ├── _headers               # The security headers of the static files, with their reasons (not served)
 └── kit/
-    ├── js/                # The page scripts (classic <script> files): app.js, i18n.js, limits.js, notify.js, pwa.js; the landing page's landing.js; the room page's room-socket.js, wake-lock.js, invite.js, room-page.js
+    ├── js/                # The page scripts (classic <script> files): app.js, i18n.js, limits.js, notify.js, pwa.js; the landing page's landing.js; the room page's room-socket.js, wake-lock.js, invite.js, room-page.js; service-worker.js, the logic a game's sw.js loads
+    ├── css/playbill.css   # The playbill look of every game: colors, the curtain, sheets, buttons, fields, windows, alerts, avatars, the room ticket, player cards, the footer
+    ├── img/               # Images every game shows: Buy Me a Coffee's cup (bmc-cup.svg)
     ├── vendor/bootstrap/  # Bootstrap 5, the same files as the owner's other apps (exact version: the files' headers)
     └── fonts/             # Fira Sans Condensed (Latin + Cyrillic) for the text; Ultra, Oswald, Abril Fatface (Latin only) for whoami's sign and seal; woff2, their licenses, fonts.css with the @font-face rules
 worker/                    # ES modules, for the Worker only (wrangler bundles them)
@@ -28,7 +33,8 @@ shared/                    # CommonJS, for a game's rules (Jest) and the Worker
 checks.js                  # Checks of how code is written, for the kit's tests and every game's: shared script names, no inline code, the errors a server sends
 playwright.js              # The shared part of a game's Playwright config: projects, use, timeouts, the tests' wrangler dev
 e2e.js                     # The guard of a game's browser tests and its players (test, expect, newPlayer)
-tests/                     # Jest: the copy into a game, the two copies of the security headers, of the player ID's pattern and of the input limits, the players list, the server's errors and their copies, debugLog, translations, the page code
+docs/testing.md            # The tests of the games on the kit: commands, the two kinds, Playwright, players and the guard, the rules of the suite, debugging (in Russian, like every docs/)
+tests/                     # Jest: the copy into a game, the two copies of the security headers, of the player ID's pattern and of the input limits, the players list, the service worker, the server's errors and their copies, debugLog, translations, the page code
 eslint.mjs                 # The shared part of ESLint: the rules and one block per environment, the paths the same in the kit and in a game
 eslint.config.mjs          # ESLint of the kit itself, on eslint.mjs
 README.md                  # What the kit is and how a game takes it
@@ -127,13 +133,29 @@ One UUID per browser, `PLAYER_ID`, and a second one, the secret, `PLAYER_SECRET`
 `wake-lock.js`: `keepScreenAwake(true)` / `keepScreenAwake(false)` — the game says when (whoami: while a round is on), leaving the page lets go by itself. Silent, as in the owner's other apps (Western Setup): no control, no text; a browser without the Screen Wake Lock API or one that refuses (battery saver) shows nothing. The browser drops the lock whenever the page leaves the screen; coming back (`visibilitychange`) and any tap or key ask again — the tap also covers a browser that refuses a lock asked for without one. The Permissions-Policy must not forbid `screen-wake-lock` (`public/_headers`)
 
 ### PWA
-`pwa.js` registers the game's own service worker (`/sw.js` — which files it caches is the game's) and shows the "Update available" banner (kit's texts) at the top of `.container` when a new worker is installed; it checks for one every 30 seconds and whenever the page comes back on screen. `forceAppUpdate()` in the console updates by hand. Any change to a game's `sw.js` is a new worker, and every open page shows the banner
+`pwa.js` registers the game's own service worker (`/sw.js`) and shows the "Update available" banner (kit's texts) at the top of `.container` when a new worker is installed; it checks for one every 30 seconds and whenever the page comes back on screen. `forceAppUpdate()` in the console updates by hand.
+- **The service worker caches icons and nothing else** (`service-worker.js`): a game lives on its server, so offline support is pointless, and caching HTML/JS only ever left players on an old version. The worker exists for installability and free icon caching. A game's `sw.js` names its cache and its icons and hands them over: `importScripts('/kit/js/service-worker.js'); cacheIconsOnly(CACHE_NAME, iconAssets);`. Icons are matched by **exact pathname** (a substring check once matched every URL, `'/'` being in the list); everything else goes to the network untouched. A new cache name drops the old cache: a game bumps it when its icons change. `tests/service-worker.test.js` runs the logic in a made-up worker scope; a game's own test keeps its list to icons
+- **Any change to a game's `sw.js` or to the kit's `service-worker.js` is a new worker** of that game, or of every game: browsers compare the imported script too, and every open page shows the banner. Change them only for a real reason
 
 ### Security headers
 The Content Security Policy, Referrer-Policy, Permissions-Policy, nosniff — the list of the owner's Flying Solo — on every answer of every game: `public/_headers` (copied into each game) puts them on the static files, and a game's Worker on its own answers from `worker/security-headers.json`. The two are deliberate copies (`tests/security-headers.test.js` keeps them equal); the reasons are written in `_headers`, as JSON holds no comments. **One list for every game**: a source one game needs is allowed for all, so each reason in `_headers` says whose it is (`data:` and `blob:` images: the photo avatars of the kit's landing page, and Bootstrap's icons). A game's `site-headers.spec.js` checks what a browser gets — and so catches a copy that did not happen
 
 ### Fonts
-The games' own files (`public/kit/fonts/`, Fontsource; licenses next to them: Ultra's is Apache 2.0, the others' SIL OFL), never a CDN: the CSP allows fonts only from the game's site. `fonts.css` next to them holds the `@font-face` rules, and a page links it before its own style sheet; a game's style sheet only names the families. Latin and Cyrillic are separate files by `unicode-range` (the browser downloads Cyrillic only for a page that has it), and there are no italic files (nothing is italic; the browser would slant the letters itself). Ultra and Abril Fatface have `font-display: block`: a logo flashing in a fallback serif looks worse than a short pause. Which face sets what is a game's look (whoami's CLAUDE.md, Fonts)
+The games' own files (`public/kit/fonts/`, Fontsource; licenses next to them: Ultra's is Apache 2.0, the others' SIL OFL), never a CDN: the CSP allows fonts only from the game's site. `fonts.css` next to them holds the `@font-face` rules, and a page links it before the style sheets (`playbill.css`, then the game's); a game's style sheet only names the families. Latin and Cyrillic are separate files by `unicode-range` (the browser downloads Cyrillic only for a page that has it), and there are no italic files (nothing is italic; the browser would slant the letters itself). Ultra and Abril Fatface have `font-display: block`: a logo flashing in a fallback serif looks worse than a short pause. Fira Sans Condensed sets the text of every game (`playbill.css`); which face sets a game's sign is the game's look (whoami's CLAUDE.md, Fonts)
+
+### The playbill look
+`public/kit/css/playbill.css`: the look every game shares — a parlour-game playbill: cream paper, dark brown ink, red, on a theatre curtain. A page links Bootstrap, the kit's `fonts.css`, `playbill.css`, then the game's `style.css`, which adds what is the game's own (whoami: its sign, the character tags, the envelope and seal, the waiting seal, the join request window) and may use the kit's tokens. What one game draws never goes here
+- **Colors are tokens on `:root`** (`--paper`, `--paper-light`, `--ink`, `--ink-soft`, `--red`, `--gold`, `--on-page`…); a game adds its own tokens in a `:root` of its style sheet. Bootstrap is repainted through its own variables — `--bs-btn-*` for buttons, `--bs-secondary-color` (so `text-muted` and `form-text` are `--ink-soft`), `--bs-modal-*`, `--bs-alert-*` — never `!important`. The main button is ink, secondary buttons an ink outline; **red only for accents and for what cannot be undone** (`btn-danger`, `btn-outline-danger`)
+- **The classes it draws**: the curtain on `body`, `.container`, the sheet `.game-card` with its `.sheet-title`, `.tagline` on the curtain, fields and labels, the landing form's `#roomCode` (`.prefilled`), `.avatar-selector` with `.avatar-option` and the `.avatar-shuffle-btn` buttons, `.room-ticket` (the room code in the room's header), `.player-list` with `.player-card`, `.player-avatar`, `.player-name`, the waiting screen (`.waiting-sheet`, `body.waiting-for-admission` hides the room's ticket and sheets), the language button, `.page-foot` with the coffee plate `.bmc-button`, alerts and `.notification`, windows (`.modal`; on a phone `.mobile-friendly-modal`, `.mobile-modal-footer`, `.mobile-modal-btn`), `.desktop-only`
+- **Hover effects only for a mouse** — a `:hover` rule goes inside `@media (hover: hover) and (pointer: fine)`: on a touch screen the hover state sticks after a tap (a game's `styles.spec.js` reads both style sheets as the browser took them and checks)
+- **Buy Me a Coffee** is a plain link, not the service's widget script (the CSP allows only the game's own code): a small playbill plate, `.bmc-button`, in a game's landing page footer. The cup in it is the service's own logo, unchanged (`public/kit/img/bmc-cup.svg`, `/kit/img/bmc-cup.svg` on a page) — their terms forbid changing their marks
+- A change here is a change of every game's look: look at every game's screens after it
+
+### Pictures
+A game's app icons and link preview picture are its brand, drawn in its own sources outside `public/` (never served); the kit's commands take them with Playwright's Chromium and write into the game's `public/`. Run in the game's folder:
+- `room-kit-icons` (a game's `npm run icons`): `scripts/icon.html` → the manifest's PNGs (`public/icons/icon-48x48.png` … `icon-512x512.png`), the iPhone's `apple-touch-icon.png` and `public/favicon.ico` (16, 32 and 48 px as PNGs inside the ICO). The game bumps its icon cache name after it (PWA)
+- `room-kit-og-image` (a game's `npm run og-image`): `scripts/og-image.html`, 1200×630, with the sign of `public/index.html` (`svg.brand-sign`) put into its `.sign-slot`, saved as JPEG where the landing page's `og:image` points. Messengers keep a picture by its address: a new look gets a new file name in the pages' tags, and the command follows it
+- The emoji in a picture are drawn by the system's emoji font of the computer that takes it: a picture taken again elsewhere may differ in them
 
 ## Rules
 1. **Debug output goes through `debugLog()`** (`app.js`), never `console.log` in a page script (ESLint's `no-console` fails on it, `eslint.mjs`). It prints only after `localStorage.setItem('<prefix>-debug', 'on')` and a reload; `console.warn`/`console.error` are for real problems. The Worker and the rooms keep `console.log`: it is what Workers Logs show
@@ -148,7 +170,7 @@ The games' own files (`public/kit/fonts/`, Fontsource; licenses next to them: Ul
 - **Locally the Worker sees the production host** in `request.url`: `wrangler dev` takes it from the route in wrangler.jsonc. It turns that host back into the local one in a `Location` header, so a redirect stays local; anything else built from `request.url` — an absolute link in an answer, a check of the browser's `Origin` against the host — would name production or fail locally. Answer with paths
 - **A new or renamed room class needs a new migration entry** in a game's wrangler.jsonc (`migrations`: `new_sqlite_classes` for a new class — SQLite storage is the kind the free plan has —, `renamed_classes` for a new name); a migration that deletes a class deletes every room's storage with it
 - **A game's `public/` is uploaded as it is**, the kit's copy included: a file in it is a file of the site, unless the game's `public/.assetsignore` names it (`.DS_Store` from a Mac); `_headers` and `.assetsignore` themselves are not served
-- **A new `bin` of the kit needs its link renewed**: `npm install` answers "up to date" and links nothing. Remove `node_modules/@parlour-games/room-kit` and run `npm install` again: the lockfile then records the bin, and `npm clean-install` in Workers Builds links it
+- **A new `bin` of the kit needs its link renewed**: `npm install` answers "up to date" and links nothing. Remove `node_modules/@parlour-games/room-kit` and run `npm install` twice: the first records the bin in the lockfile, the second links it into `node_modules/.bin`; `npm clean-install` in Workers Builds links it from the lockfile
 
 ## Decisions (why it is so)
 The owner's decisions, with the reason.
@@ -156,5 +178,6 @@ The owner's decisions, with the reason.
 - **The kit's browser files reach a game by a copy at build time**, not by symlinks in git (wrangler means to skip symlinks in the static files and uploads them only by accident: a fix on its side would silently drop the kit's files from production), not served by the Worker (every file would be a request of the day's limit, where static files are free), not as committed copies (every file twice: what the monorepo avoids)
 - **One list of security headers for every game**: the games follow one policy, the list of the owner's Flying Solo
 - **Bootstrap is local, not on a CDN**: the Content Security Policy allows only the game's own site, and the owner's apps share one Bootstrap
-- **The fonts are the kit's**: the games share the playbill typography; which face sets what stays each game's look
+- **The fonts are the kit's**: the games share the playbill typography; which face sets a game's sign stays its look
+- **The playbill look is the kit's** (`playbill.css`), a game's sign and field are the game's: the games are one collection, and a fix of the shared look reaches every game instead of living in copies
 - **The kit's behaviour is tested through the games' browser tests**, never by tests of its own on a page of its own: a game's pages use the kit as players do. The kit's Jest tests check its files — the copies, the two copies of a value, the rules about how code is written, the logic that runs without a page (`debugLog`, the translations)

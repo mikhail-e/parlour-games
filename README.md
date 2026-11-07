@@ -41,7 +41,7 @@ The code is released under the [MIT License](LICENSE).
 
 The license does not cover the games' brands. For "Who am I?": the "WHO AM I?" sign (`svg.brand-sign` in the pages), the wax-seal app icon (`games/whoami/public/icons/`, `games/whoami/public/favicon.ico`, `games/whoami/scripts/icon.html`) and the link preview picture (`games/whoami/public/img/og-image-2.jpg`, `games/whoami/scripts/og-image.html`). All rights to them are reserved (except the emoji avatars in the picture, drawn by the system's emoji font); a copy of a game must replace them with its own.
 
-Third-party files keep their own licenses: the fonts in `packages/room-kit/public/kit/fonts/` (SIL Open Font License; Ultra — Apache License 2.0; the license files are next to the fonts) and Bootstrap in `packages/room-kit/public/kit/vendor/bootstrap/` (MIT). The cup in the Buy Me a Coffee button (`games/whoami/public/img/bmc-cup.svg`) is Buy Me a Coffee's logo.
+Third-party files keep their own licenses: the fonts in `packages/room-kit/public/kit/fonts/` (SIL Open Font License; Ultra — Apache License 2.0; the license files are next to the fonts) and Bootstrap in `packages/room-kit/public/kit/vendor/bootstrap/` (MIT). The cup in the Buy Me a Coffee button (`packages/room-kit/public/kit/img/bmc-cup.svg`) is Buy Me a Coffee's logo.
 
 ## Credits
 

@@ -12,7 +12,7 @@ Parlour games to play remotely with friends and family. Each game is a web app w
 package.json               # parlour-games (private): npm workspaces games/* and packages/*, the tools of every game (devDependencies), scripts that run every workspace's
 package-lock.json          # The one lockfile: the exact version of every package, for every game
 games/<game>/              # A game, whole: Worker, pages, tests, configs, package.json (name, version, scripts, the kit in dependencies), README, CLAUDE.md, docs
-packages/room-kit/         # The shared kit of the games (an npm workspace package, private, no version): its code, tests, CLAUDE.md, README
+packages/room-kit/         # The shared kit of the games (an npm workspace package, private, no version): its code, tests, docs (testing.md: the games' tests), CLAUDE.md, README
 docs/release.md            # Git flow, versions, releasing a game, the Workers Builds settings, the check of production
 openspec/                  # OpenSpec: config.yaml, the current behaviour (specs/), changes in progress (changes/), finished ones (changes/archive/)
 .claude/                   # Claude Code: settings.json (shared), the OpenSpec commands (commands/opsx/) and skills (skills/openspec-*)
