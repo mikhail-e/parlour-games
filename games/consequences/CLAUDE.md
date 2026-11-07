@@ -24,7 +24,7 @@ npm run test:e2e                   # Browser tests only (Playwright); :headed an
 
 ## Architecture
 ```
-package.json               # The game's name, version (/api/version reads it), the kit in dependencies, scripts (build: the kit's copy) and Jest settings; the tools are the root's devDependencies
+package.json               # The game's name, version (/api/version reads it), the kit in dependencies, scripts (build: the kit's copy; icons: the kit's room-kit-icons) and Jest settings; the tools are the root's devDependencies
 wrangler.jsonc             # Cloudflare: the Worker, the kit's copy before serving (build), npm start's port (8788), the static files of public/, the rooms' Durable Object class and its migrations
 worker/
 ├── index.js               # The Worker: the kit's frame (version, HEAD, 404, failures, security headers) with the kit's room addresses (create, join, room page, socket)
@@ -36,15 +36,21 @@ public/
 ├── index.html             # Landing page: the sign, the rules; the kit's form (name, avatar, create/join)
 ├── game.html              # Game room page, noindex: the waiting screen, the lobby (invitation, players, Start), the writing sheet, the reading, every story, the table, New round and Leave with their windows
 ├── 404.html               # Page for an address nothing answers (sent with status 404; links start at /)
+├── manifest.json          # PWA manifest
+├── sw.js                  # Service worker: the icons' cache name and list, handed to the kit's logic (icons only; everything else straight to the network)
+├── favicon.ico, icons/    # The app icon (the sheet folded like an accordion): PNG 48–512, apple-touch-icon.png, favicon.ico — taken by `npm run icons`
+├── robots.txt             # Nothing disallowed: room pages keep out of search by their noindex
+├── llms.txt               # The game in plain text, for assistants reading the site
 ├── css/style.css          # The game's own look on the kit's playbill.css: its color (the accent and the curtain), the sign, the sheet folded like an accordion, the table, the stories
 └── js/                    # The game's page scripts; the kit's come from /kit/js/
     ├── config.js          # The game's settings for the kit's scripts: the prefix of its keys in localStorage ('consequences'), loaded first
     ├── translations.js    # The game's texts (en/ru) and the Russian copies of the server's errors; the kit's i18n.js shows them
     ├── utils.js           # The game's shared page code: the answer's length limit, the fewest players of a round — the game's reusable page code goes HERE
     └── game-room.js       # The game's part of the room page, on the kit's room-page.js: draws the lobby and the round from currentGame, sends the game's moves
-tests/                     # Jest: game logic, the round in the room's storage, the texts (translations.test.js), checks of deliberate copies and of how code is written
-└── e2e/                   # Playwright: the game in Chromium (phone + desktop), several players per room — the landing page, the room, its timers, the writing, the reading, newcomers, languages, the answers' secrecy, the HTTP API; helpers.js, on the kit's guard and helpers, with the round's own (docs/testing.md)
+tests/                     # Jest: game logic, the round in the room's storage, the texts (translations.test.js), the manifest and the service worker, checks of deliberate copies and of how code is written
+└── e2e/                   # Playwright: the game in Chromium (phone + desktop), several players per room — the landing page, the room, its timers, the writing, the reading, newcomers, languages, the answers' secrecy, the site (headers, icons, 404, the service worker), accessibility (axe), the HTTP API; helpers.js, on the kit's guard and helpers, with the round's own (docs/testing.md)
 playwright.config.js       # Browser tests on the kit's shared config: own wrangler dev on 3200 (and 3201 with short room timers), mobile + desktop
+scripts/icon.html          # The source of the app icons; `npm run icons` (the kit's room-kit-icons) takes every size and favicon.ico (not served)
 README.md                  # What the game is, how to run it
 docs/testing.md            # The game's tests: what they check by the files' text, the two test servers, the round's helpers, the special tests
 .claude/skills/verify/     # How to run and drive the game to check a change by hand
@@ -67,22 +73,25 @@ Releases, the license and the security policy are the repository's: root `docs/r
 - **The kit and the game:** what knows nothing of the game is the kit's; the game's part is `worker/room.js` (its moves), `game-logic.js` (its rules and its hooks for the players list), the pages' markup, `style.css` (its own look), `game-room.js` (its field and events) and its brand. When unsure where code goes, it goes into the game's part
 
 ## Rules (important!)
-1. **No code duplication across files** — code every game shares goes to the kit (`packages/room-kit/`)
-2. **Update tests whenever logic changes**: a game rule → Jest with `game-logic.js`; what the player sees or does → a browser test in `tests/e2e/` (the kit's `docs/testing.md`). Run `npm test` before committing
-3. **Localize all UI text** — every user-facing string of the game needs both `en` and `ru` entries in `public/js/translations.js` (the kit's rule and its `data-i18n*` attributes: `packages/room-kit/CLAUDE.md`, Translations); a text the kit already has is the kit's, not repeated. An error the server sent is shown through `serverErrorText()`; `serverErrors` holds the Russian copies of the game's own errors (game-logic.js, worker/), keyed by the English text. `tests/translations.test.js` fails if a key is in one language only, the placeholders differ, a kit's text is repeated, or a text the server sends has no copy (the kit's `translationProblems`). Rewording a server error means rewording its key too, and `LOST_RACES` in game-room.js compares some of them itself
-4. **Never build DOM from user data with `innerHTML`** — player names and answers go through `textContent`, avatars through the kit's `renderAvatar()`
-5. **Debug output goes through `debugLog()`** — the kit's rule (`packages/room-kit/CLAUDE.md`, Rules); here it prints after `localStorage.setItem('consequences-debug', 'on')` and a reload
-6. **The pages share names through plain `<script>` files** — the kit's rule; the game's scripts take the kit's names and give the kit `APP_STORAGE_PREFIX` (config.js), `translations` and `serverErrors` (translations.js); `tests/shared-names.test.js` checks the game's scripts and the kit's together
-7. **Only the game's own code runs on its pages** — the kit's rule: no `style="..."` or `on...="..."` attributes; `tests/code-structure.test.js` checks the game's pages and scripts, the browser tests' guard any other blocked code
+1. **Bump the icon cache version in `CACHE_NAME`** (public/sw.js, `consequences-game-v1` → `v2`) **when you change the icons** (drawn in `scripts/icon.html`, taken by `npm run icons`). Only icons are cached, so HTML/CSS/JS changes reach players without it. This is not the app version — that one is in package.json
+2. **No code duplication across files** — code every game shares goes to the kit (`packages/room-kit/`)
+3. **Update tests whenever logic changes**: a game rule → Jest with `game-logic.js`; what the player sees or does → a browser test in `tests/e2e/` (the kit's `docs/testing.md`). Run `npm test` before committing
+4. **Localize all UI text** — every user-facing string of the game needs both `en` and `ru` entries in `public/js/translations.js` (the kit's rule and its `data-i18n*` attributes: `packages/room-kit/CLAUDE.md`, Translations); a text the kit already has is the kit's, not repeated. An error the server sent is shown through `serverErrorText()`; `serverErrors` holds the Russian copies of the game's own errors (game-logic.js, worker/), keyed by the English text. `tests/translations.test.js` fails if a key is in one language only, the placeholders differ, a kit's text is repeated, or a text the server sends has no copy (the kit's `translationProblems`). Rewording a server error means rewording its key too, and `LOST_RACES` in game-room.js compares some of them itself
+5. **Never build DOM from user data with `innerHTML`** — player names and answers go through `textContent`, avatars through the kit's `renderAvatar()`
+6. **Debug output goes through `debugLog()`** — the kit's rule (`packages/room-kit/CLAUDE.md`, Rules); here it prints after `localStorage.setItem('consequences-debug', 'on')` and a reload
+7. **The pages share names through plain `<script>` files** — the kit's rule; the game's scripts take the kit's names and give the kit `APP_STORAGE_PREFIX` (config.js), `translations` and `serverErrors` (translations.js); `tests/shared-names.test.js` checks the game's scripts and the kit's together
+8. **Only the game's own code runs on its pages** — the kit's rule: no `style="..."` or `on...="..."` attributes; `tests/code-structure.test.js` checks the game's pages and scripts, the browser tests' guard any other blocked code
 
 ## Gotchas
 - **The answer's length limit (200) and the fewest players of a round (2) exist twice** — the server's in `game-logic.js` and `public/js/utils.js` for the browser (a browser script cannot `require()` a Node module); `tests/input-limits.test.js` fails if they drift apart. The limit is counted by character, not UTF-16 code unit, like a name: an emoji counts as one
 - **The list's order is the order of first joins** (the kit's): Jest tests that join several players advance fake time between the joins, as people never join in one millisecond — with equal join times a returning leaver would not get their place back
 - `game-logic.js` must stay free of Cloudflare imports (CommonJS) so Jest tests it in Node; its functions take a `Map` of games, and a room passes a Map of its one game
 - **The sign** ("CONSEQUENCES", in whoami's frame) is an inline `<svg class="brand-sign">` in three deliberate copies — index.html and game.html (the `h1`), 404.html (a `<p>`: its `h1` is "Page not found"); `tests/brand-sign.test.js` keeps them equal (the kit's `brandSignProblems`). It is a logo: English in both languages (Oswald, its face, has no Cyrillic), `aria-label="Consequences"`, and its `h1` carries **no** `data-i18n` — the Russian name, «Чепуха», is in the subtitle and the tab's title. Its fonts come from style.css by class (a `<style>` inside the SVG is inline code the CSP blocks); the name's fill is written in the markup, the same color as `--accent`. Oswald has a `preload` in the three pages
-- **The game's color is bottle green**: style.css sets the kit's `--accent`, `--accent-tint`, `--curtain-top` and `--curtain-bottom` on its `:root` (the kit's CLAUDE.md, The playbill look); red stays the kit's, for what cannot be undone. The app's color `#1b4a36` (the top of the curtain) is written in the three pages' `theme-color`
+- **The game's color is bottle green**: style.css sets the kit's `--accent`, `--accent-tint`, `--curtain-top` and `--curtain-bottom` on its `:root` (the kit's CLAUDE.md, The playbill look); red stays the kit's, for what cannot be undone. The app's color `#1b4a36` (the top of the curtain) is written in the three pages' `theme-color` and in the manifest (`tests/manifest.test.js` keeps them equal to `--curtain-top`)
 - **`hidden` loses to Bootstrap's display utilities**: `.d-grid`, `.d-flex` and the like set `display` with `!important`, and so does Bootstrap's `[hidden]` — the utility comes later and wins. An element the script shows and hides (`hidden`) never carries one: put the utility on a wrapper that always shows, or use `w-100` on the button itself (`#giveSheetBack`)
 - **The answer is counted by characters in the page too**: no `maxlength` on the field (it counts UTF-16 units, an emoji two); the counter shows `n/200` as a person counts, and over the limit the button is off. An empty answer is not sent: the field keeps the focus
+- **The service worker caches icons and nothing else** — the kit's logic (`packages/room-kit/CLAUDE.md`, PWA); `public/sw.js` holds only the cache name and the icons, and `tests/service-worker.test.js` fails if anything else is added to the list. **Any change to sw.js, even a comment, is a new worker** (and so is a change to the kit's `service-worker.js`): every open page shows the "Update available" banner, so edit it only for a real reason
+- **`public/` is uploaded as it is** (the kit's Gotchas): `public/.assetsignore` names `.DS_Store`; `_headers` and `.assetsignore` themselves are never served (`not-found.spec.js` checks)
 - **`npm start` listens on 8788, its inspector on 9238** (`dev` in wrangler.jsonc), the browser tests on 3200 and 3201 (inspectors 9232, 9233): whoami's are 8787 with wrangler's default 9229, 3100 and 3101 (9230, 9231), so both games can run side by side, their tests too. Without its own inspector port the second `npm start` would take 9230 and stop whoami's tests
 
 ## Git Workflow

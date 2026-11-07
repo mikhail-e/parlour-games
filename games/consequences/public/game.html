@@ -6,6 +6,15 @@
     <title data-i18n="title">Consequences</title>
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#1b4a36">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <!-- The installed app: its manifest, the iPhone's home-screen name and icon -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Consequences">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Consequences">
     <!-- The sign's font, fetched before the stylesheet asks for it -->
     <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
@@ -190,6 +199,7 @@
     </div>
 
     <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/kit/js/pwa.js"></script>
     <script src="/kit/js/room-socket.js"></script>
     <script src="/kit/js/wake-lock.js"></script>
     <script src="/kit/js/invite.js"></script>

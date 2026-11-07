@@ -17,7 +17,7 @@ npx playwright test tests/e2e/writing.spec.js --project=desktop   # один ф�
 - `code-structure.test.js`: ни `style="..."`, ни `on...="..."` в страницах и скриптах игры (`inlineCodeProblems` ядра);
 - `shared-names.test.js`: общие имена скриптов страниц — игры и ядра вместе (`sharedNameProblems` ядра);
 - `translations.test.js`: оба языка словаря, одинаковые подстановки, словарь не повторяет тексты ядра, у каждой ошибки сервера есть русская копия (`translationProblems` ядра);
-- сверка копий, которые игра держит намеренно: предел ответа в `game-logic.js` и в `utils.js` (`input-limits.test.js`), три копии вывески (`brand-sign.test.js`).
+- сверка копий, которые игра держит намеренно: предел ответа и наименьшее число игроков в `game-logic.js` и в `utils.js` (`input-limits.test.js`), три копии вывески (`brand-sign.test.js`), цвет приложения в страницах, манифесте и `--curtain-top` (`manifest.test.js`), список иконок service worker (`service-worker.test.js`: только иконки, и все они есть).
 
 ## Серверы тестов
 
@@ -48,4 +48,6 @@ Playwright запускает два `wrangler dev` (`playwright.config.js`):
 - **Гонки**: «Ответить за» у двоих сразу (`writing.spec.js`) — лист достаётся одному, другой видит, кто пишет, и никакого окна с ошибкой: проигранная гонка — не сбой (`LOST_RACES` в `game-room.js`).
 - **Экран не гаснет**: `writing.spec.js` спрашивает настоящий Chromium с разрешением `screen-wake-lock` и оборачивает `navigator.wakeLock.request`, чтобы видеть выданные блокировки. Подмена браузера с отказами и скрытой страницей — у whoami (`wake-lock.spec.js`): это поведение ядра.
 - **HTTP API**: `api.spec.js` — без страницы, только в проекте `desktop`.
+- **Сайт**: `site.spec.js` — ничего с чужих сайтов, заголовки безопасности у каждого вида адреса (статические файлы — из `_headers` ядра, API и комнаты — из копии в Worker), версия в подвале, иконки, регистрация service worker, баннер обновления (подставной: выпуск в тесте не устроить); `not-found.spec.js` — страница 404 и адреса, которых у игры нет. Что `/_headers` и `/.assetsignore` не отдаются, обеспечивает wrangler: из кода игры этого не сломать, тест сторожит платформу.
+- **Доступность**: `accessibility.spec.js` — axe (WCAG 2.1 AA) на главной, в лобби, на письме, на чтении, во всех историях, на экране ожидания, в окнах и на баннере обновления; переходы цветов на время проверки выключены правилом в `style.css` страницы.
 - **Журнал игры** в консоли теста: `await player.page.evaluate(() => localStorage.setItem('consequences-debug', 'on'))` и перезагрузка.
