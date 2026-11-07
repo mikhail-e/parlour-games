@@ -56,7 +56,7 @@ test("a tapped sheet opens: eight answers, each under its question in the reader
     await startRound(players);
     await writeToReading(players);
     await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'ru', { opened: 0, count: 3 }));
-    await expect(ownSheet(anna.page).locator('.closed-sheet')).toContainText(text('tapToUnfold', 'ru'));
+    await expect(ownSheet(anna.page).locator('.closed-sheet')).toContainText(text('tapToOpen', 'ru'));
     // The writing's New round is there in the reading too
     await expect(anna.page.locator('#newRound')).toBeVisible();
 

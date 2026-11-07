@@ -67,7 +67,7 @@ test('a sent answer is folded away: the field closes, and the player sees who is
     await answer(anna, 'A pirate grandmother');
 
     await expect(anna.page.locator('#answerForm')).toBeHidden();
-    await expect(anna.page.locator('#sheetHint')).toHaveText(text('answerFolded', 'en', { name: 'Boris' }));
+    await expect(anna.page.locator('#sheetHint')).toHaveText(text('answerSaved', 'en', { name: 'Boris' }));
     await expect(anna.page.locator('#folds .fold')).toHaveCount(1);
     await expect(seatRow(anna.page, 'Anna')).toContainText(text('statusDone'));
     await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusWriting'));

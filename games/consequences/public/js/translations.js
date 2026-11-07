@@ -8,9 +8,9 @@ const translations = {
     en: {
         // The landing page
         title: "Consequences",
-        subtitle: "The classic folded-paper story game, for friends and family",
+        subtitle: "The classic parlour story game, for friends and family",
         howToPlay: "How to Play",
-        rule1: "Everyone answers the same question on their own sheet, folds the answer away and passes the sheet on",
+        rule1: "Everyone answers the same question on their own sheet and passes the sheet on: nobody sees what was written before",
         rule2: "Eight questions: who, with whom, when, where, what they were doing, how it ended, what people said, the moral",
         rule3: "At the end everyone reads out the story that came to them",
 
@@ -36,7 +36,7 @@ const translations = {
         yourAnswer: "Your answer",
         saveAndPass: "Save and pass on →",
         answerKeys: "Enter to send · Shift + Enter for a new line",
-        answerFolded: "Your answer is folded away. The sheet goes on to your neighbour, {name}, when everyone has answered.",
+        answerSaved: "Your answer is saved. The sheet goes on to your neighbour, {name}, when everyone has answered.",
         answeredForYou: "{name} is answering for you on this step: you answer from the next one.",
         sheetOfPlayer: "{name}'s sheet",
         giveSheetBack: "Give the sheet back",
@@ -52,7 +52,7 @@ const translations = {
         // Reading: the sheets, every story
         storiesReady: "The stories are ready",
         readAloud: "Read out the sheet that came to you",
-        tapToUnfold: "Tap to unfold",
+        tapToOpen: "Tap to open",
         yourSheet: "Your sheet",
         othersWillSee: "Everyone sees every story once all the sheets are open",
         openedCount: "{opened} of {count} sheets open",
@@ -75,9 +75,9 @@ const translations = {
     ru: {
         // The landing page
         title: "Чепуха",
-        subtitle: "«Чепуха» — классическая игра на сложенных листах, для друзей и семьи",
+        subtitle: "«Чепуха» — классическая салонная игра в истории, для друзей и семьи",
         howToPlay: "Как играть",
-        rule1: "Все отвечают на один вопрос — каждый на своём листе, — загибают ответ и передают лист дальше",
+        rule1: "Все отвечают на один вопрос — каждый на своём листе — и передают лист дальше: прежних ответов никто не видит",
         rule2: "Восемь вопросов: кто, с кем, когда, где, что делали, чем всё закончилось, что сказали люди, какая мораль",
         rule3: "В конце каждый читает вслух историю, которая к нему пришла",
 
@@ -103,7 +103,7 @@ const translations = {
         yourAnswer: "Ваш ответ",
         saveAndPass: "Сохранить и передать →",
         answerKeys: "Enter — отправить · Shift + Enter — новая строка",
-        answerFolded: "Ответ загнут. Лист уйдёт к соседу ({name}), когда ответят все.",
+        answerSaved: "Ответ сохранён. Лист уйдёт к соседу ({name}), когда ответят все.",
         answeredForYou: "На этом шаге за вас отвечает {name}, вы ответите со следующего.",
         sheetOfPlayer: "Лист игрока {name}",
         giveSheetBack: "Вернуть лист",
@@ -119,7 +119,7 @@ const translations = {
         // Reading: the sheets, every story
         storiesReady: "Истории готовы",
         readAloud: "Прочитайте вслух лист, который пришёл к вам",
-        tapToUnfold: "Нажмите, чтобы развернуть",
+        tapToOpen: "Нажмите, чтобы открыть",
         yourSheet: "Ваш лист",
         othersWillSee: "Все истории увидят все, когда откроются все листы",
         openedCount: "Открыто листов: {opened} из {count}",

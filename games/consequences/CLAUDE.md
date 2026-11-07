@@ -6,7 +6,7 @@ The game is built on the shared kit, `packages/room-kit/`; the kit's rules hold 
 @../../packages/room-kit/CLAUDE.md
 
 ## Project Overview
-Web application to play Consequences, the folded-paper story game, remotely with friends and family. Players join a room by a 6-character code; in a round every player answers the same question on the sheet in front of them, the answer is folded away and the sheets move on, eight questions in all (Who? / With whom? / When? / Where? / What were they doing? / How did it all end? / What did people say? / What is the moral?); at the end each player reads out the story that came to them. Adaptive UI works on desktop and mobile browsers.
+Web application to play Consequences, the parlour story game, remotely with friends and family. Players join a room by a 6-character code; in a round every player answers the same question on the sheet in front of them, nobody sees the answers before theirs and the sheets move on, eight questions in all (Who? / With whom? / When? / Where? / What were they doing? / How did it all end? / What did people say? / What is the moral?); at the end each player reads out the story that came to them. Adaptive UI works on desktop and mobile browsers.
 
 - **Production:** https://story.escapist.club/ (Cloudflare Workers, free plan), from the first release (root `docs/release.md`)
 - **Repository:** https://github.com/mikhail-e/parlour-games, folder `games/consequences/` — public, a showcase (root CLAUDE.md, Decisions)

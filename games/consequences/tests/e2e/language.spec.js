@@ -46,12 +46,12 @@ test('the switch draws the reading and every story again in the other language',
     const [anna, boris] = await russianAndEnglish(newPlayer);
     await startRound([anna, boris]);
     await writeToReading([anna, boris]);
-    await expect(anna.page.locator('#readingCard')).toContainText(text('tapToUnfold', 'ru'));
+    await expect(anna.page.locator('#readingCard')).toContainText(text('tapToOpen', 'ru'));
 
     await anna.page.locator('.lang-toggle-btn').click();
 
     await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText(text('storiesReady', 'en'));
-    await expect(anna.page.locator('#readingCard .closed-sheet')).toContainText(text('tapToUnfold', 'en'));
+    await expect(anna.page.locator('#readingCard .closed-sheet')).toContainText(text('tapToOpen', 'en'));
     await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 0, count: 2 }));
     await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusClosed', 'en'));
     await anna.page.locator('#readingCard .closed-sheet').click();

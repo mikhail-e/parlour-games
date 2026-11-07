@@ -233,7 +233,7 @@ function waitingHint(round, mine) {
     if (answeredForMe && answeredForMe.step === round.step) return say('answeredForYou', { name: answeredForMe.name });
     const index = round.seats.indexOf(mine);
     const next = round.seats[(index + 1) % round.seats.length];
-    return say('answerFolded', { name: next.name });
+    return say('answerSaved', { name: next.name });
 }
 
 // The answer's characters as a person counts them (an emoji is one)
@@ -310,7 +310,7 @@ function closedSheet(onOpen) {
     const packet = element('span', 'packet');
     packet.setAttribute('aria-hidden', 'true');
     for (let pleat = 0; pleat < 5; pleat++) packet.append(element('span'));
-    sheet.append(packet, element('span', 'closed-sheet__label', say('tapToUnfold')));
+    sheet.append(packet, element('span', 'closed-sheet__label', say('tapToOpen')));
     return sheet;
 }
 

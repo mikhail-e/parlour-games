@@ -193,6 +193,12 @@
   background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 45%, var(--fold-light) 100%);
 }
 
+/* A title that takes two lines splits them evenly, so a star never stays
+   alone on the second («★ Историю / рассказывают ★») */
+.sheet-title {
+  text-wrap: balance;
+}
+
 /* The table: who writes or reads, who is away, who is done */
 .seat-list {
   margin: 0;
