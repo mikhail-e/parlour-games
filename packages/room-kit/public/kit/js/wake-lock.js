@@ -1,8 +1,8 @@
-// Keep the screen awake while a round is on. Players look at the others' tags
-// to answer their questions, often for minutes without a touch, and the phone
-// would go dark at its own idle limit. game-room.js says when: from Start
-// until every envelope is open, or until Restart; leaving the page lets go
-// by itself.
+// Keep the screen awake while a round is on: players look at the screen for
+// minutes without a touch, and the phone would go dark at its own idle limit.
+// The game says when, with keepScreenAwake(true) and keepScreenAwake(false)
+// (whoami: from Start until every envelope is open, or until Restart); leaving
+// the page lets go by itself.
 //
 // Silent, as in the owner's other apps: no control, no setting, no line on the
 // screen. A browser without the Screen Wake Lock API (Safari before 16.4,
@@ -60,7 +60,7 @@ async function requestScreenWakeLock() {
 // Coming back to the page and a tap go through the same function. The first
 // takes back the lock the browser dropped; the second covers a browser that
 // refuses a lock asked for without a tap - for everyone but the player who
-// pressed Start, the round begins with the server's message
+// started it, a round begins with the server's message
 document.addEventListener('visibilitychange', requestScreenWakeLock);
 window.addEventListener('pointerdown', requestScreenWakeLock, { capture: true, passive: true });
 window.addEventListener('keydown', requestScreenWakeLock, { capture: true, passive: true });

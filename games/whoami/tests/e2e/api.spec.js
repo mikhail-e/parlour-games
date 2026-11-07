@@ -7,8 +7,8 @@ const { version } = require('../../package.json');
 
 test.skip(({ isMobile }) => isMobile, 'HTTP only: one browser is enough');
 
-// Every page sends its browser's secret with a join (PLAYER_SECRET in
-// utils.js). Here each player name is a browser of its own
+// Every page sends its browser's secret with a join (PLAYER_SECRET, the
+// kit's app.js). Here each player name is a browser of its own
 const secrets = new Map();
 function withSecret(body) {
     if (!secrets.has(body.playerName)) secrets.set(body.playerName, crypto.randomUUID());

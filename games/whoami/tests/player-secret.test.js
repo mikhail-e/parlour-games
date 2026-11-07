@@ -1,4 +1,4 @@
-// A player's secret (PLAYER_SECRET in utils.js) proves that a browser IS the
+// A player's secret (PLAYER_SECRET, the kit's app.js) proves that a browser IS the
 // player with that ID. The ID is public - every page in a room sees the
 // players list - so without the secret anybody could act in a player's name.
 // The server records the secret on the first join and never sends it to a page.

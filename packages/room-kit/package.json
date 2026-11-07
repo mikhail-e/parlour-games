@@ -1,0 +1,24 @@
+{
+  "name": "@parlour-games/room-kit",
+  "private": true,
+  "description": "The shared kit of the parlour games with rooms: the room's base, the page's socket, the player's identity, translations, security headers, Bootstrap and fonts, the shared parts of the ESLint and Playwright configs",
+  "homepage": "https://github.com/mikhail-e/parlour-games/tree/master/packages/room-kit#readme",
+  "bugs": {
+    "url": "https://github.com/mikhail-e/parlour-games/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikhail-e/parlour-games.git",
+    "directory": "packages/room-kit"
+  },
+  "license": "MIT",
+  "author": "Mikhail Elychev",
+  "bin": {
+    "room-kit-copy-public": "scripts/copy-public.js"
+  },
+  "scripts": {
+    "test": "npm run lint && jest",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix"
+  }
+}

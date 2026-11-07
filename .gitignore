@@ -49,6 +49,11 @@ pids
 # wrangler dev: the local state of the rooms and wrangler's own files
 .wrangler/
 
+# A game's copy of the kit's files (packages/room-kit/public/, copied by the
+# game's `npm run build`): they are edited in the kit only
+games/*/public/kit/
+games/*/public/_headers
+
 # Playwright MCP: page snapshots and screenshots from checking the app by hand
 .playwright-mcp/
 

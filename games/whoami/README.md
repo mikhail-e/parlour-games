@@ -45,7 +45,7 @@ The documents in `docs/` are written in Russian.
 ## Technologies
 
 - Server: Cloudflare Workers and Durable Objects (one per room), WebSocket
-- Browser: plain JavaScript and Bootstrap 5 — no framework, no build step
+- Browser: plain JavaScript and Bootstrap 5 — no framework, no bundler; the shared kit ([`packages/room-kit/`](../../packages/room-kit/README.md)) is copied into `public/` before the game is served
 - Checks: ESLint, Jest, Playwright and axe-core
 - Hosting: Cloudflare (Workers Builds deploys every push to master that changes the game)
 

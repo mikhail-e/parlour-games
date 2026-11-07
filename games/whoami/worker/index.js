@@ -1,10 +1,12 @@
 // The game's Worker (Cloudflare Workers, wrangler.jsonc). The static files of
 // public/ are served without it; it answers the addresses run_worker_first
-// sends here, and puts the security headers on every answer of its own
+// sends here, in the kit's frame (packages/room-kit/worker/http.js): the
+// version, HEAD, the 404 page, an answer to a failure and the security headers
+// on every answer of its own are the frame's, the game's addresses are here
 import pkg from '../package.json';
+import { gameWorker } from '@parlour-games/room-kit/worker/http.js';
 import gameLogic from '../game-logic.js';
 import { forLog } from './room.js';
-import SECURITY_HEADERS from './security-headers.json';
 
 // Each room is a Durable Object of its own (worker/room.js)
 export { Room } from './room.js';
@@ -13,22 +15,6 @@ export { Room } from './room.js';
 const MAX_BODY_BYTES = 64 * 1024;
 // Codes tried for a new room before giving up; a taken one is rare
 const CREATE_ATTEMPTS = 5;
-
-// A copy of the answer with the security headers (public/_headers has their
-// reasons and puts them on the static files)
-export function withSecurityHeaders(response) {
-    const answer = new Response(response.body, response);
-    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-        answer.headers.set(name, value);
-    }
-    return answer;
-}
-
-// The game's own page for an address nothing answers, with status 404
-export async function notFound(request, env) {
-    const page = await env.ASSETS.fetch(new URL('/404', request.url));
-    return new Response(page.body, { status: 404, headers: page.headers });
-}
 
 const homeWithError = () => new Response(null, { status: 302, headers: { Location: '/?error=room-not-found' } });
 
@@ -100,16 +86,8 @@ async function roomPage(request, env, code) {
     return env.ASSETS.fetch(new URL('/game.html', request.url));
 }
 
-async function route(request, env) {
-    const { pathname } = new URL(request.url);
-    // HEAD asks what GET would answer (fetch below leaves the body out)
-    const method = request.method === 'HEAD' ? 'GET' : request.method;
-
-    // The running version: every page shows it at the bottom, and after a
-    // deploy it tells which release is live
-    if (method === 'GET' && pathname === '/api/version') {
-        return Response.json({ version: pkg.version });
-    }
+// The game's addresses; anything else is the frame's (the version, the 404 page)
+async function route(request, env, { method, pathname }) {
     if (method === 'POST' && pathname === '/api/create-game') return createGame(env);
     if (method === 'POST' && pathname === '/api/join-game') return joinGame(request, env);
 
@@ -123,25 +101,7 @@ async function route(request, env) {
         if (!gameLogic.isValidRoomCode(roomCode)) return new Response('No such room', { status: 400 });
         return env.ROOMS.getByName(roomCode).fetch(request);
     }
-
-    return notFound(request, env);
+    return null;
 }
 
-// The Worker's answer: the route's, with the security headers. Should a room
-// fail, the page still gets JSON it can read, with the headers, not
-// Cloudflare's error page
-export default {
-    async fetch(request, env) {
-        let response;
-        try {
-            response = await route(request, env);
-        } catch (error) {
-            console.error(`Error answering ${request.method} ${new URL(request.url).pathname}:`, error);
-            response = Response.json({ success: false }, { status: 500 });
-        }
-        // An accepted socket is no page: its answer goes back as it is
-        if (response.webSocket) return response;
-        if (request.method === 'HEAD') response = new Response(null, response);
-        return withSecurityHeaders(response);
-    },
-};
+export default gameWorker({ route, version: pkg.version });

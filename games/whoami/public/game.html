@@ -49,10 +49,14 @@
     <meta name="twitter:image:alt" content="Who am I? sign on a theatre curtain, and player cards with pinned character tags: Sherlock Holmes, Cleopatra, and your own sealed in an envelope.">
 
     <!-- The sign's font, fetched before the stylesheet asks for it -->
-    <link rel="preload" href="/fonts/ultra-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-    <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link rel="preload" href="/kit/fonts/ultra-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/kit/js/app.js"></script>
     <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
     <script src="/js/utils.js"></script>
 </head>
 <body>
@@ -296,10 +300,10 @@
         </div>
     </div>
 
-    <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
-    <script src="/js/pwa.js"></script>
-    <script src="/js/room-socket.js"></script>
-    <script src="/js/wake-lock.js"></script>
+    <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/kit/js/pwa.js"></script>
+    <script src="/kit/js/room-socket.js"></script>
+    <script src="/kit/js/wake-lock.js"></script>
     <script src="/js/game-room.js"></script>
 </body>
 </html>
