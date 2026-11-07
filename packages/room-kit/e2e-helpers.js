@@ -6,21 +6,11 @@
 // players by the kit's player cards (.player-card with its .player-name, one's
 // own "Name (You)" in the page's language). A game's tests/e2e/helpers.js
 // passes them on with its own, and the texts of its pages (pageTexts).
-const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const zlib = require('zlib');
 const { expect } = require('./e2e');
-
-// translations.js and the kit's i18n.js are page scripts: they wait for the
-// page's DOMContentLoaded as they load. Run them apart, with just enough of a
-// page, and take their texts and copies of the server's errors
-function loadPageScript(file) {
-    const source = fs.readFileSync(file, 'utf8');
-    const sandbox = { module: { exports: {} }, document: { addEventListener() {} } };
-    vm.runInNewContext(source, sandbox);
-    return sandbox.module.exports;
-}
+// translations.js and the kit's i18n.js run apart from a page
+const { loadPageScript } = require('./checks');
 
 // The texts of a game's pages: its translations.js on top of the kit's, as on
 // the page. Tests never type the game's texts by hand:

@@ -1,10 +1,12 @@
 // Checks of how a game's code is written, for the kit's tests and every
 // game's (Jest): the page code's and the sign's checks take what to read and
 // return what is wrong, an empty list when nothing is; serverErrorTexts finds
-// the errors a server sends. They read the files as text on purpose - the rules
-// are about the text (CLAUDE.md, Rules).
+// the errors a server sends, translationProblems holds a game's texts against
+// them and the kit's. They read the files as text on purpose - the rules are
+// about the text (CLAUDE.md, Rules).
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 // The kit's own page scripts: a game's checks read them next to its own
 const KIT_SCRIPTS = path.join(__dirname, 'public', 'kit', 'js');
@@ -92,4 +94,47 @@ function brandSignProblems(publicFolder, pages, label) {
     ];
 }
 
-module.exports = { KIT_SCRIPTS, KIT_SERVER_FILES, sharedNameProblems, inlineCodeProblems, serverErrorTexts, brandSignProblems };
+// A page script that exports itself to Node (translations.js, the kit's
+// i18n.js), run apart with just enough of a page: such scripts wait for the
+// page's DOMContentLoaded as they load. What it exports
+function loadPageScript(file) {
+    const source = fs.readFileSync(file, 'utf8');
+    const sandbox = { module: { exports: {} }, document: { addEventListener() {} } };
+    vm.runInNewContext(source, sandbox);
+    return sandbox.module.exports;
+}
+
+// A game's texts (its translations.js) against the kit's and the server's:
+// every text in both languages with the same {placeholders}, none of the
+// kit's texts repeated, a Russian copy of every error the server sends -
+// those of the game's server files in the game's serverErrors, the kit's
+// server code's in the kit's - and no copy of an error the game does not
+// send. "what is wrong" per problem
+function translationProblems(translationsFile, gameServerFiles) {
+    const { translations, serverErrors } = loadPageScript(translationsFile);
+    const { KIT_TEXTS, KIT_SERVER_ERRORS } = loadPageScript(path.join(KIT_SCRIPTS, 'i18n.js'));
+    const placeholdersOf = text => (String(text).match(/\{\w+\}/g) || []).sort().join(' ');
+    const [en, ru] = [translations.en, translations.ru];
+    const gameErrors = serverErrorTexts(gameServerFiles);
+    const sent = [...new Set([...gameErrors, ...serverErrorTexts(KIT_SERVER_FILES)])];
+    const has = (dictionary, key) => Object.hasOwn(dictionary, key);
+    return [
+        ...Object.keys(en).filter(key => !has(ru, key)).map(key => `"${key}": no Russian text`),
+        ...Object.keys(ru).filter(key => !has(en, key)).map(key => `"${key}": no English text`),
+        ...Object.keys(en).filter(key => has(ru, key) && placeholdersOf(en[key]) !== placeholdersOf(ru[key]))
+            .map(key => `"${key}": other placeholders in Russian`),
+        ...Object.keys(en).filter(key => has(KIT_TEXTS.en, key)).map(key => `"${key}": the kit's text`),
+        ...(gameErrors.length === 0 ? ["no error found in the game's server files"] : []),
+        ...sent.filter(error => !has(serverErrors.ru, error) && !has(KIT_SERVER_ERRORS.ru, error))
+            .map(error => `error "${error}": no Russian copy`),
+        ...Object.keys(serverErrors.ru).filter(error => !gameErrors.includes(error))
+            .map(error => `error "${error}": a copy, but the game does not send it`),
+        ...Object.keys(serverErrors.ru).filter(error => has(KIT_SERVER_ERRORS.ru, error))
+            .map(error => `error "${error}": the kit's copy`),
+    ];
+}
+
+module.exports = {
+    KIT_SCRIPTS, KIT_SERVER_FILES, sharedNameProblems, inlineCodeProblems, serverErrorTexts, brandSignProblems,
+    loadPageScript, translationProblems,
+};

@@ -17,7 +17,7 @@ npm run test:e2e:prod                      # браузерные тесты п�
 
 - `code-structure.test.js`: ни `style="..."`, ни `on...="..."` в страницах и скриптах игры (CLAUDE.md, правило 8; проверка — `inlineCodeProblems` ядра);
 - `shared-names.test.js`: общие имена скриптов страниц — игры и ядра вместе (`sharedNameProblems` ядра);
-- `translations-real.test.js`: оба языка словаря, одинаковые подстановки, у каждой ошибки сервера есть перевод (`serverErrors` — копии ошибок самой игры, тексты ядра ищет `serverErrorTexts`), словарь не повторяет тексты ядра;
+- `translations-real.test.js`: оба языка словаря, одинаковые подстановки, словарь не повторяет тексты ядра, у каждой ошибки сервера есть русская копия (`serverErrors` — копии ошибок самой игры; проверка — `translationProblems` ядра);
 - сверка копий, которые игра держит намеренно: длина персонажа в `game-logic.js` и в `utils.js` (`input-limits.test.js`), список иконок service worker (`service-worker.test.js`), манифест, печать на конверте и в иконке (`wax-seal.test.js`), три копии вывески (`brand-sign.test.js`), цвета наклеек (`improved-sticker-colors.test.js`).
 
 ## Серверы тестов
