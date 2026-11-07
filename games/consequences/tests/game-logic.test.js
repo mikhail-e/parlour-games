@@ -112,7 +112,7 @@ describe('the answers', () => {
         expect(gameLogic.writeAnswer(games, CODE, ids[1], `${longest}🐱`)).toEqual({ success: false, error: 'Answer is too long' });
     });
 
-    test('a sent answer is final', () => {
+    test('a sent answer is not written over: to change it, the player takes it back first', () => {
         const { games, game, ids } = roundOf(3);
         gameLogic.writeAnswer(games, CODE, ids[0], 'first');
         expect(gameLogic.writeAnswer(games, CODE, ids[0], 'second')).toEqual({ success: false, error: 'This answer has already been written' });
@@ -127,6 +127,63 @@ describe('the answers', () => {
         expect(gameLogic.writeAnswer(games, CODE, ids[0], 'for Boris', ids[1])).toEqual({ success: false, error: 'You are not holding this sheet' });
         expect(gameLogic.writeAnswer(games, CODE, idOf(11), 'a stranger')).toEqual({ success: false, error: 'Player not found in game' });
         expect(gameLogic.writeAnswer(new Map(), CODE, ids[0], 'no room')).toEqual({ success: false, error: 'Game not found' });
+    });
+});
+
+describe('changing an answer', () => {
+    test('a player takes their own answer back while the step is on: the seat is blank, the step waits for it, and the new answer is kept', () => {
+        const { games, game, ids } = roundOf(3);
+        gameLogic.writeAnswer(games, CODE, ids[0], 'first');
+
+        expect(gameLogic.takeBackAnswer(games, CODE, ids[0], 0)).toEqual({ success: true });
+        expect(game.round.sheets[0][0]).toBeNull();
+        expect(gameLogic.roundView(game).seats[0]).toMatchObject({ answered: false, answeredBy: null });
+        expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b').stepEnded).toBe(false);
+        expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').stepEnded).toBe(false);
+        expect(game.round.step).toBe(0);
+
+        expect(gameLogic.writeAnswer(games, CODE, ids[0], 'second')).toEqual({ success: true, stepEnded: true, step: 1 });
+        expect(game.round.sheets[0][0]).toEqual({ text: 'second', by: ids[0] });
+    });
+
+    test('once the step is over the answer stays: the step the page showed is gone', () => {
+        const { games, game, ids } = roundOf(2);
+        answerStep(games, ids, 0);
+
+        expect(gameLogic.takeBackAnswer(games, CODE, ids[0], 0)).toEqual({ success: false, error: 'This step is over' });
+        expect(game.round.sheets[0][0]).toEqual({ text: `${ids[0]} 0`, by: ids[0] });
+        expect(gameLogic.takeBackAnswer(games, CODE, ids[0], 1)).toEqual({ success: false, error: 'There is no answer to change' });
+    });
+
+    test('an answer another player wrote for the seat stays, and nobody takes back an answer of another seat', () => {
+        const { games, game, ids } = roundOf(3);
+        const [anna, boris] = ids;
+        gameLogic.writeAnswer(games, CODE, anna, 'Anna 1');
+        markPlayerDisconnected(game, boris);
+        gameLogic.takeSheet(games, CODE, anna, boris);
+        gameLogic.writeAnswer(games, CODE, anna, 'for Boris', boris);
+        markPlayerConnected(game, boris);
+
+        expect(gameLogic.roundView(game).seats[1]).toMatchObject({ answered: true, answeredBy: anna });
+        expect(gameLogic.takeBackAnswer(games, CODE, boris, 0)).toEqual({ success: false, error: 'Another player wrote this answer' });
+        expect(game.round.sheets[1][0]).toEqual({ text: 'for Boris', by: anna });
+        // Anna's taking back is of her own seat's answer only
+        expect(gameLogic.takeBackAnswer(games, CODE, anna, 0)).toEqual({ success: true });
+        expect(game.round.sheets[1][0]).toEqual({ text: 'for Boris', by: anna });
+    });
+
+    test('nothing to take back: no answer yet, no round, the reading, a stranger', () => {
+        const { games, ids } = roundOf(2);
+        expect(gameLogic.takeBackAnswer(games, CODE, ids[0], 0)).toEqual({ success: false, error: 'There is no answer to change' });
+        expect(gameLogic.takeBackAnswer(games, CODE, idOf(11), 0)).toEqual({ success: false, error: 'You are not in this round' });
+
+        const lobby = lobbyOf(2);
+        expect(gameLogic.takeBackAnswer(lobby.games, CODE, lobby.ids[0], 0)).toEqual({ success: false, error: 'No round is on' });
+
+        const reading = roundOf(2);
+        for (let step = 0; step < gameLogic.QUESTION_COUNT; step++) answerStep(reading.games, reading.ids, step);
+        expect(gameLogic.takeBackAnswer(reading.games, CODE, reading.ids[0], 7)).toEqual({ success: false, error: 'This step is over' });
+        expect(gameLogic.takeBackAnswer(reading.games, CODE, reading.ids[0], gameLogic.READING_STEP)).toEqual({ success: false, error: 'There is no answer to change' });
     });
 });
 
@@ -516,10 +573,10 @@ describe('the round as the pages see it', () => {
         const view = gameLogic.roundView(game);
         expect(view).toMatchObject({ step: 0, questionCount: 8, opened: 0, stories: null });
         expect(view.seats).toEqual([
-            { playerId: anna, name: 'Anna', avatar: '🐱', absent: null, answered: true, heldBy: null, sheet: null, openedBy: null },
-            { playerId: boris, name: 'Boris', avatar: '🐱', absent: 'offline', answered: false, heldBy: anna, sheet: null, openedBy: null },
-            { playerId: vera, name: 'Vera', avatar: '🐱', absent: null, answered: false, heldBy: null, sheet: null, openedBy: null },
-            { playerId: gleb, name: 'Gleb', avatar: '🐱', absent: 'left', answered: false, heldBy: null, sheet: null, openedBy: null },
+            { playerId: anna, name: 'Anna', avatar: '🐱', absent: null, answered: true, answeredBy: anna, heldBy: null, sheet: null, openedBy: null },
+            { playerId: boris, name: 'Boris', avatar: '🐱', absent: 'offline', answered: false, answeredBy: null, heldBy: anna, sheet: null, openedBy: null },
+            { playerId: vera, name: 'Vera', avatar: '🐱', absent: null, answered: false, answeredBy: null, heldBy: null, sheet: null, openedBy: null },
+            { playerId: gleb, name: 'Gleb', avatar: '🐱', absent: 'left', answered: false, answeredBy: null, heldBy: null, sheet: null, openedBy: null },
         ]);
         const seen = JSON.stringify(gameLogic.serializeGame(game));
         expect(seen).not.toContain('secret of Anna');
@@ -535,7 +592,7 @@ describe('the round as the pages see it', () => {
         expect(view.opened).toBe(1);
         expect(view.seats.map(seat => seat.sheet)).toEqual(ids.map((id, seat) => gameLogic.sheetAt(game.round, seat)));
         expect(view.seats.map(seat => seat.openedBy)).toEqual([ids[0], null, null]);
-        expect(view.seats.every(seat => seat.answered === false)).toBe(true);
+        expect(view.seats.every(seat => seat.answered === false && seat.answeredBy === null)).toBe(true);
         const seen = JSON.stringify(view);
         for (const text of textsOf(game)) expect(seen).not.toContain(text);
     });

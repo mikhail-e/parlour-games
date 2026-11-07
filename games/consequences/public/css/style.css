@@ -138,6 +138,14 @@
   font-size: 1.15rem;
 }
 
+/* The pencil of «Change the answer», as big as the button's letters */
+.pencil {
+  width: 1em;
+  height: 1em;
+  margin-right: .5em;
+  vertical-align: -.125em;
+}
+
 /* Under the field: the keys on the left, the count on the right */
 .sheet__under {
   display: flex;

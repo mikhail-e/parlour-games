@@ -8,6 +8,8 @@ const {
     startedRound, startRound, answer, answerStep, waitForStep, returnToRound, seatRow, roundStep,
 } = require('./helpers');
 
+/* global sendMove -- the room page's move (the kit's room-page.js), inside page.evaluate() */
+
 const answerFor = (page, name) => seatRow(page, name).getByRole('button', { name: text('answerFor', 'en', { name }) });
 
 test('Start waits for a second player and says so', async ({ newPlayer }) => {
@@ -76,6 +78,46 @@ test('a sent answer is folded away: the field closes, and the player sees who is
     await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
     await expect(vera.page.locator('#answerForm')).toBeVisible();
     expect(await roundStep(anna.page)).toBe(0);
+});
+
+test('Change the answer: the field opens again with the answer, the step waits for it, and the new one is in the story', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await answer(anna, 'Anna first');
+    const edit = anna.page.getByRole('button', { name: text('editAnswer') });
+    await expect(edit).toBeVisible();
+
+    await edit.click();
+
+    await expect(anna.page.locator('#answerText')).toHaveValue('Anna first');
+    await expect(anna.page.locator('#answerText')).toBeFocused();
+    await expect(edit).toBeHidden();
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusWriting'));
+    // Boris's answer does not end the step: it waits for Anna's again
+    await answer(boris, 'Boris 1');
+    await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusDone'));
+    expect(await roundStep(anna.page)).toBe(0);
+    expect(await roundStep(boris.page)).toBe(0);
+    await anna.page.fill('#answerText', 'Anna changed');
+    await anna.page.click('#saveAndPass');
+    await waitForStep([anna, boris], 1);
+    // With two players Anna's own sheet comes back to her to read
+    for (let step = 1; step < 8; step++) await answerStep([anna, boris], step);
+    await anna.page.locator('#readingCard .closed-sheet').first().click();
+    await expect(anna.page.locator('#readingCard .story__answer').first()).toHaveText('Anna changed');
+});
+
+test('Change the answer pressed as the step ends changes nothing, and is no error', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await answer(anna, 'Anna 1');
+    await expect(anna.page.locator('#editAnswer')).toBeVisible();
+    await answer(boris, 'Boris 1');
+    await waitForStep([anna, boris], 1);
+
+    // Her press reaches the room after Boris's answer moved the sheets on
+    await anna.page.evaluate(() => sendMove('take-back-answer', { step: 0 }));
+
+    await expect(anna.page.locator('#questionText')).toHaveText(text('question2'));
+    await answerStep([anna, boris], 1);
 });
 
 test('an empty answer or one of spaces is not sent, and the field stays open', async ({ newPlayer }) => {
@@ -308,6 +350,10 @@ test('Petya back while Katya writes for him sees it, and answers himself from th
     await expect(back.page.locator('#sheetHint')).toBeVisible();
     await expect(back.page.locator('#sheetHint')).toHaveText(text('answeredForYou', 'en', { name: 'Katya' }));
     await answer(katya, 'for Petya 1');
+    // The answer Katya wrote for him is not his to change
+    await expect(seatRow(back.page, 'Petya')).toContainText(text('statusDone'));
+    await expect(back.page.locator('#editAnswer')).toBeHidden();
+    await expect(katya.page.locator('#editAnswer')).toBeVisible();
     await answer(masha, 'Masha 1');
     await waitForStep([katya, masha, back], 1);
     await expect(back.page.locator('#questionText')).toHaveText(text('question2'));

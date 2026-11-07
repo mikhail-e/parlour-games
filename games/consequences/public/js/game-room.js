@@ -9,7 +9,7 @@
 // shown, hidden and relabelled, so an answer being typed survives the others'
 // moves and a language change. It is emptied when its sheet changes - the next
 // step, another seat's sheet.
-/* global getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
+/* global AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
 // From the kit's room-page.js
 /* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
 
@@ -29,6 +29,13 @@ let formFor = null;
 let answerSending = false;
 // Who answered for this player at this step while they were away: { step, name }
 let answeredForMe = null;
+// The player's own answer as this tab sent it ({ room, step, text }), kept in
+// the tab (a reload keeps it): «Change the answer» puts it back into the
+// field. The room never sends an answer's text back before the stories
+let sentAnswer = AppStorage.session.get('sentAnswer');
+// The step whose answer the player asked to take back: the field opening on
+// it gets the focus
+let takingBack = null;
 
 let newRoundModal = null;
 
@@ -41,7 +48,9 @@ const LOST_RACES = [
     'This player is here',
     'This answer has already been written',
     'This sheet is already open',
-    'You are already holding a sheet'
+    'You are already holding a sheet',
+    'This step is over',
+    'There is no answer to change'
 ];
 
 // The page's texts (i18n.js is loaded before this script)
@@ -95,6 +104,7 @@ startRoomPage({
     },
     afterError() {
         answerSending = false;
+        takingBack = null;
         renderRoom();
     },
     ignoreError: error => LOST_RACES.includes(error),
@@ -142,7 +152,14 @@ function renderRoom() {
     showCard('newRound', Boolean(round) && !stories);
     if ((!round || stories) && newRoundModal) newRoundModal.hide();
 
-    if (!round) openSheets.clear();
+    if (!round) {
+        openSheets.clear();
+        // A round's answer is no answer of the next one
+        if (sentAnswer) {
+            sentAnswer = null;
+            AppStorage.session.remove('sentAnswer');
+        }
+    }
     renderLobby();
     if (round && !reading) renderWriting(round);
     if (reading && !stories) renderReading(round);
@@ -199,8 +216,19 @@ function renderWriting(round) {
     if (key !== formSheet) {
         formSheet = key;
         formFor = held ? held.playerId : null;
-        field.value = '';
+        // Their own sheet again at the step whose answer they took back: its
+        // text comes back into the field, as this tab sent it
+        const takenBack = !held && target && takingBack === step;
+        const kept = takenBack && sentAnswer && sentAnswer.room === currentGame.id && sentAnswer.step === step;
+        field.value = kept ? sentAnswer.text : '';
         answerSending = false;
+        if (takenBack) {
+            takingBack = null;
+            setTimeout(() => {
+                field.focus();
+                field.setSelectionRange(field.value.length, field.value.length);
+            });
+        }
     }
 
     const title = document.getElementById('writingTitle');
@@ -213,6 +241,10 @@ function renderWriting(round) {
     const hint = document.getElementById('sheetHint');
     hint.hidden = Boolean(target);
     hint.textContent = target ? '' : waitingHint(round, mine);
+    // Only an answer the player wrote themselves, while they wait for the others
+    const edit = document.getElementById('editAnswer');
+    edit.hidden = Boolean(target) || !mine || mine.answeredBy !== currentPlayer.id;
+    edit.disabled = takingBack === step;
     if (target) {
         document.getElementById('questionNumber').textContent = say('questionOf', { number: step + 1, count: questionCount });
         document.getElementById('questionText').textContent = say(`question${step + 1}`);
@@ -264,6 +296,10 @@ function sendAnswer(event) {
     }
     answerSending = true;
     updateAnswerField();
+    if (!formFor) {
+        sentAnswer = { room: currentGame.id, step: currentGame.round.step, text };
+        AppStorage.session.set('sentAnswer', sentAnswer);
+    }
     sendMove('write-answer', formFor ? { text, for: formFor } : { text });
 }
 
@@ -407,6 +443,12 @@ function setUpRoomGame() {
     document.getElementById('answerText').addEventListener('keydown', event => {
         if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
         sendAnswer(event);
+    });
+    document.getElementById('editAnswer').addEventListener('click', event => {
+        if (!currentGame || !currentGame.round) return;
+        takingBack = currentGame.round.step;
+        event.currentTarget.disabled = true;
+        sendMove('take-back-answer', { step: takingBack });
     });
     document.getElementById('giveSheetBack').addEventListener('click', () => {
         const held = currentGame && currentGame.round ? heldSeat(currentGame.round) : null;

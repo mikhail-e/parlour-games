@@ -19,6 +19,7 @@ import { GameRoom, isPlayer, isPlayerOf } from '@parlour-games/room-kit/worker/g
 const MOVES = {
     'start-round': 'startRound',
     'write-answer': 'writeAnswer',
+    'take-back-answer': 'takeBackAnswer',
     'take-sheet': 'takeSheet',
     'return-sheet': 'returnSheet',
     'open-sheet': 'openSheet',
@@ -100,6 +101,18 @@ export class Room extends GameRoom {
             return;
         }
         if (result.stepEnded) console.log(`Game ${me.gameId} is at step ${result.step}`);
+        await this.afterChange();
+    }
+
+    // "Change the answer": the sender's own answer at the step their page
+    // shows (`step`) is taken back, and their seat waits for it again
+    async takeBackAnswer(ws, data, me) {
+        const step = Number.isInteger(data && data.step) ? data.step : -1;
+        const result = gameLogic.takeBackAnswer(this.games, me.gameId, me.playerId, step);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
         await this.afterChange();
     }
 
