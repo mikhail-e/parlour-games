@@ -33,6 +33,24 @@ test("three players: each reads the sheet the player before them finished, writt
     await expect(answersOf(storyReadBy(anna.page, 'Anna')).last()).toHaveText('Vera 8');
 });
 
+test('a closed sheet is a sealed envelope, the wax at its middle', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    const { page } = players[0];
+
+    const envelope = ownSheet(page).locator('.envelope');
+    const seal = envelope.locator('.envelope__seal');
+    await expect(seal).toBeVisible();
+    const wax = await seal.evaluate(element => getComputedStyle(element).backgroundImage.match(/url\("(.+)"\)/)[1]);
+    const image = await page.request.get(wax);
+    expect(image.status()).toBe(200);
+    expect(image.headers()['content-type']).toContain('image/svg');
+    const outer = await envelope.boundingBox();
+    const inner = await seal.boundingBox();
+    expect(Math.abs((inner.x + inner.width / 2) - (outer.x + outer.width / 2))).toBeLessThan(1.5);
+    expect(Math.abs((inner.y + inner.height / 2) - (outer.y + outer.height / 2))).toBeLessThan(1.5);
+});
+
 test('two players: each reads the sheet the other finished', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading([anna, boris]);

@@ -431,7 +431,8 @@
   margin: 0 0 14px;
 }
 
-/* A closed sheet: a folded packet of pleats, a button */
+/* A closed sheet: a sealed envelope, a button. The flap is two diagonal
+   lines drawn by gradients */
 .closed-sheet {
   display: block;
   width: 100%;
@@ -444,36 +445,32 @@
   cursor: pointer;
 }
 
-.packet {
+.envelope {
   position: relative;
   display: block;
-  height: 150px;
-  filter: drop-shadow(0 3px 4px rgba(42, 29, 23, .3));
+  width: min(100%, 300px);
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  border: 1px solid rgba(42, 29, 23, .45);
+  background:
+    linear-gradient(to top right, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) left top / 50% 50% no-repeat,
+    linear-gradient(to top left, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) right top / 50% 50% no-repeat,
+    var(--sheet-paper);
+  box-shadow: 0 3px 8px rgba(42, 29, 23, .3);
 }
 
-.packet span {
+/* The wax seal, on the point of the flap at the envelope's middle. The shadow
+   follows the wax's uneven edge */
+.envelope__seal {
   position: absolute;
-  left: 10%;
-  right: 10%;
-  height: 27px;
-  border-bottom: 1px solid rgba(42, 29, 23, .25);
+  left: 50%;
+  top: 50%;
+  width: 84px;
+  height: 84px;
+  transform: translate(-50%, -50%);
+  background: url('../img/seal.svg') center / contain no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .45));
 }
-
-.packet span:nth-child(odd) {
-  clip-path: polygon(0 0, calc(100% - var(--fold-shift)) 0, 100% 100%, var(--fold-shift) 100%);
-  background: linear-gradient(to bottom, var(--fold-light) 35%, var(--fold-dark));
-}
-
-.packet span:nth-child(even) {
-  clip-path: polygon(var(--fold-shift) 0, 100% 0, calc(100% - var(--fold-shift)) 100%, 0 100%);
-  background: linear-gradient(to bottom, var(--fold-dark), var(--fold-light) 65%);
-}
-
-.packet span:nth-child(1) { top: 10px; }
-.packet span:nth-child(2) { top: 36px; }
-.packet span:nth-child(3) { top: 62px; }
-.packet span:nth-child(4) { top: 88px; }
-.packet span:nth-child(5) { top: 114px; }
 
 .closed-sheet__label {
   display: block;

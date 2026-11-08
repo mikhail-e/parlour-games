@@ -348,13 +348,13 @@ function takenSheet(seat) {
         button('btn btn-outline-primary', say('giveSheetBack'), () => sendMove('return-sheet', { playerId: seat.playerId })));
 }
 
-// A closed sheet: a packet of pleats to tap
+// A closed sheet: a sealed envelope to tap
 function closedSheet(onOpen) {
     const sheet = button('closed-sheet', undefined, onOpen);
-    const packet = element('span', 'packet');
-    packet.setAttribute('aria-hidden', 'true');
-    for (let pleat = 0; pleat < 5; pleat++) packet.append(element('span'));
-    sheet.append(packet, element('span', 'closed-sheet__label', say('tapToOpen')));
+    const envelope = element('span', 'envelope');
+    envelope.setAttribute('aria-hidden', 'true');
+    envelope.append(element('span', 'envelope__seal'));
+    sheet.append(envelope, element('span', 'closed-sheet__label', say('tapToOpen')));
     return sheet;
 }
 
