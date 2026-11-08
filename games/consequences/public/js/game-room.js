@@ -153,7 +153,7 @@ function renderRoom() {
     showCard('storiesCard', Boolean(stories));
     showCard('seatsCard', Boolean(round) && !stories);
     showCard('newRound', Boolean(round) && !stories);
-    if ((!round || stories) && newRoundModal) newRoundModal.hide();
+    if (!round && newRoundModal) newRoundModal.hide();
 
     if (!round) {
         openSheets.clear();
@@ -488,11 +488,12 @@ function setUpRoomGame() {
 
     // A new round in the middle of one asks first: its sheets are lost
     newRoundModal = new bootstrap.Modal(document.getElementById('newRoundModal'));
-    document.getElementById('newRound').addEventListener('click', () => newRoundModal.show());
+    // Both ask first: after every story too, another player may still be reading their sheet
+    for (const id of ['newRound', 'anotherRound']) {
+        document.getElementById(id).addEventListener('click', () => newRoundModal.show());
+    }
     document.getElementById('confirmNewRound').addEventListener('click', () => {
         newRoundModal.hide();
         sendMove('new-round');
     });
-    // After every story there is nothing to lose
-    document.getElementById('anotherRound').addEventListener('click', () => sendMove('new-round'));
 }

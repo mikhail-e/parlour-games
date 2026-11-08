@@ -5,8 +5,10 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, seatRow,
+    showStories, confirmAnotherRound, seatRow,
 } = require('./helpers');
+
+/* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
 
 const readFor = (page, name) => seatRow(page, name).getByRole('button', { name: text('readFor', 'en', { name }) });
 // The player's own sheet in the reading: the first part of the reading card
@@ -199,7 +201,7 @@ test('the press of one round does not carry over to the next', async ({ newPlaye
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     await showStories(players[0]);
-    await players[0].page.click('#anotherRound');
+    await confirmAnotherRound(players[0]);
     await waitForPlayers(players[1].page, 2);
 
     await startRound(players);
@@ -233,13 +235,45 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
     }
 });
 
-test('Another round takes everyone back to the lobby, without asking', async ({ newPlayer }) => {
+test('Another round asks first: while a player is still reading, a No changes nothing', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading([anna, boris]);
+    for (const player of [anna, boris]) await ownSheet(player.page).locator('.closed-sheet').click();
+    await showStories(anna);
+
+    await anna.page.click('#anotherRound');
+
+    const window = anna.page.locator('#newRoundModal');
+    await expect(window).toHaveClass(/\bshow\b/);
+    await expect(window).toContainText(text('newRoundText'));
+    await window.locator('[data-bs-dismiss="modal"]').first().click();
+    await expect(window).not.toHaveClass(/\bshow\b/);
+    await expect(anna.page.locator('#storiesCard')).toBeVisible();
+    await expect(answersOf(ownSheet(boris.page))).toHaveCount(8);
+});
+
+test('the question of Another round stays open through what happens in the room', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading([anna, boris]);
+    for (const player of [anna, boris]) await ownSheet(player.page).locator('.closed-sheet').click();
+    await showStories(anna);
+    await anna.page.click('#anotherRound');
+    await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+
+    await boris.page.goto('about:blank');
+    await expect(anna.page.locator('#storiesCard')).toBeVisible();
+    await expect.poll(() => anna.page.evaluate(() => currentGame.round.seats[1].absent)).toBe('offline');
+
+    await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+});
+
+test('Another round, said yes to, takes everyone back to the lobby', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     await showStories(players[1]);
 
-    await players[1].page.click('#anotherRound');
+    await confirmAnotherRound(players[1]);
 
     for (const player of players) {
         await expect(player.page.locator('#playersCard')).toBeVisible();

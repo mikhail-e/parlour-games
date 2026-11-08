@@ -68,6 +68,13 @@ async function showStories(player) {
     await expect(player.page.locator('#storiesCard')).toBeVisible();
 }
 
+// Another round: the player presses it and says yes in the window
+async function confirmAnotherRound(player) {
+    await player.page.click('#anotherRound');
+    await expect(player.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+    await player.page.click('#confirmNewRound');
+}
+
 // A player back in the started round by its link, from a new page of their
 // browser: the landing page, the name, Join - and the round, not the lobby
 async function returnToRound(player, code) {
@@ -104,6 +111,7 @@ module.exports = {
     answerStep,
     writeToReading,
     showStories,
+    confirmAnotherRound,
     returnToRound,
     seatRow,
 };
