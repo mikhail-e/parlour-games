@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, confirmAnotherRound, seatRow,
+    showStories, confirmAnotherRound, seatRow, stubShare,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -233,6 +233,69 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
         await expect(stories.nth(1).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Anna' }));
         await expect(stories.nth(2).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Boris' }));
     }
+});
+
+// Everyone opens their sheet; the player goes on to every story with the
+// share sheet stubbed (the stand-in comes with the next page load)
+async function storiesToShare(newPlayer, behaviour) {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
+    const [anna] = players;
+    await expect(anna.page.locator('#showStories')).toBeEnabled();
+    await stubShare(anna.page, behaviour);
+    await anna.page.reload();
+    await expect(anna.page.locator('#showStories')).toBeEnabled();
+    await showStories(anna);
+    return { anna, story: storyReadBy(anna.page, 'Anna') };
+}
+
+test('a story is shared with its text and an invitation that names the game and its site, and nothing else', async ({ newPlayer }) => {
+    const { anna, story } = await storiesToShare(newPlayer, 'record');
+    await expect(anna.page.locator('.story-share')).toHaveCount(2);
+    await expect(story.locator('.story-share')).toHaveText(text('shareStory'));
+    await expect(story.locator('.story-share .icon--share')).toBeVisible();
+
+    await story.locator('.story-share').click();
+
+    await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(1);
+    const answers = await answersOf(story).allTextContents();
+    expect(answers).toHaveLength(8);
+    const site = new URL(anna.page.url()).host;
+    const invitation = text('shareStoryInvitation', 'en', { site });
+    expect(invitation).toContain(text('title'));
+    expect(invitation).toContain(site);
+    expect((await anna.page.evaluate(() => window.shareCalls))[0]).toEqual({
+        title: text('title'),
+        text: `${answers.join('\n')}\n\n${invitation}`,
+    });
+});
+
+test('closing the share sheet of a story is silent', async ({ newPlayer }) => {
+    const { anna, story } = await storiesToShare(newPlayer, 'abort');
+    await anna.page.evaluate(() => {
+        window.copiedTexts = [];
+        navigator.clipboard.writeText = async copied => { window.copiedTexts.push(copied); };
+    });
+
+    await story.locator('.story-share').click();
+
+    await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(1);
+    // The sheet's refusal is handled by then: nothing went to be copied
+    expect(await anna.page.evaluate(() => window.copiedTexts)).toEqual([]);
+});
+
+test('without a share sheet the story is copied, and the button says so', async ({ newPlayer }) => {
+    const { anna, story } = await storiesToShare(newPlayer, 'unsupported');
+    await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await story.locator('.story-share').click();
+
+    await expect(story.locator('.story-share')).toHaveText(text('copiedSuccess'));
+    const answers = await answersOf(story).allTextContents();
+    const copied = await anna.page.evaluate(() => navigator.clipboard.readText());
+    expect(copied.startsWith(answers.join('\n'))).toBe(true);
+    expect(copied.endsWith(text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host }))).toBe(true);
 });
 
 test('Another round asks first: while a player is still reading, a No changes nothing', async ({ newPlayer }) => {

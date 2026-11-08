@@ -9,7 +9,7 @@
 // shown, hidden and relabelled, so an answer being typed survives the others'
 // moves and a language change. It is emptied when its sheet changes - the next
 // step, another seat's sheet.
-/* global AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
+/* global createIcon, shareOrCopy, AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
 // From the kit's room-page.js
 /* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
 
@@ -406,9 +406,21 @@ function renderStories(round) {
         const head = element('div', 'story-head');
         head.append(element('span', '', say(`storyTitle${story.sheet + 1}`)),
             element('small', '', say('storyReadBy', { name: nameOf(round, story.readBy) })));
-        sheet.append(head, storyList(story.answers));
+        const share = element('button', 'story-share');
+        share.type = 'button';
+        share.append(createIcon('share'), element('span', '', say('shareStory')));
+        share.addEventListener('click', () => shareStory(share, story.answers));
+        sheet.append(head, storyList(story.answers), share);
         return sheet;
     }));
+}
+
+// A story for friends: its text, then an invitation with the game's name and
+// its site. The address is inside the text, not in the share sheet's `url`:
+// some apps keep only one of the two
+function shareStory(button, answers) {
+    const text = `${answers.join('\n')}\n\n${say('shareStoryInvitation', { site: window.location.host })}`;
+    shareOrCopy(button, { title: say('title'), text }, text);
 }
 
 // The table: every seat - here or away, its step done or not, who answers or

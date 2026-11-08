@@ -77,6 +77,8 @@ const translations = {
         storyTitle11: "Story eleven",
         storyTitle12: "Story twelve",
         storyReadBy: "read out by {name}",
+        shareStory: "Share this story",
+        shareStoryInvitation: "This story was written in a game of Consequences. Create your own at {site}",
         anotherRound: "Another round",
 
         // A new round in the middle of one
@@ -156,6 +158,8 @@ const translations = {
         storyTitle11: "История одиннадцатая",
         storyTitle12: "История двенадцатая",
         storyReadBy: "читал(а): {name}",
+        shareStory: "Поделиться историей",
+        shareStoryInvitation: "Эту историю сочинили в «Чепухе». Создайте свою на {site}",
         anotherRound: "Ещё раунд",
 
         // A new round in the middle of one

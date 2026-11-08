@@ -553,3 +553,25 @@
   font-weight: 400;
   text-align: right;
 }
+
+/* Sharing a story: a strip across the bottom of its sheet (the owner's pick
+   from a page of variants) */
+.story-share {
+  display: block;
+  width: 100%;
+  padding: 12px 10px;
+  border: 0;
+  border-top: 1px solid rgba(42, 29, 23, .25);
+  background: none;
+  color: var(--ink);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .story-share:hover {
+    background: var(--accent-tint);
+  }
+}
