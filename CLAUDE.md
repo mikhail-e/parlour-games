@@ -5,6 +5,7 @@ Parlour games to play remotely with friends and family. Each game is a web app w
 - **Repository:** https://github.com/mikhail-e/parlour-games — public, a showcase (see Decisions)
 - **Games:**
   - `games/whoami/` — "Who am I?", https://whoami.escapist.club/ (the Worker `whoami-game`). Its architecture, rules and gotchas: `games/whoami/CLAUDE.md`, which Claude Code reads when working in that folder
+  - `games/consequences/` — Consequences, the parlour story game, https://story.escapist.club/ (the Worker `consequences-game`). Its architecture, rules and gotchas: `games/consequences/CLAUDE.md`
 - **The kit:** `packages/room-kit/` — what every game with rooms shares (`@parlour-games/room-kit`). Its layout and rules: `packages/room-kit/CLAUDE.md`, which every game's CLAUDE.md imports
 
 ## Layout
@@ -12,7 +13,7 @@ Parlour games to play remotely with friends and family. Each game is a web app w
 package.json               # parlour-games (private): npm workspaces games/* and packages/*, the tools of every game (devDependencies), scripts that run every workspace's
 package-lock.json          # The one lockfile: the exact version of every package, for every game
 games/<game>/              # A game, whole: Worker, pages, tests, configs, package.json (name, version, scripts, the kit in dependencies), README, CLAUDE.md, docs
-packages/room-kit/         # The shared kit of the games (an npm workspace package, private, no version): its code, tests, CLAUDE.md, README
+packages/room-kit/         # The shared kit of the games (an npm workspace package, private, no version): its code, tests, docs (testing.md: the games' tests), CLAUDE.md, README
 docs/release.md            # Git flow, versions, releasing a game, the Workers Builds settings, the check of production
 openspec/                  # OpenSpec: config.yaml, the current behaviour (specs/), changes in progress (changes/), finished ones (changes/archive/)
 .claude/                   # Claude Code: settings.json (shared), the OpenSpec commands (commands/opsx/) and skills (skills/openspec-*)
@@ -29,7 +30,7 @@ npm install                        # At the root only (Node.js 22+: wrangler nee
 npm test                           # Every game's checks (ESLint, Jest, then Playwright) and the kit's — run before every merge
 npm run lint                       # Every game's and the kit's ESLint
 npm run test:e2e                   # Every game's browser tests
-npm start -w games/whoami          # One game: any of its scripts with -w games/<game>, or run in its folder
+npm start -w games/whoami          # One game: any of its scripts with -w games/<game>, or run in its folder (whoami on 8787, consequences on 8788)
 npm test -w games/whoami           # One game's checks
 npm test -w packages/room-kit      # The kit's checks
 npx playwright install chromium    # Once per machine: the browser for the tests

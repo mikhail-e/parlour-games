@@ -79,6 +79,7 @@ test('revealing shows your character and tells everyone', async ({ newPlayer }) 
     await expect(playerCard(alice.page, 'Alice').locator('.character-sticker')).toHaveText(characters.Alice);
     await expect(notifications(bob.page)).toContainText(
         text('playerRevealedNotification', 'en', { playerName: 'Alice', character: characters.Alice }));
+    await expect(notifications(bob.page).locator('.icon--mask')).toBeVisible();
     await expect(playerCard(bob.page, 'Alice').locator('.character-sticker.revealed')).toHaveText(characters.Alice);
     // The whole card of a revealed player turns gold, for everyone
     await expect(playerCard(bob.page, 'Alice')).toHaveClass(/\brevealed\b/);

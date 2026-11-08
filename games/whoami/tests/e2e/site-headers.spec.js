@@ -25,7 +25,7 @@ test('the pages load nothing from other sites', async ({ newPlayer, baseURL }) =
 // (public/_headers, the kit's copy, and the Worker's copy of it)
 const ADDRESSES = {
     '/': 200,
-    '/js/game.js': 200,
+    '/js/game-room.js': 200,
     '/kit/vendor/bootstrap/bootstrap.min.css': 200,
     '/kit/fonts/fonts.css': 200,
     '/no-such/page': 404,

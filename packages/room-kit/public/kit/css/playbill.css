@@ -1,0 +1,725 @@
+/* The playbill look of the parlour games (packages/room-kit/public/kit/css/,
+   copied into each game): linked after the kit's fonts.css and before the
+   game's own style.css, which adds its sign and its field. The kit knows no
+   game: what one game draws stays in its style.css */
+
+/* The look of a parlour-game playbill: cream paper, dark brown ink, an
+   accent - and a theatre curtain under the paper. The accent and the curtain
+   are each game's color (red unless the game's style.css sets its own); red
+   is for actions that cannot be undone in every game, never for an ordinary
+   button */
+:root {
+  --paper: #efe2c4;          /* sheets, windows, alerts, the ticket */
+  --paper-light: #f8f0dd;    /* fields, avatar tiles, player cards */
+  --ink: #2a1d17;            /* text on paper, rules, the main button */
+  --ink-hover: #4a372c;
+  --ink-soft: #5e4b3e;       /* secondary text on paper */
+  --accent: #b3261e;         /* the game's color on paper: its name, the room code, numbers, the chosen avatar */
+  --accent-tint: #f7dccf;    /* the chosen avatar's tile */
+  --curtain-top: #7e1a13;    /* the curtain, in the game's color */
+  --curtain-bottom: #5c110b;
+  --red: #b3261e;            /* danger: what cannot be undone, in every game */
+  --red-deep: #8e1c16;
+  --cream: #fbf3e0;          /* text on red */
+  --gold: #d4a72c;           /* a highlight: a warning's edge (whoami: a revealed character) */
+  --on-page: #f3e6c8;        /* text right on the curtain */
+  --on-page-soft: #e6cfa6;
+
+  /* Bootstrap draws with these: its fields, windows and muted text */
+  --bs-body-font-family: 'Fira Sans Condensed', 'Arial Narrow', sans-serif;
+  --bs-body-color: var(--ink);
+  --bs-body-bg: var(--paper-light);
+  --bs-secondary-color: var(--ink-soft); /* .text-muted, .form-text */
+}
+
+/* The curtain shows when a phone scrolls past the page's edge */
+html {
+  background: var(--curtain-bottom);
+}
+
+body {
+  font-family: var(--bs-body-font-family);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  color: var(--on-page);
+  /* A theatre curtain: a spotlight from above, velvet folds (200 px wide -
+     narrower ones ripple on a wide screen), in the game's color */
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255, 214, 170, .2), rgba(255, 214, 170, 0) 70%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .24) 0, rgba(0, 0, 0, 0) 62px, rgba(255, 255, 255, .07) 100px, rgba(0, 0, 0, 0) 138px, rgba(0, 0, 0, .24) 200px),
+    linear-gradient(180deg, var(--curtain-top) 0%, var(--curtain-bottom) 100%);
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.tagline {
+  margin: 4px 0 0;
+  letter-spacing: .02em;
+  color: var(--on-page-soft);
+}
+
+/* A sheet of paper with a rule inside its edge */
+.game-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 2px;
+  outline: 1.5px solid var(--ink);
+  outline-offset: -8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .4);
+  padding: 30px;
+  margin: 20px 0;
+}
+
+/* A sheet's title: playbill capitals between two stars, a rule under them.
+   The stars are cut out with clip-path: no font of the kit has ★. The coffee
+   plate's top line shares them */
+.sheet-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-align: center;
+  padding-bottom: 10px;
+  margin: 0 0 16px;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.sheet-title::before,
+.sheet-title::after,
+.bmc-button__top::before,
+.bmc-button__top::after {
+  content: '';
+  display: inline-block;
+  width: .7em;
+  height: .7em;
+  margin: 0 .55em .1em;
+  background: currentColor;
+  clip-path: polygon(50% 0%, 61.7% 33.8%, 97.5% 34.5%, 69% 56.2%, 79.4% 90.5%, 50% 70%, 20.6% 90.5%, 31% 56.2%, 2.5% 34.5%, 38.3% 33.8%);
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: .85rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.form-control {
+  background-color: var(--paper-light);
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+.form-control::placeholder {
+  color: #7d6858;
+}
+
+.form-control:focus {
+  background-color: var(--paper-light);
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(42, 29, 23, .3);
+}
+
+/* The room code typed on the landing page */
+input#roomCode {
+  text-transform: uppercase;
+  letter-spacing: .25em;
+  font-size: 1.2rem;
+}
+
+/* A code that came with the room link (/?join=CODE): the kit's landing.js marks it */
+input#roomCode.prefilled {
+  background-color: #fff3cd;
+}
+
+/* Buttons: letterpress capitals. Bootstrap draws them from its --bs-btn-*
+   variables, so the colors are given there */
+.btn {
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  border-width: 2px;
+}
+
+/* The main button is ink. The update banner's "Update Now" (pwa.js) is
+   btn-warning: the same main action */
+.btn-primary,
+.btn-warning {
+  --bs-btn-color: var(--paper);
+  --bs-btn-bg: var(--ink);
+  --bs-btn-border-color: var(--ink);
+  --bs-btn-hover-color: var(--paper);
+  --bs-btn-hover-bg: var(--ink-hover);
+  --bs-btn-hover-border-color: var(--ink);
+  --bs-btn-active-color: var(--paper);
+  --bs-btn-active-bg: var(--ink-hover);
+  --bs-btn-active-border-color: var(--ink);
+  --bs-btn-focus-shadow-rgb: 42, 29, 23;
+  /* A main button that is off (whoami's Start waiting for every character) is faded paper, not Bootstrap's blue */
+  --bs-btn-disabled-color: #6f5c4d;
+  --bs-btn-disabled-bg: #dccaa5;
+  --bs-btn-disabled-border-color: #a8916c;
+  --bs-btn-disabled-opacity: 1;
+}
+
+/* Secondary buttons are an ink outline. btn-secondary is the windows' Cancel
+   and the landing page's Join/Create while they are off (the kit's landing.js) */
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-secondary {
+  --bs-btn-color: var(--ink);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--ink);
+  --bs-btn-hover-color: var(--paper);
+  --bs-btn-hover-bg: var(--ink);
+  --bs-btn-hover-border-color: var(--ink);
+  --bs-btn-active-color: var(--paper);
+  --bs-btn-active-bg: var(--ink);
+  --bs-btn-active-border-color: var(--ink);
+  --bs-btn-focus-shadow-rgb: 42, 29, 23;
+  --bs-btn-disabled-color: #6f5c4d;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #a8916c;
+  --bs-btn-disabled-opacity: 1;
+}
+
+/* Red only for what cannot be undone: leaving, and a game's own (whoami: reveal, restart) */
+.btn-danger {
+  --bs-btn-color: var(--cream);
+  --bs-btn-bg: var(--red);
+  --bs-btn-border-color: var(--red);
+  --bs-btn-hover-color: var(--cream);
+  --bs-btn-hover-bg: var(--red-deep);
+  --bs-btn-hover-border-color: var(--red-deep);
+  --bs-btn-active-color: var(--cream);
+  --bs-btn-active-bg: var(--red-deep);
+  --bs-btn-active-border-color: var(--red-deep);
+  --bs-btn-focus-shadow-rgb: 179, 38, 30;
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--red);
+  --bs-btn-border-color: var(--red);
+  --bs-btn-hover-color: var(--cream);
+  --bs-btn-hover-bg: var(--red);
+  --bs-btn-hover-border-color: var(--red);
+  --bs-btn-active-color: var(--cream);
+  --bs-btn-active-bg: var(--red-deep);
+  --bs-btn-active-border-color: var(--red-deep);
+  --bs-btn-focus-shadow-rgb: 179, 38, 30;
+}
+
+.avatar-selector {
+  display: grid;
+  /* Exactly 12 avatars, so six columns give two even rows.
+     Columns are capped so tiles stay square instead of stretching wide. */
+  grid-template-columns: repeat(6, minmax(0, 80px));
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.avatar-option {
+  font-size: 2rem;
+  padding: 10px;
+  background: var(--paper-light);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* line-height 1 keeps the emoji from inflating the tile past its width,
+     which would make aspect-ratio fall back to a taller-than-wide box */
+  line-height: 1;
+  aspect-ratio: 1;
+}
+
+/* Hover effects only for a mouse: on a phone a hover state sticks after the tap */
+@media (hover: hover) and (pointer: fine) {
+  .avatar-option:hover {
+    transform: scale(1.06);
+  }
+}
+
+.avatar-option.selected {
+  border: 3px solid var(--accent);
+  background: var(--accent-tint);
+}
+
+/* Uploaded custom avatar inside a selector tile. pointer-events: none makes a
+   click on the image count as a click on the tile - same trick as the
+   toolbar buttons' svg icons */
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Avatar toolbar buttons (upload + shuffle) - they sit next to the "Choose Your
+   Avatar" label, outside the grid, so they never read as extra avatar tiles */
+.avatar-shuffle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;  /* comfortable tap target on phones */
+  min-height: 36px;
+}
+
+/* A click on the icon must count as a click on the button */
+.avatar-shuffle-btn svg {
+  pointer-events: none;
+}
+
+/* A numbered list on a sheet (the rules): numbers in the accent */
+.game-card ol li::marker {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* The room code in the room's header: a ticket stub */
+.room-ticket {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .6em;
+  margin-top: 6px;
+  padding: 6px 16px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px dashed var(--ink);
+  outline: 4px solid var(--paper);
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.room-ticket #roomCode {
+  color: var(--accent);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+}
+
+.player-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.player-card {
+  background: var(--paper-light);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  padding: 15px 12px 18px;
+  text-align: center;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .player-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(42, 29, 23, .2);
+  }
+}
+
+.player-avatar,
+.waiting-sheet__avatar {
+  font-size: 4.5rem;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+/* Uploaded custom avatar on a player card: a rounded square, deliberately
+   larger than the 4.5rem emoji avatar (~72px) so photos stay recognizable */
+.player-avatar img,
+.waiting-sheet__avatar img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 3px;
+  vertical-align: bottom; /* removes the inline-image baseline gap */
+}
+
+.player-name,
+.waiting-sheet__name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  /* names can be up to 128 characters - never let one widen the card */
+  overflow-wrap: break-word;
+}
+
+/* A newcomer waiting to be let into a started game (#waitingSheet, the kit's
+   room-page.js): the room itself stays hidden from them */
+body.waiting-for-admission .room-ticket,
+body.waiting-for-admission .container > .game-card:not(#waitingSheet) {
+  display: none;
+}
+
+.waiting-sheet {
+  text-align: center;
+}
+
+.waiting-sheet p {
+  color: var(--ink-soft);
+  margin: 18px auto 20px;
+  max-width: 340px;
+}
+
+/* The language switch (the kit's i18n.js) sits on the curtain */
+.language-switcher {
+  position: relative;
+  z-index: 10;
+}
+
+.lang-toggle-btn {
+  --bs-btn-color: var(--on-page);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--on-page);
+  --bs-btn-hover-color: var(--curtain-bottom);
+  --bs-btn-hover-bg: var(--on-page);
+  --bs-btn-hover-border-color: var(--on-page);
+  --bs-btn-active-color: var(--curtain-bottom);
+  --bs-btn-active-bg: var(--on-page);
+  --bs-btn-active-border-color: var(--on-page);
+  --bs-btn-focus-shadow-rgb: 243, 230, 200;
+  border-width: 1.5px;
+  min-width: 100px;
+}
+
+/* The footer under the sheets: the coffee link and the version. The margin
+   keeps it apart from the language button right above (i18n.js) */
+.page-foot {
+  margin-top: 2.5rem;
+  color: var(--on-page-soft);
+}
+
+/* Buy Me a Coffee: a small playbill plate (the landing page's footer).
+   The cup is the service's logo as they ship it - their terms forbid changing
+   their marks, so it keeps its own yellow and outline */
+.bmc-button {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 12px 28px 14px;
+  background: var(--paper);
+  color: var(--ink);
+  text-decoration: none;
+  border: 3px solid var(--ink);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, .35);
+  transition: all 0.3s ease;
+}
+
+/* The plate's inner rule: a layer of its own, so the hover shadow keeps it */
+.bmc-button::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid var(--ink);
+  pointer-events: none;
+}
+
+.bmc-button__top {
+  align-self: stretch;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--ink);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+}
+
+.bmc-button__main {
+  display: flex;
+  align-items: center;
+  gap: .4em;
+  color: var(--accent);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.bmc-button__cup {
+  width: auto;
+  height: 1.3em;
+}
+
+/* Focus ring for the keyboard */
+.bmc-button:focus,
+.bmc-button:focus-visible {
+  outline: 3px solid var(--on-page);
+  outline-offset: 4px;
+}
+
+/* The lift only for a mouse: on a phone a hover state sticks after the tap */
+@media (hover: hover) and (pointer: fine) {
+  .bmc-button:hover {
+    box-shadow:
+      0 8px 16px rgba(0, 0, 0, .45),
+      0 0 30px rgba(212, 167, 44, .45);
+    transform: translateY(-3px) scale(1.05);
+  }
+}
+
+/* Alerts: paper slips; the colored left edge says what kind */
+.alert {
+  --bs-alert-bg: var(--paper);
+  --bs-alert-color: var(--ink);
+  --bs-alert-border-color: var(--ink);
+  --bs-alert-link-color: var(--ink);
+  --bs-alert-border-radius: 2px;
+  border-width: 1.5px;
+  border-left-width: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+}
+
+.alert-danger {
+  border-left-color: var(--red);
+}
+
+.alert-success {
+  border-left-color: #2f5d3a;
+}
+
+.alert-info {
+  border-left-color: var(--ink-soft);
+}
+
+.alert-warning {
+  border-left-color: var(--gold);
+}
+
+/* A notification in the room (the kit's showNotification, notify.js):
+   pinned to the top right corner, over the page and below the windows */
+.alert.notification {
+  top: 20px;
+  right: 20px;
+  z-index: 1055;
+  min-width: 300px;
+}
+
+/* Confirmation windows: a sheet of paper, like .game-card */
+.modal {
+  --bs-modal-bg: var(--paper);
+  --bs-modal-color: var(--ink);
+  --bs-modal-border-color: var(--ink);
+  --bs-modal-border-radius: 2px;
+  --bs-modal-inner-border-radius: 2px;
+  --bs-modal-header-border-color: var(--ink);
+  --bs-modal-footer-border-color: var(--ink);
+}
+
+.modal-content {
+  outline: 1.5px solid var(--ink);
+  outline-offset: -8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .45);
+}
+
+/* The rules under the title and over the buttons stay inside the inner frame */
+.modal-header,
+.modal-footer {
+  margin-inline: 14px;
+  padding-inline: 6px;
+}
+
+.modal-header {
+  border-bottom-width: 1.5px;
+}
+
+.modal-footer {
+  border-top-width: 1.5px;
+}
+
+.modal-title {
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* A message that waits for the player (notify.js, showMessage): a browser
+   <dialog>, above every other window, dressed as the game's windows - the
+   .modal inside it only brings their look */
+.message-window {
+  width: min(500px, calc(100vw - 30px));
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: visible;
+}
+
+.message-window::backdrop {
+  background: rgba(0, 0, 0, .5);
+}
+
+.message-window .modal {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  z-index: auto;
+}
+
+.message-window .modal-dialog {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  pointer-events: auto;
+}
+
+/* Icons: Phosphor Bold (vendor/phosphor), painted through a mask in the color
+   of the text around them. An element of the classes icon and icon--<name>
+   goes before its text, or a script's createIcon(name); a game adds its own
+   names in its style sheet. The pictures are inside the style sheet, each with
+   Phosphor's name: a file would be asked for only when its icon first shows -
+   late on a window or a "Copied!", and never without the network. The license
+   is in vendor/phosphor */
+.icon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: .4em;
+  vertical-align: -.17em;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.icon--copy { /* clipboard-text */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M172,164a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,164Zm-12-52H96a12,12,0,0,0,0,24h64a12,12,0,0,0,0-24Zm60-64V216a20,20,0,0,1-20,20H56a20,20,0,0,1-20-20V48A20,20,0,0,1,56,28H90.53a51.88,51.88,0,0,1,74.94,0H200A20,20,0,0,1,220,48ZM100.29,60h55.42a28,28,0,0,0-55.42,0ZM196,52H178.59A52.13,52.13,0,0,1,180,64v8a12,12,0,0,1-12,12H88A12,12,0,0,1,76,72V64a52.13,52.13,0,0,1,1.41-12H60V212H196Z'/%3E%3C/svg%3E"); }
+.icon--share { /* export */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M220,112v96a20,20,0,0,1-20,20H56a20,20,0,0,1-20-20V112A20,20,0,0,1,56,92H76a12,12,0,0,1,0,24H60v88H196V116H180a12,12,0,0,1,0-24h20A20,20,0,0,1,220,112ZM96.49,72.49,116,53v83a12,12,0,0,0,24,0V53l19.51,19.52a12,12,0,1,0,17-17l-40-40a12,12,0,0,0-17,0l-40,40a12,12,0,1,0,17,17Z'/%3E%3C/svg%3E"); }
+.icon--refresh { /* arrows-clockwise */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M228,48V96a12,12,0,0,1-12,12H168a12,12,0,0,1,0-24h19l-7.8-7.8a75.55,75.55,0,0,0-53.32-22.26h-.43A75.49,75.49,0,0,0,72.39,75.57,12,12,0,1,1,55.61,58.41a99.38,99.38,0,0,1,69.87-28.47H126A99.42,99.42,0,0,1,196.2,59.23L204,67V48a12,12,0,0,1,24,0ZM183.61,180.43a75.49,75.49,0,0,1-53.09,21.63h-.43A75.55,75.55,0,0,1,76.77,179.8L69,172H88a12,12,0,0,0,0-24H40a12,12,0,0,0-12,12v48a12,12,0,0,0,24,0V189l7.8,7.8A99.42,99.42,0,0,0,130,226.06h.56a99.38,99.38,0,0,0,69.87-28.47,12,12,0,0,0-16.78-17.16Z'/%3E%3C/svg%3E"); }
+.icon--door { /* door-open */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M232,212H212V40a20,20,0,0,0-20-20H64A20,20,0,0,0,44,40V212H24a12,12,0,0,0,0,24H232a12,12,0,0,0,0-24Zm-44,0H172V44h16ZM68,44h80V212H68Zm68,84a16,16,0,1,1-16-16A16,16,0,0,1,136,128Z'/%3E%3C/svg%3E"); }
+.icon--check { /* check */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z'/%3E%3C/svg%3E"); }
+.icon--left { /* sign-out */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M124,216a12,12,0,0,1-12,12H48a12,12,0,0,1-12-12V40A12,12,0,0,1,48,28h64a12,12,0,0,1,0,24H60V204h52A12,12,0,0,1,124,216Zm108.49-96.49-40-40a12,12,0,0,0-17,17L195,116H112a12,12,0,0,0,0,24h83l-19.52,19.51a12,12,0,0,0,17,17l40-40A12,12,0,0,0,232.49,119.51Z'/%3E%3C/svg%3E"); }
+.icon--update { /* arrow-circle-up */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,192a84,84,0,1,1,84-84A84.09,84.09,0,0,1,128,212Zm40.49-100.49a12,12,0,0,1-17,17L140,117v51a12,12,0,0,1-24,0V117l-11.51,11.52a12,12,0,0,1-17-17l32-32a12,12,0,0,1,17,0Z'/%3E%3C/svg%3E"); }
+.icon--language { /* globe */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm0,187a113.4,113.4,0,0,1-20.39-35h40.82a116.94,116.94,0,0,1-10,20.77A108.61,108.61,0,0,1,128,207Zm-26.49-59a135.42,135.42,0,0,1,0-40h53a135.42,135.42,0,0,1,0,40ZM44,128a83.49,83.49,0,0,1,2.43-20H77.25a160.63,160.63,0,0,0,0,40H46.43A83.49,83.49,0,0,1,44,128Zm84-79a113.4,113.4,0,0,1,20.39,35H107.59a116.94,116.94,0,0,1,10-20.77A108.61,108.61,0,0,1,128,49Zm50.73,59h30.82a83.52,83.52,0,0,1,0,40H178.75a160.63,160.63,0,0,0,0-40Zm20.77-24H173.71a140.82,140.82,0,0,0-15.5-34.36A84.51,84.51,0,0,1,199.52,84ZM97.79,49.64A140.82,140.82,0,0,0,82.29,84H56.48A84.51,84.51,0,0,1,97.79,49.64ZM56.48,172H82.29a140.82,140.82,0,0,0,15.5,34.36A84.51,84.51,0,0,1,56.48,172Zm101.73,34.36A140.82,140.82,0,0,0,173.71,172h25.81A84.51,84.51,0,0,1,158.21,206.36Z'/%3E%3C/svg%3E"); }
+.icon--edit { /* pencil-simple */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M230.14,70.54,185.46,25.85a20,20,0,0,0-28.29,0L33.86,149.17A19.85,19.85,0,0,0,28,163.31V208a20,20,0,0,0,20,20H92.69a19.86,19.86,0,0,0,14.14-5.86L230.14,98.82a20,20,0,0,0,0-28.28ZM91,204H52V165l84-84,39,39ZM192,103,153,64l18.34-18.34,39,39Z'/%3E%3C/svg%3E"); }
+
+/* Desktop-only elements - hidden on mobile, visible on desktop (unless overridden by JS) */
+@media (max-width: 767.98px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .game-card {
+    padding: 24px 20px;
+  }
+
+  /* The players' names are read at arm's length, the phone on the table */
+  .player-name,
+  .waiting-sheet__name {
+    font-size: 1.6rem;
+  }
+
+  .avatar-selector {
+    /* Six columns do not fit on a phone; four give three even rows of 12 */
+    grid-template-columns: repeat(4, minmax(0, 80px));
+    gap: 8px;
+  }
+
+  .avatar-option {
+    font-size: 1.8rem;
+    padding: 8px;
+  }
+
+  /* Mobile-friendly modal styles */
+  .mobile-friendly-modal {
+    margin: 15px;
+    max-width: none;
+    width: calc(100% - 30px);
+  }
+
+  .mobile-friendly-modal .modal-header {
+    padding: 20px 6px 15px;
+  }
+
+  .mobile-friendly-modal .modal-title {
+    font-size: 1.15rem;
+  }
+
+  .mobile-friendly-modal .modal-body {
+    padding: 20px;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .mobile-friendly-modal .modal-body p {
+    margin-bottom: 15px;
+  }
+
+  .mobile-friendly-modal .modal-body ul {
+    padding-left: 20px;
+    margin-bottom: 15px;
+  }
+
+  .mobile-friendly-modal .modal-body li {
+    margin-bottom: 8px;
+  }
+
+  .mobile-modal-footer {
+    padding: 15px 6px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Bootstrap centers them; a thumb wants the full width */
+    gap: 12px;
+  }
+
+  .mobile-modal-btn {
+    padding: 12px 20px;
+    font-size: 1.05rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+  }
+
+  .mobile-modal-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Close button mobile optimization */
+  .mobile-friendly-modal .btn-close {
+    padding: 12px;
+    font-size: 1.2rem;
+    opacity: 0.6;
+  }
+
+  .mobile-friendly-modal .btn-close:focus {
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 768px) and (hover: hover) and (pointer: fine) {
+  .mobile-friendly-modal .btn-close:hover {
+    opacity: 0.8;
+  }
+}

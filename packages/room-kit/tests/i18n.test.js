@@ -29,7 +29,7 @@ global.CustomEvent = class CustomEvent {
 // What a game's config.js gives
 global.APP_STORAGE_PREFIX = 'some-game';
 
-const { KIT_TEXTS, withKitTexts, Localization } = require('../public/kit/js/i18n');
+const { KIT_TEXTS, withKitTexts, withKitServerErrors, Localization } = require('../public/kit/js/i18n');
 
 // A game's dictionaries, as its translations.js gives them
 const GAME_TEXTS = {
@@ -142,6 +142,12 @@ describe("the server's errors", () => {
     test('read in the current language', () => {
         expect(startIn('en-US').serverErrorText('Game not found')).toBe('Game not found');
         expect(startIn('ru-RU').serverErrorText('Game not found')).toBe('Игра не найдена');
+    });
+
+    test("the kit's errors too, the game's copy before the kit's", () => {
+        expect(startIn('ru-RU').serverErrorText('Game is full')).toBe('В комнате нет свободных мест');
+        expect(startIn('en-US').serverErrorText('Game is full')).toBe('Game is full');
+        expect(withKitServerErrors({ ru: { 'Game is full': 'Мест нет' } }).ru['Game is full']).toBe('Мест нет');
     });
 
     test('a text the list does not know is shown as it came', () => {

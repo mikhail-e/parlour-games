@@ -1,0 +1,24 @@
+# Consequences
+
+> A free web app for playing Consequences, the classic parlour story
+> game, remotely with friends and family (in Russian, «Чепуха»). Players join
+> a room by a six-character code or a link, write a story together without
+> seeing each other's answers, then read the stories out.
+
+Key facts:
+
+- One player creates a room and shares its code or link; two to twelve players join from any phone or computer
+- Eight questions, one at a time, for everyone at once: Who? With whom? When? Where? What were they doing? How did it all end? What did people say? What is the moral?
+- Each player answers on the sheet in front of them and the sheets move on to the next player; nobody sees what was written before
+- At the end every player gets a sheet, opens it and reads its story aloud; once every sheet is open, everyone sees every story
+- A player who is away is waited for, and any player may answer or read for them; a newcomer joins at the next round
+- English and Russian: the browser's language at first, switchable on the page
+- Installable PWA; it needs a connection, since a room lives on the server
+- No account or payment required
+
+Note: the site's HTML is a form to join or create a room; it does not explain
+the game in full - this file is the canonical plain-text description of the site.
+
+## Links
+
+- [Live app](https://story.escapist.club/): the app itself

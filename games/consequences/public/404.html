@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- The site sends this page, with status 404, for any address nothing else
+         answers. It can be shown at any depth (/a/b/c), so every link starts at
+         the site root. -->
+    <title data-i18n="notFoundTitle">Page not found</title>
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#1b4a36">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <!-- The sign's font, fetched before the stylesheet asks for it -->
+    <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
+    <link href="/kit/css/playbill.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- The sign: the same drawing as index.html's; a picture here, the
+             page's h1 is "Page not found" -->
+        <p class="brand text-center mb-4">
+            <svg class="brand-sign" viewBox="0 0 600 232" role="img" aria-label="Consequences" focusable="false">
+                <rect x="2" y="2" width="596" height="228" fill="#efe2c4" stroke="#2a1d17" stroke-width="4"/>
+                <rect x="12" y="12" width="576" height="208" fill="none" stroke="#2a1d17" stroke-width="1.5"/>
+                <polygon transform="translate(127 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                <text class="brand-sign__small" x="302.5" y="45" text-anchor="middle" font-size="17" letter-spacing="5" fill="#2a1d17">THE PARLOUR STORY GAME</text>
+                <polygon transform="translate(473 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                <line x1="60" y1="58" x2="540" y2="58" stroke="#2a1d17" stroke-width="1.5"/>
+                <text class="brand-sign__name" x="300" y="150" text-anchor="middle" font-size="92" textLength="500" lengthAdjust="spacingAndGlyphs" fill="#1d4f3a">CONSEQUENCES</text>
+                <line x1="60" y1="174" x2="540" y2="174" stroke="#2a1d17" stroke-width="1.5"/>
+                <text class="brand-sign__small" x="302" y="203" text-anchor="middle" font-size="16" letter-spacing="4" fill="#2a1d17">FOR FRIENDS &amp; FAMILY · PLAYED ONLINE</text>
+            </svg>
+        </p>
+        <div class="game-card text-center">
+            <h1 class="sheet-title" data-i18n="notFoundTitle">Page not found</h1>
+            <p data-i18n="notFoundText">There is nothing at this address. The game is on the main page.</p>
+            <a href="/" class="btn btn-primary btn-lg" data-i18n="openGame">Open the game</a>
+        </div>
+    </div>
+</body>
+</html>

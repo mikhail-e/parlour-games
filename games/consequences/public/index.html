@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Consequences</title>
+    <meta name="description" content="The classic parlour story game, for friends and family">
+    <meta name="theme-color" content="#1b4a36">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <!-- The installed app: its manifest, the iPhone's home-screen name and icon -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Consequences">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Consequences">
+    <link rel="canonical" href="https://story.escapist.club/">
+
+    <!-- Link preview: the card a messenger shows for a link (docs/publishing.md).
+         Its bot runs no scripts, so the text is fixed, in English; the
+         addresses are absolute, as the bots require. game.html has the same card -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Consequences">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="https://story.escapist.club/">
+    <meta property="og:title" content="Consequences · the parlour story game for friends">
+    <meta property="og:description" content="Play the classic parlour game remotely: everyone answers the same question without seeing the answers before it and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta property="og:image" content="https://story.escapist.club/img/og-image.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Consequences sign on a theatre curtain, and a sheet in the middle of a round: five questions answered and the sixth, How did it all end?, being answered.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Consequences · the parlour story game for friends">
+    <meta name="twitter:description" content="Play the classic parlour game remotely: everyone answers the same question without seeing the answers before it and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta name="twitter:image" content="https://story.escapist.club/img/og-image.jpg">
+    <meta name="twitter:image:alt" content="Consequences sign on a theatre curtain, and a sheet in the middle of a round: five questions answered and the sixth, How did it all end?, being answered.">
+
+    <!-- The game described for search engines. A data block: the browser never
+         runs it, so the Content Security Policy has nothing to block -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Consequences",
+      "alternateName": "Чепуха",
+      "url": "https://story.escapist.club/",
+      "description": "The classic parlour story game, played remotely: players join a room by its code, answer eight questions on sheets that move round the table, nobody seeing the answers before theirs, then read the stories out.",
+      "applicationCategory": "GameApplication",
+      "applicationSubCategory": "Party Game",
+      "operatingSystem": "Any (web browser)",
+      "browserRequirements": "Requires JavaScript",
+      "inLanguage": ["en", "ru"],
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Person", "name": "Mikhail E" },
+      "featureList": [
+        "Rooms joined by a six-character code or a link",
+        "Eight questions; nobody sees the answers before theirs",
+        "Stories read out at the end, then shown to everyone",
+        "Players away are waited for, or answered for",
+        "Phones and computers, English and Russian",
+        "Installable PWA"
+      ],
+      "screenshot": "https://story.escapist.club/img/og-image.jpg",
+      "keywords": "consequences, parlour game, story game, party game, online game with friends"
+    }
+    </script>
+
+    <!-- The sign's font, fetched before the stylesheet asks for it -->
+    <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="/kit/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/kit/fonts/fonts.css" rel="stylesheet">
+    <link href="/kit/css/playbill.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/config.js"></script>
+    <script src="/kit/js/app.js"></script>
+    <script src="/js/translations.js"></script>
+    <script src="/kit/js/i18n.js"></script>
+    <script src="/kit/js/limits.js"></script>
+    <script src="/kit/js/notify.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-4">
+            <!-- The sign, in the frame of whoami's: the name in Oswald, in the
+                 game's color (--accent in style.css). It is a logo, so it stays
+                 English in both languages (Oswald has no Cyrillic; the Russian
+                 name, «Чепуха», is in the subtitle and the tab's title) and
+                 carries no data-i18n: a translation would replace the drawing
+                 with text. The same drawing is in game.html and 404.html
+                 (tests/brand-sign.test.js keeps the three equal). Its fonts come
+                 from style.css by class: a <style> inside the SVG is inline code
+                 the Content Security Policy blocks. The stars are polygons, not ★:
+                 no font of the game has the star, the system font would draw it -->
+            <h1 class="brand">
+                <svg class="brand-sign" viewBox="0 0 600 232" role="img" aria-label="Consequences" focusable="false">
+                    <rect x="2" y="2" width="596" height="228" fill="#efe2c4" stroke="#2a1d17" stroke-width="4"/>
+                    <rect x="12" y="12" width="576" height="208" fill="none" stroke="#2a1d17" stroke-width="1.5"/>
+                    <polygon transform="translate(127 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                    <text class="brand-sign__small" x="302.5" y="45" text-anchor="middle" font-size="17" letter-spacing="5" fill="#2a1d17">THE PARLOUR STORY GAME</text>
+                    <polygon transform="translate(473 39)" fill="#2a1d17" points="0,-7.5 1.76,-2.43 7.13,-2.32 2.85,0.93 4.41,6.07 0,3 -4.41,6.07 -2.85,0.93 -7.13,-2.32 -1.76,-2.43"/>
+                    <line x1="60" y1="58" x2="540" y2="58" stroke="#2a1d17" stroke-width="1.5"/>
+                    <text class="brand-sign__name" x="300" y="150" text-anchor="middle" font-size="92" textLength="500" lengthAdjust="spacingAndGlyphs" fill="#1d4f3a">CONSEQUENCES</text>
+                    <line x1="60" y1="174" x2="540" y2="174" stroke="#2a1d17" stroke-width="1.5"/>
+                    <text class="brand-sign__small" x="302" y="203" text-anchor="middle" font-size="16" letter-spacing="4" fill="#2a1d17">FOR FRIENDS &amp; FAMILY · PLAYED ONLINE</text>
+                </svg>
+            </h1>
+            <p class="tagline" data-i18n="subtitle">The classic parlour story game, for friends and family</p>
+        </header>
+
+        <div class="game-card">
+            <h3 class="sheet-title" data-i18n="joinCreateGame">Join or Create a Game</h3>
+            
+            <!-- Player Setup Form -->
+            <form id="playerForm">
+                <div class="mb-4">
+                    <label for="playerName" class="form-label" data-i18n="yourName">Your Name</label>
+                    <!-- maxlength is set from MAX_NAME_LENGTH by the kit's landing.js -->
+                    <input type="text" class="form-control" id="playerName" required data-i18n-placeholder="enterName" placeholder="Enter your name" autofocus>
+                </div>
+
+                <!-- Avatar Selection -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0" data-i18n="chooseAvatar">Choose Your Avatar</label>
+                        <div class="d-flex gap-2">
+                            <!-- type="button" is required on both buttons: they sit inside the
+                                 form, a default submit button would join the game on click -->
+                            <button type="button" class="btn btn-sm btn-outline-primary avatar-shuffle-btn"
+                                    id="uploadAvatar"
+                                    data-i18n-title="uploadAvatar"
+                                    data-i18n-aria-label="uploadAvatar"
+                                    title="Upload your own avatar photo"
+                                    aria-label="Upload your own avatar photo">
+                                <!-- Bootstrap Icons "camera" (MIT), inlined to avoid a CDN -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"
+                                     fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4z"/>
+                                    <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5m0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary avatar-shuffle-btn"
+                                    id="shuffleAvatars"
+                                    data-i18n-title="shuffleAvatars"
+                                    data-i18n-aria-label="shuffleAvatars"
+                                    title="Show a different set of avatars"
+                                    aria-label="Show a different set of avatars">
+                                <!-- Bootstrap Icons "arrow-clockwise" (MIT), inlined to avoid a CDN -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"
+                                     fill="currentColor" aria-hidden="true" focusable="false">
+                                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="avatar-selector" id="avatarSelector">
+                        <!-- Avatar options will be populated dynamically -->
+                    </div>
+                    <input type="hidden" id="selectedAvatar" value="😀">
+                    <!-- Hidden file picker for the custom avatar; opened by #uploadAvatar.
+                         A hidden input can still be .click()ed programmatically -->
+                    <input type="file" id="avatarFileInput" accept="image/*" hidden>
+                </div>
+
+                <!-- Game Options -->
+                <div class="mb-3">
+                    <label for="roomCode" class="form-label" data-i18n="roomCode">Room Code (optional)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" class="form-control text-center" id="roomCode" data-i18n-placeholder="roomCodePlaceholder" placeholder="ABC123" maxlength="6">
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-primary w-100" id="joinBtn" data-i18n="joinGame">Join Game</button>
+                        </div>
+                    </div>
+                    <div class="form-text" data-i18n="roomCodeHelp">Enter 6-character room code to join existing game</div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="button" class="btn btn-primary" id="createNewGame" data-i18n="createNewGame">Create New Game</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="game-card">
+            <h5 class="sheet-title" data-i18n="howToPlay">How to Play</h5>
+            <ol>
+                <li data-i18n="rule1">Everyone answers the same question on their own sheet and passes the sheet on: nobody sees what was written before</li>
+                <li data-i18n="rule2">Eight questions: who, with whom, when, where, what they were doing, how it ended, what people said, the moral</li>
+                <li data-i18n="rule3">At the end everyone reads out the story that came to them</li>
+            </ol>
+        </div>
+    </div>
+
+    <footer class="page-foot text-center small pb-3">
+        <!-- A plain link, not Buy Me a Coffee's widget: the widget is a script
+             from another site, and the pages run only their own (CSP, public/_headers).
+             A small playbill plate, English in both languages like the sign; its
+             name is the words it shows. The cup is Buy Me a Coffee's logo file
+             as they ship it: their terms forbid changing their marks -->
+        <a href="https://www.buymeacoffee.com/mikhail.e" target="_blank" rel="noopener noreferrer" class="bmc-button" lang="en">
+            <span class="bmc-button__top" aria-hidden="true">Intermission</span>
+            <span class="bmc-button__main"><img src="/kit/img/bmc-cup.svg" alt="" class="bmc-button__cup">Buy me a coffee</span>
+        </a>
+        <div><span data-app-version></span></div>
+    </footer>
+
+    <script src="/kit/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/kit/js/pwa.js"></script>
+    <script src="/kit/js/landing.js"></script>
+</body>
+</html>

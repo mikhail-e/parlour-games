@@ -1,11 +1,13 @@
-// Checks of public/css/style.css, read by the browser itself (CSSOM): what the
-// browser accepted is what players get
+// Checks of the page's own stylesheets - the kit's playbill.css and the game's
+// public/css/style.css -, read by the browser itself (CSSOM): what the browser
+// accepted is what players get
 const { test, expect, waitForLanding } = require('./helpers');
 
-// Every rule of the game's stylesheet, with the @media conditions around it
+// Every rule of the page's own stylesheets, with the @media conditions around it
 async function readAppRules(page) {
     return page.evaluate(() => {
-        const sheet = [...document.styleSheets].find(s => s.href && s.href.endsWith('/css/style.css'));
+        const own = ['/kit/css/playbill.css', '/css/style.css'];
+        const sheets = [...document.styleSheets].filter(s => s.href && own.some(path => s.href.endsWith(path)));
         const rules = [];
         const walk = (ruleList, media) => {
             for (const rule of ruleList) {
@@ -19,8 +21,8 @@ async function readAppRules(page) {
                 }
             }
         };
-        walk(sheet.cssRules, []);
-        return rules;
+        for (const sheet of sheets) walk(sheet.cssRules, []);
+        return { sheets: sheets.length, rules };
     });
 }
 
@@ -30,13 +32,13 @@ test('every :hover rule applies only with a mouse', async ({ newPlayer }) => {
     await page.goto('/');
     await waitForLanding(page);
 
-    const rules = await readAppRules(page);
+    const { sheets, rules } = await readAppRules(page);
     const touchHover = rules
         .filter(rule => rule.selector.includes(':hover'))
         .filter(rule => !rule.media.some(condition => condition.includes('(hover: hover)') && condition.includes('(pointer: fine)')))
         .map(rule => rule.selector);
 
-    expect(rules.length).toBeGreaterThan(0);
+    expect(sheets).toBe(2);
     expect(touchHover).toEqual([]);
 });
 

@@ -34,14 +34,17 @@ test('closing the share sheet is silent', async ({ newPlayer }) => {
     const alice = await newPlayer('Alice');
     await stubShare(alice.page, 'abort');
     await createRoom(alice);
+    await alice.page.evaluate(() => {
+        window.copiedTexts = [];
+        navigator.clipboard.writeText = async copied => { window.copiedTexts.push(copied); };
+    });
 
     await shareButton(alice.page).click();
 
     await expect.poll(() => alice.page.evaluate(() => window.shareCalls.length)).toBe(1);
-    // No copy fallback, no message; an error would fail the guard. Read the
-    // label once, right after the call: a "Copied!" flash goes away by itself,
-    // so waiting for its absence would always succeed
-    expect(await alice.page.locator('#shareButton').textContent()).not.toContain(text('copiedSuccess'));
+    // The sheet's refusal is handled by then: no copy fallback, no message
+    // (an error would fail the guard)
+    expect(await alice.page.evaluate(() => window.copiedTexts)).toEqual([]);
 });
 
 test('without Web Share the link is copied', async ({ newPlayer }) => {

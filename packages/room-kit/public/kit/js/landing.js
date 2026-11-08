@@ -1,6 +1,15 @@
-// Who am I? Game - Frontend JavaScript
-// Names from utils.js (loaded before this file; see the note at the top of utils.js)
-/* global debugLog, MAX_NAME_LENGTH, isCustomAvatar, getText, serverErrorText, showError, showInfo, AppStorage, handleApiError, PLAYER_ID, PLAYER_SECRET */
+// The landing page of a game with rooms: the player's name and avatar (an
+// emoji from the pool, or a photo they upload), the last ones remembered, a
+// room's code from a link (?join=CODE) and what went wrong before (?error=),
+// creating a room and joining one. The page's markup is the game's
+// (index.html); this script finds its parts by their ids and classes - the
+// list is in the kit's CLAUDE.md (The landing page).
+/* global debugLog, MAX_NAME_LENGTH, isCustomAvatar, getText, serverErrorText, showError, showMessage, showInfo, AppStorage, handleApiError, PLAYER_ID, PLAYER_SECRET, APP_STORAGE_PREFIX */
+
+// The last name and avatar the player used, remembered in the game's
+// localStorage (the player's saved data: the keys never change)
+const SAVED_NAME_KEY = `${APP_STORAGE_PREFIX}-player-name`;
+const SAVED_AVATAR_KEY = `${APP_STORAGE_PREFIX}-player-avatar`;
 
 // Avatar pool: the landing page deals 12 of them at a time (the server does
 // not need the list - it checks only that an avatar is short)
@@ -133,15 +142,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const createNewGameBtn = document.getElementById('createNewGame');
     const roomCodeInput = document.getElementById('roomCode');
 
-    // The player ID comes from utils.js (PLAYER_ID)
-
-    // Enforce the shared name limit (kept in utils.js, not in the HTML)
+    // Enforce the shared name limit (the kit's limits.js, not the HTML)
     const playerNameInput = document.getElementById('playerName');
     if (playerNameInput) playerNameInput.maxLength = MAX_NAME_LENGTH;
 
     // Prefill the last used name so returning players (e.g. after leaving
     // a game) don't have to retype it
-    const savedName = AppStorage.get('whoami-player-name');
+    const savedName = AppStorage.get(SAVED_NAME_KEY);
     if (savedName && playerNameInput && !playerNameInput.value) {
         playerNameInput.value = savedName;
     }
@@ -162,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // first makes populateAvatars() auto-select it. An uploaded image is restored
     // through the same validation the server applies; emoji values that are not
     // in the pool (stale or tampered localStorage) are ignored
-    const savedAvatar = AppStorage.get('whoami-player-avatar');
+    const savedAvatar = AppStorage.get(SAVED_AVATAR_KEY);
     let initialAvatars = selectRandomAvatars();
     if (savedAvatar && isCustomAvatar(savedAvatar)) {
         customAvatar = savedAvatar;
@@ -227,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // The Join button follows the pre-filled code: updateJoinButtonState() below
 
-        // translations.js set up i18n on this same DOMContentLoaded, before this
-        // script (it loads first), so the message is already in the page's language
+        // i18n.js set up the page's language on this same DOMContentLoaded,
+        // before this script (it loads first), so the message is already in it
         showInfo(`${getText('readyToJoin', 'Ready to join')} ${joinRoomCode.toUpperCase()}. ${getText('enterNameAvatar', 'Enter your name and choose an avatar.')}`);
     }
 
@@ -255,42 +262,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update Join button state based on room code
     function updateJoinButtonState() {
         if (joinBtn) {
-            const roomCode = roomCodeInput.value.trim();
-            const isValidLength = roomCode.length === 6;
-            joinBtn.disabled = !isValidLength;
-
-            if (isValidLength) {
-                joinBtn.classList.remove('btn-secondary');
-                joinBtn.classList.add('btn-primary');
-            } else {
-                joinBtn.classList.remove('btn-primary');
-                joinBtn.classList.add('btn-secondary');
-            }
+            const hasCode = roomCodeInput.value.trim().length === 6;
+            const hasName = Boolean(playerNameInput.value.trim());
+            joinBtn.disabled = !(hasCode && hasName);
+            joinBtn.classList.toggle('btn-primary', hasCode && hasName);
+            joinBtn.classList.toggle('btn-secondary', !(hasCode && hasName));
+            // Says when the name is what is missing
+            joinBtn.title = hasName ? '' : getText('pleaseEnterName', 'Please enter your name');
         }
 
         // Update Create New Game button state
         updateCreateButtonState();
     }
 
-    // Function to update Create New Game button state based on room code
+    // Create needs a name and no room code typed; the button says why it is off
     function updateCreateButtonState() {
-        if (createNewGameBtn) {
-            const roomCode = roomCodeInput.value.trim();
-            const hasValidRoomCode = roomCode.length === 6;
-
-            if (hasValidRoomCode) {
-                createNewGameBtn.disabled = true;
-                createNewGameBtn.classList.add('btn-secondary');
-                createNewGameBtn.classList.remove('btn-primary');
-                createNewGameBtn.title = getText('clearRoomCodeToCreate', 'Clear room code to create a new game');
-            } else {
-                createNewGameBtn.disabled = false;
-                createNewGameBtn.classList.remove('btn-secondary');
-                createNewGameBtn.classList.add('btn-primary');
-                createNewGameBtn.title = '';
-            }
+        if (!createNewGameBtn) return;
+        let whyOff = '';
+        if (roomCodeInput.value.trim().length === 6) {
+            whyOff = getText('clearRoomCodeToCreate', 'Clear room code to create a new game');
+        } else if (!playerNameInput.value.trim()) {
+            whyOff = getText('pleaseEnterName', 'Please enter your name');
         }
+        createNewGameBtn.disabled = Boolean(whyOff);
+        createNewGameBtn.classList.toggle('btn-secondary', Boolean(whyOff));
+        createNewGameBtn.classList.toggle('btn-primary', !whyOff);
+        createNewGameBtn.title = whyOff;
     }
+
+    if (playerNameInput) playerNameInput.addEventListener('input', updateJoinButtonState);
+    document.addEventListener('languagechanged', updateJoinButtonState);
 
     // Auto-uppercase room code input and manage Join button state
     if (roomCodeInput) {
@@ -311,12 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const playerName = document.getElementById('playerName').value.trim();
             const selectedAvatar = selectedAvatarInput.value;
             
-            if (!playerName) {
-                alert(getText('pleaseEnterName', 'Please enter your name first'));
-                document.getElementById('playerName').focus();
-                return;
-            }
-
             // Clear room code first (this will re-enable the button visually)
             roomCodeInput.value = '';
             updateJoinButtonState(); // This will also update the create button state
@@ -325,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
             createNewGameBtn.disabled = true;
             createNewGameBtn.textContent = getText('creating', 'Creating...');
             
-            // Store player data (ID will be set by game-room.js using global PLAYER_ID)
+            // The room page joins with this (the ID and secret are the browser's: PLAYER_ID, PLAYER_SECRET)
             const playerData = {
                 name: playerName,
                 avatar: selectedAvatar,
@@ -345,18 +340,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedAvatar = selectedAvatarInput.value;
             const roomCode = roomCodeInput.value.trim();
             
-            if (!playerName) {
-                alert(getText('pleaseEnterName', 'Please enter your name'));
-                return;
-            }
-
             // If room code provided, validate it
             if (roomCode && roomCode.length !== 6) {
-                alert(getText('roomCodeLength', 'Room code must be exactly 6 characters'));
+                showMessage(getText('roomCodeLength', 'Room code must be exactly 6 characters'));
                 return;
             }
 
-            // Store player data (ID will be set by game-room.js using global PLAYER_ID)
+            // The room page joins with this (the ID and secret are the browser's: PLAYER_ID, PLAYER_SECRET)
             const playerData = {
                 name: playerName,
                 avatar: selectedAvatar,
@@ -377,8 +367,8 @@ document.addEventListener('DOMContentLoaded', function() {
     async function createGame(playerData) {
         try {
             debugLog('Creating game with player data:', playerData);
-            AppStorage.set('whoami-player-name', playerData.name);
-            AppStorage.set('whoami-player-avatar', playerData.avatar);
+            AppStorage.set(SAVED_NAME_KEY, playerData.name);
+            AppStorage.set(SAVED_AVATAR_KEY, playerData.avatar);
 
             const response = await fetch('/api/create-game', {
                 method: 'POST',
@@ -404,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = `/game/${result.gameId}`;
             } else {
                 console.error('Create game failed:', result);
-                alert(getText('failedCreateGame', 'Failed to create game. Please try again.'));
+                showMessage(getText('failedCreateGame', 'Failed to create game. Please try again.'));
                 resetCreateButton();
             }
         } catch (error) {
@@ -423,8 +413,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to join existing game
     async function joinGame(playerData) {
         try {
-            AppStorage.set('whoami-player-name', playerData.name);
-            AppStorage.set('whoami-player-avatar', playerData.avatar);
+            AppStorage.set(SAVED_NAME_KEY, playerData.name);
+            AppStorage.set(SAVED_AVATAR_KEY, playerData.avatar);
             const response = await fetch('/api/join-game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -439,14 +429,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const result = await response.json();
             
-            // A started game lets a newcomer in only when a player agrees: the
-            // room page waits for that (game-room.js)
+            // A newcomer to a started round waits on the room page (the kit's
+            // room with players: waitingForApproval)
             if (result.success || result.waitingForApproval) {
                 // Store player data and redirect to game room
                 AppStorage.session.set('playerData', playerData);
                 window.location.href = `/game/${playerData.roomCode}`;
             } else {
-                alert(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
+                showMessage(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
             }
         } catch (error) {
             handleApiError(error, 'joining game');
