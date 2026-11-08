@@ -4,7 +4,7 @@
 // The browser's language, the saved choice and the landing page's texts are
 // the kit's (landing.spec.js checks the game's title and subtitle)
 const {
-    test, expect, text, createRoom, joinRoom, waitForPlayers, startRound, answer, answerStep, writeToReading, seatRow,
+    test, expect, text, createRoom, joinRoom, waitForPlayers, startRound, answer, answerStep, writeToReading, showStories, seatRow,
 } = require('./helpers');
 
 // Anna plays in Russian, Boris in English
@@ -58,7 +58,7 @@ test('the switch draws the reading and every story again in the other language',
     await expect(anna.page.locator('#readingCard .story__answer').first()).toBeVisible();
 
     await boris.page.locator('#readingCard .closed-sheet').click();
-    await expect(anna.page.locator('#storiesCard')).toBeVisible();
+    await showStories(anna);
     await anna.page.locator('.lang-toggle-btn').click();
     await expect(anna.page.locator('#storyList .story-head').first()).toContainText(text('sheetNumber', 'ru', { number: 1 }));
     await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'ru'));

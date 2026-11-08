@@ -27,6 +27,10 @@ let formSheet = null;
 let formFor = null;
 // An answer sent and not yet in the round: the button waits for it
 let answerSending = false;
+// This player has pressed «Every story»: each comes to them in their own time,
+// so the last sheet to open changes nobody's screen - or its reader would
+// never see it. Nothing the room knows: a reload goes back to the reading
+let storiesAsked = false;
 // The player's own answer as this tab sent it ({ room, step, text }), kept in
 // the tab (a reload keeps it): shown while they wait, and «Change the answer»
 // puts it back into the field. The room never sends an answer's text back
@@ -140,7 +144,7 @@ function renderRoom() {
     if (!currentGame) return;
     const round = currentGame.round || null;
     const reading = Boolean(round) && round.step >= round.questionCount;
-    const stories = round ? round.stories : null;
+    const stories = round && storiesAsked ? round.stories : null;
 
     showCard('shareCard', !round);
     showCard('playersCard', !round);
@@ -153,6 +157,7 @@ function renderRoom() {
 
     if (!round) {
         openSheets.clear();
+        storiesAsked = false;
         // A round's answer is no answer of the next one
         if (sentAnswer) {
             sentAnswer = null;
@@ -323,7 +328,22 @@ function renderReading(round) {
         else if (isMe(seat.openedBy)) parts.push(sheetSection(say('sheetOfPlayer', { name: seat.name }), openSheet(seat.sheet)));
     }
     parts.push(element('p', 'opened-count', say('openedCount', { opened: round.opened, count: round.seats.length })));
+    parts.push(storiesButton(round));
     document.getElementById('readingCard').replaceChildren(...parts);
+}
+
+// «Every story»: there from the start of the reading, off until the last sheet is open
+function storiesButton(round) {
+    const show = button('btn btn-primary btn-lg', say('allStories'), () => {
+        storiesAsked = true;
+        renderRoom();
+        document.getElementById('storiesCard').scrollIntoView({ block: 'start', behavior: 'instant' });
+    });
+    show.id = 'showStories';
+    show.disabled = !round.stories;
+    const row = element('div', 'd-grid mt-3');
+    row.append(show);
+    return row;
 }
 
 function sheetSection(title, ...content) {
@@ -334,7 +354,7 @@ function sheetSection(title, ...content) {
 
 function ownSheet(round, mine) {
     if (isMe(mine.openedBy)) {
-        return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('othersWillSee')), openSheet(mine.sheet));
+        return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('readThisAloud')), openSheet(mine.sheet));
     }
     const reader = mine.openedBy || mine.heldBy;
     if (reader) return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('yourSheetReadBy', { name: nameOf(round, reader) })));

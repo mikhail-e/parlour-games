@@ -4,7 +4,7 @@
 const { AxeBuilder } = require('@axe-core/playwright');
 const {
     test, expect, text, PAGE_STATUS_404, createRoom, roomWith, askToJoin, startedRound, answer, writeToReading,
-    seatRow,
+    showStories, seatRow,
 } = require('./helpers');
 
 const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
@@ -103,7 +103,7 @@ test('every story', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
-    await expect(players[0].page.locator('#storiesCard')).toBeVisible();
+    await showStories(players[0]);
 
     expect(await violations(players[0].page)).toEqual([]);
 });

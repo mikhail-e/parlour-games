@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    seatRow,
+    showStories, seatRow,
 } = require('./helpers');
 
 const readFor = (page, name) => seatRow(page, name).getByRole('button', { name: text('readFor', 'en', { name }) });
@@ -30,6 +30,7 @@ test("three players: each reads the sheet the player before them finished, writt
     await expect(answersOf(ownSheet(vera.page)).last()).toHaveText('Boris 8');
     await expect(ownSheet(anna.page).locator('.closed-sheet')).toBeVisible();
     await ownSheet(anna.page).locator('.closed-sheet').click();
+    await showStories(anna);
     await expect(answersOf(storyReadBy(anna.page, 'Anna')).last()).toHaveText('Vera 8');
 });
 
@@ -64,6 +65,7 @@ test('two players: each reads the sheet the other finished', async ({ newPlayer 
 
     await expect(answersOf(ownSheet(anna.page)).last()).toHaveText('Boris 8');
     await boris.page.locator('#readingCard .closed-sheet').click();
+    await showStories(boris);
     await expect(answersOf(storyReadBy(boris.page, 'Boris')).last()).toHaveText('Anna 8');
 });
 
@@ -153,14 +155,69 @@ test('Petya back before anyone took his sheet opens it himself; "Read for Petya"
     await expect(answersOf(ownSheet(back.page))).toHaveCount(8);
 });
 
-test('the last sheet to open shows every story to everyone, each with who read it', async ({ newPlayer }) => {
+test('every story is off until the last sheet opens; that changes no screen, and each player goes on by their own press', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const [anna, boris] = players;
+    await writeToReading(players);
+    await expect(anna.page.locator('#showStories')).toBeDisabled();
+
+    await ownSheet(anna.page).locator('.closed-sheet').click();
+    await expect(ownSheet(anna.page).locator('.lead-on-sheet')).toHaveText(text('readThisAloud'));
+    await expect(anna.page.locator('#showStories')).toBeDisabled();
+
+    await ownSheet(boris.page).locator('.closed-sheet').click();
+
+    // The last to open reads their sheet like everyone else
+    for (const player of players) {
+        await expect(player.page.locator('#showStories')).toBeEnabled();
+        await expect(player.page.locator('#storiesCard')).toBeHidden();
+        await expect(answersOf(ownSheet(player.page))).toHaveCount(8);
+        await expect(player.page.locator('#seatsCard')).toBeVisible();
+    }
+
+    await showStories(boris);
+    await expect(boris.page.locator('#readingCard')).toBeHidden();
+    await expect(anna.page.locator('#storiesCard')).toBeHidden();
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+});
+
+test('a reload on every story goes back to the player\'s sheet, with the button on', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
+    await showStories(players[0]);
+
+    await players[0].page.reload();
+
+    await expect(answersOf(ownSheet(players[0].page))).toHaveCount(8);
+    await expect(players[0].page.locator('#showStories')).toBeEnabled();
+    await expect(players[0].page.locator('#storiesCard')).toBeHidden();
+});
+
+test('the press of one round does not carry over to the next', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
+    await showStories(players[0]);
+    await players[0].page.click('#anotherRound');
+    await waitForPlayers(players[1].page, 2);
+
+    await startRound(players);
+    await writeToReading(players);
+    for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
+
+    await expect(players[0].page.locator('#showStories')).toBeEnabled();
+    await expect(players[0].page.locator('#storiesCard')).toBeHidden();
+});
+
+test('every story shows each sheet with who read it', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
     await writeToReading(players);
 
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
 
     for (const player of players) {
-        await expect(player.page.locator('#storiesCard')).toBeVisible();
+        await showStories(player);
         await expect(player.page.locator('#readingCard')).toBeHidden();
         await expect(player.page.locator('#seatsCard')).toBeHidden();
         await expect(player.page.locator('#newRound')).toBeHidden();
@@ -179,7 +236,7 @@ test('Another round takes everyone back to the lobby, without asking', async ({ 
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
-    await expect(players[1].page.locator('#storiesCard')).toBeVisible();
+    await showStories(players[1]);
 
     await players[1].page.click('#anotherRound');
 

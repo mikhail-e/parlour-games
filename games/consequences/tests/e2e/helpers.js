@@ -62,6 +62,12 @@ async function writeToReading(players, answerOf = answerText) {
     for (let step = 0; step < 8; step++) await answerStep(players, step, answerOf);
 }
 
+// A player goes on from the reading to every story, by their own press
+async function showStories(player) {
+    await player.page.click('#showStories');
+    await expect(player.page.locator('#storiesCard')).toBeVisible();
+}
+
 // A player back in the started round by its link, from a new page of their
 // browser: the landing page, the name, Join - and the round, not the lobby
 async function returnToRound(player, code) {
@@ -97,6 +103,7 @@ module.exports = {
     answerText,
     answerStep,
     writeToReading,
+    showStories,
     returnToRound,
     seatRow,
 };
