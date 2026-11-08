@@ -24,7 +24,7 @@ npm run test:e2e:prod                      # браузерные тесты п�
 
 Playwright запускает два `wrangler dev` (`playwright.config.js`):
 - на порту 3200 — обычный, для всех тестов; пауза после последнего ответа шага на нём почти нулевая (`STEP_PAUSE_MS: 50`): тесты играют много шагов;
-- на порту 3201 — с короткими таймерами комнаты (`ROOM_EMPTY_MS: 8000`, `GHOST_MS: 3000`, `STEP_PAUSE_MS: 3000`): на нём идёт только `room-timers.spec.js` (`test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL })`).
+- на порту 3201 — с короткими таймерами комнаты (`ROOM_EMPTY_MS: 8000`, `GHOST_MS: 3000`, `STEP_PAUSE_MS: 3000`, `LATE_ALARM_MS: 30000` — будильник смены шага опаздывает, как иногда бывает в Cloudflare): на нём идёт только `room-timers.spec.js` (`test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL })`).
 
 Порты whoami — 3100 и 3101, так что прогоны двух игр не встречаются; запущенный `npm start` (8788) тоже не мешает.
 

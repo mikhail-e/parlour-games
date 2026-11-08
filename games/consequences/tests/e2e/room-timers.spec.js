@@ -15,6 +15,19 @@ const GHOST_WAIT = { timeout: 10_000 };
 // Longer than the fast server's pause after a step's last answer
 const LONGER_THAN_PAUSE = 4000;
 
+// Longer than the fast server's pause, shorter than its late alarm (LATE_ALARM_MS)
+const SOONER_THAN_THE_LATE_ALARM = { timeout: 15_000 };
+
+test('the sheets move on at the end of the pause even when the alarm runs late', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+
+    await answer(anna, 'Anna 1');
+    await answer(boris, 'Boris 1');
+
+    await expect.poll(() => roundStep(anna.page), SOONER_THAN_THE_LATE_ALARM).toBe(1);
+    await expect.poll(() => roundStep(boris.page), SOONER_THAN_THE_LATE_ALARM).toBe(1);
+});
+
 test('a room nobody has open is gone after the empty-room time', async ({ newPlayer }) => {
     const anna = await newPlayer('Anna');
     const code = await createRoom(anna);
