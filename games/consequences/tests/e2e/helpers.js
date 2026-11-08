@@ -41,7 +41,7 @@ async function startedRound(newPlayer, names) {
     return room;
 }
 
-// Write an answer on the sheet in front of the player and fold it
+// Write an answer on the sheet in front of the player and send it
 async function answer(player, text) {
     await player.page.fill('#answerText', text);
     await player.page.click('#saveAndPass');

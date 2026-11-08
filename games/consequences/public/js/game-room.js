@@ -195,8 +195,8 @@ function playerCard(player) {
     return card;
 }
 
-// The writing: the step, the sheet in front of the player with its answers
-// folded away, and the question - or, once answered, what happens next
+// The writing: the step, the sheet in front of the player with its answered
+// questions as pleats, and the question - or, once answered, what happens next
 function renderWriting(round) {
     const { step, questionCount } = round;
     document.getElementById('stepLabel').textContent = say('stepOf', { step: step + 1, count: questionCount });
@@ -265,7 +265,7 @@ function renderFolds(count) {
         (_, index) => element('div', 'fold', `${index + 1}. ${say(`question${index + 1}`)}`)));
 }
 
-// Under the folded answer: who answers (or answered) for this player at this
+// Under the sent answer: who answers (or answered) for this player at this
 // step, or who gets the sheet next
 function waitingHint(round, mine) {
     if (!mine) return '';

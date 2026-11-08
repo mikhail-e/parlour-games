@@ -63,7 +63,7 @@ test("each player sees the question in their page's language", async ({ newPlaye
     await expect(anna.page.locator('#writingCard')).not.toContainText('Boris 3');
 });
 
-test('a sent answer is folded away: the field closes, and the player sees who is still writing', async ({ newPlayer }) => {
+test('after sending an answer the field closes, and the player sees who is still writing', async ({ newPlayer }) => {
     const { players: [anna, boris, vera] } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
 
     await answer(anna, 'A pirate grandmother');
