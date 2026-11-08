@@ -134,14 +134,20 @@
                     <form id="answerForm" novalidate>
                         <div class="sheet__number" id="questionNumber"></div>
                         <h2 class="sheet__question" id="questionText"></h2>
-                        <textarea class="form-control" id="answerText" rows="3" enterkeyhint="send" data-i18n-aria-label="yourAnswer" aria-label="Your answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer"></textarea>
+                        <textarea class="form-control" id="answerText" rows="3" data-i18n-aria-label="yourAnswer" aria-label="Your answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer"></textarea>
                         <!-- The keys, for a computer's keyboard only (style.css), and the count -->
                         <div class="sheet__under">
                             <span class="sheet__keys" data-i18n="answerKeys">Enter to send · Shift + Enter for a new line</span>
                             <span class="sheet__count" id="answerCount"></span>
                         </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg" id="saveAndPass" data-i18n="saveAndPass">Save and pass on →</button>
+                        <!-- The send button: on a computer under the field, on a phone a
+                             square at its right (style.css). The label is a span of its own:
+                             data-i18n replaces an element's text, and would take the plane -->
+                        <div class="d-grid answer-send">
+                            <button type="submit" class="btn btn-primary btn-lg" id="saveAndPass">
+                                <span class="answer-send__label" data-i18n="saveAndPass">Save and pass on →</span>
+                                <svg class="answer-send__plane" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="answer-send__wing" d="M3.5 4.2 21 12 3.5 19.8 6.4 12z"/><path class="answer-send__fold" d="M6.4 12h7"/></svg>
+                            </button>
                         </div>
                     </form>
                     <p class="sheet__hint" id="sheetHint" role="status"></p>

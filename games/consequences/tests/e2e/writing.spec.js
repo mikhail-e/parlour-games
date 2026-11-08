@@ -138,7 +138,8 @@ test('an empty answer or one of spaces is not sent, and the field stays open', a
     await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusWriting'));
 });
 
-test('Enter sends the answer, Shift + Enter breaks a line in it, and the story keeps the line', async ({ newPlayer }) => {
+test('on a computer Enter sends the answer, Shift + Enter breaks a line in it, and the story keeps the line', async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, "a phone's keys: the next test");
     const anna = await newPlayer('Anna');
     const sentAnswers = countSentEvents(anna.page, 'write-answer');
     const boris = await newPlayer('Boris');
@@ -154,6 +155,10 @@ test('Enter sends the answer, Shift + Enter breaks a line in it, and the story k
     await anna.page.keyboard.type('and her cat');
     await expect(field).toHaveValue('Anna\nand her cat');
     expect(sentAnswers()).toBe(0);
+    // The send button is the main one, under the field and as wide
+    const [fieldBox, sendBox] = [await field.boundingBox(), await anna.page.locator('#saveAndPass').boundingBox()];
+    expect(sendBox.y).toBeGreaterThan(fieldBox.y + fieldBox.height);
+    expect(Math.abs(sendBox.width - fieldBox.width)).toBeLessThan(2);
 
     await anna.page.keyboard.press('Enter');
 
@@ -166,6 +171,37 @@ test('Enter sends the answer, Shift + Enter breaks a line in it, and the story k
     for (let step = 1; step < 8; step++) await answerStep([anna, boris], step);
     await anna.page.locator('#readingCard .closed-sheet').first().click();
     await expect(anna.page.locator('#readingCard .story__answer').first()).toHaveJSProperty('innerText', 'Anna\nand her cat');
+});
+
+test("on a phone Enter breaks a line, and the square at the field's right sends the answer", async ({ newPlayer, isMobile }) => {
+    test.skip(!isMobile, "a computer's keys: the test before");
+    const anna = await newPlayer('Anna');
+    const sentAnswers = countSentEvents(anna.page, 'write-answer');
+    const boris = await newPlayer('Boris');
+    const code = await createRoom(anna);
+    await joinRoom(boris, code);
+    await waitForPlayers(anna.page, 2);
+    await startRound([anna, boris]);
+
+    const field = anna.page.locator('#answerText');
+    await field.focus();
+    await anna.page.keyboard.type('Anna');
+    await anna.page.keyboard.press('Enter');
+    await anna.page.keyboard.type('and her cat');
+    await expect(field).toHaveValue('Anna\nand her cat');
+    expect(sentAnswers()).toBe(0);
+    // The button stays in sight above the keyboard: at the field's right,
+    // level with its bottom, and named for a screen reader
+    const send = anna.page.getByRole('button', { name: text('saveAndPass') });
+    const [fieldBox, sendBox] = [await field.boundingBox(), await send.boundingBox()];
+    expect(sendBox.x).toBeGreaterThanOrEqual(fieldBox.x + fieldBox.width);
+    expect(Math.abs(sendBox.y + sendBox.height - (fieldBox.y + fieldBox.height))).toBeLessThan(2);
+
+    await send.click();
+
+    await expect(anna.page.locator('#answerForm')).toBeHidden();
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
+    expect(sentAnswers()).toBe(1);
 });
 
 test('under the field a computer shows the keys - Enter sends, Shift + Enter breaks a line; a phone does not', async ({ newPlayer, isMobile }) => {

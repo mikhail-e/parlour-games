@@ -437,10 +437,14 @@ function setUpRoomGame() {
 
     document.getElementById('answerForm').addEventListener('submit', sendAnswer);
     document.getElementById('answerText').addEventListener('input', updateAnswerField);
-    // Enter sends the answer as the button does, Shift + Enter starts a new
-    // line in it. An Enter that ends a word of an input method is not one
-    // (Safari reports it as key code 229)
+    // A computer's Enter sends the answer as the button does, Shift + Enter
+    // starts a new line in it. A phone's Enter is a new line (its keyboard has
+    // no Shift + Enter): the button at the field's right sends (style.css).
+    // An Enter that ends a word of an input method is not one (Safari reports
+    // it as key code 229)
+    const computerKeyboard = matchMedia('(hover: hover) and (pointer: fine)');
     document.getElementById('answerText').addEventListener('keydown', event => {
+        if (!computerKeyboard.matches) return;
         if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
         sendAnswer(event);
     });

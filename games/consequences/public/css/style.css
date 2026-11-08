@@ -156,7 +156,7 @@
 }
 
 /* Only for a computer's keyboard: a phone's has no Shift + Enter, and its
-   Enter key is the keyboard's Send (enterkeyhint) */
+   Enter starts a new line */
 .sheet__keys {
   display: none;
 }
@@ -164,6 +164,91 @@
 @media (hover: hover) and (pointer: fine) {
   .sheet__keys {
     display: inline;
+  }
+}
+
+/* The send button. On a computer it is the main button under the field. On
+   a phone - a touch screen, no mouse - the keyboard covers what is under the
+   field: a square at the field's right, level with its bottom, as messengers
+   have it, in the game's color with a paper plane; its label stays for a
+   screen reader */
+.answer-send__plane {
+  display: none;
+}
+
+.answer-send__wing {
+  fill: currentColor;
+}
+
+.answer-send__fold {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+@media not all and (hover: hover) and (pointer: fine) {
+  #answerForm {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+  }
+
+  #answerForm > * {
+    grid-column: 1 / -1;
+  }
+
+  #answerForm > .sheet__number {
+    grid-row: 1;
+  }
+
+  #answerForm > .sheet__question {
+    grid-row: 2;
+  }
+
+  #answerForm > #answerText {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  #answerForm > .answer-send {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  #answerForm > .sheet__under {
+    grid-row: 4;
+  }
+
+  #saveAndPass {
+    --bs-btn-color: var(--paper-light);
+    --bs-btn-bg: var(--accent);
+    --bs-btn-border-color: var(--accent);
+    --bs-btn-active-color: var(--paper-light);
+    --bs-btn-active-bg: var(--curtain-bottom);
+    --bs-btn-active-border-color: var(--curtain-bottom);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+  }
+
+  .answer-send__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .answer-send__plane {
+    display: block;
+    width: 26px;
+    height: 26px;
   }
 }
 
