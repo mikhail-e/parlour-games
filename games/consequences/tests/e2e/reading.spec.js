@@ -33,7 +33,7 @@ test("three players: each reads the sheet the player before them finished, writt
     await expect(answersOf(storyReadBy(anna.page, 'Anna')).last()).toHaveText('Vera 8');
 });
 
-test('a closed sheet is a sealed envelope, the wax at its middle', async ({ newPlayer }) => {
+test('a closed sheet is a sealed envelope, the center of the wax on the point of the flap', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     const { page } = players[0];
@@ -48,7 +48,9 @@ test('a closed sheet is a sealed envelope, the wax at its middle', async ({ newP
     const outer = await envelope.boundingBox();
     const inner = await seal.boundingBox();
     expect(Math.abs((inner.x + inner.width / 2) - (outer.x + outer.width / 2))).toBeLessThan(1.5);
-    expect(Math.abs((inner.y + inner.height / 2) - (outer.y + outer.height / 2))).toBeLessThan(1.5);
+    // The flap's lines are drawn in a box as tall as its point is low
+    const flapPoint = await envelope.evaluate(element => parseFloat(getComputedStyle(element).backgroundSize.split(',')[0].trim().split(' ')[1]));
+    expect(Math.abs((inner.y + inner.height / 2) - (outer.y + outer.height * flapPoint / 100))).toBeLessThan(1.5);
 });
 
 test('two players: each reads the sheet the other finished', async ({ newPlayer }) => {

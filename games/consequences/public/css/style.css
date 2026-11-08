@@ -446,6 +446,8 @@
 }
 
 .envelope {
+  /* How far down the flap's point is: the seal sits on it */
+  --flap-point: 60%;
   position: relative;
   display: block;
   width: min(100%, 300px);
@@ -453,18 +455,18 @@
   aspect-ratio: 3 / 2;
   border: 1px solid rgba(42, 29, 23, .45);
   background:
-    linear-gradient(to top right, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) left top / 50% 50% no-repeat,
-    linear-gradient(to top left, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) right top / 50% 50% no-repeat,
+    linear-gradient(to top right, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) left top / 50% var(--flap-point) no-repeat,
+    linear-gradient(to top left, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) right top / 50% var(--flap-point) no-repeat,
     var(--sheet-paper);
   box-shadow: 0 3px 8px rgba(42, 29, 23, .3);
 }
 
-/* The wax seal, on the point of the flap at the envelope's middle. The shadow
-   follows the wax's uneven edge */
+/* The wax seal, its center on the point of the flap. The shadow follows the
+   wax's uneven edge */
 .envelope__seal {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: var(--flap-point);
   width: 84px;
   height: 84px;
   transform: translate(-50%, -50%);
