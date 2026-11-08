@@ -33,7 +33,7 @@ test("three players: each reads the sheet the player before them finished, writt
     await expect(answersOf(storyReadBy(anna.page, 'Anna')).last()).toHaveText('Vera 8');
 });
 
-test('a closed sheet is a sealed envelope, the center of the wax on the point of the flap', async ({ newPlayer }) => {
+test('a closed sheet is a sealed envelope, the point of the flap hidden just under the center of the wax', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     const { page } = players[0];
@@ -48,9 +48,12 @@ test('a closed sheet is a sealed envelope, the center of the wax on the point of
     const outer = await envelope.boundingBox();
     const inner = await seal.boundingBox();
     expect(Math.abs((inner.x + inner.width / 2) - (outer.x + outer.width / 2))).toBeLessThan(1.5);
-    // The flap's lines are drawn in a box as tall as its point is low
-    const flapPoint = await envelope.evaluate(element => parseFloat(getComputedStyle(element).backgroundSize.split(',')[0].trim().split(' ')[1]));
-    expect(Math.abs((inner.y + inner.height / 2) - (outer.y + outer.height * flapPoint / 100))).toBeLessThan(1.5);
+    // The flap's lines are drawn in a box as tall as its point is low: the
+    // seal's height on the envelope, and a little lower, for the eye
+    const flapBox = await envelope.evaluate(element => getComputedStyle(element).backgroundSize);
+    const [, sealPercent, lowerBy] = flapBox.match(/calc\(([\d.]+)% \+ ([\d.]+)px\)/);
+    expect(Math.abs((inner.y + inner.height / 2) - (outer.y + outer.height * Number(sealPercent) / 100))).toBeLessThan(1.5);
+    expect(Number(lowerBy)).toBe(8);
 });
 
 test('two players: each reads the sheet the other finished', async ({ newPlayer }) => {

@@ -446,8 +446,11 @@
 }
 
 .envelope {
-  /* How far down the flap's point is: the seal sits on it */
-  --flap-point: 60%;
+  /* How far down the seal is, and the flap's point under it. The point is
+     hidden by the wax and the eye carries the lines on to a meeting above
+     it: 8px lower is what looks centered (the owner's pick by eye) */
+  --seal-center: 60%;
+  --flap-point: calc(var(--seal-center) + 8px);
   position: relative;
   display: block;
   width: min(100%, 300px);
@@ -461,12 +464,11 @@
   box-shadow: 0 3px 8px rgba(42, 29, 23, .3);
 }
 
-/* The wax seal, its center on the point of the flap. The shadow follows the
-   wax's uneven edge */
+/* The wax seal. The shadow follows the wax's uneven edge */
 .envelope__seal {
   position: absolute;
   left: 50%;
-  top: var(--flap-point);
+  top: var(--seal-center);
   width: 84px;
   height: 84px;
   transform: translate(-50%, -50%);
