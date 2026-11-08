@@ -4,7 +4,8 @@
 // A round: every player of the list takes a seat in the circle, in the list's
 // order, with a blank sheet of eight questions. At step s (0-7) every seat
 // answers question s on the sheet in front of it; when every sheet has its
-// answer the sheets move on to the next seat, all at once. After the eighth
+// answer, and a short pause has passed, the sheets move on to the next seat,
+// all at once. After the eighth
 // question they move once more, and each seat reads the sheet that came to it
 // (step 8). The round in the game:
 //
@@ -14,6 +15,7 @@
 //     step:     0-7 the questions, 8 the reading
 //     takenBy:  { [the seat's playerId]: playerId }, // who writes for an absent seat at this step, or reads its sheet
 //     openedBy: { [sheet number]: playerId },         // which sheets are open, and who opened them
+//     stepEndsAt: time | null,  // every sheet has this step's answer: when they move on
 //   }
 
 // The players of the room - joining with the browser's secret, a leaver's
@@ -32,6 +34,9 @@ const MIN_PLAYERS = 2;
 // The answer's limit, counted as a person counts characters (an emoji is one).
 // The browser's copy is in public/js/utils.js; a test keeps the two equal
 const MAX_ANSWER_LENGTH = 200;
+// The pause after a step's last answer, before the sheets move on: time for
+// whoever wrote it to press "Change the answer". The room's tests shorten it
+const STEP_PAUSE_MS = 5000;
 
 const {
     createGame,
@@ -96,7 +101,8 @@ function startRound(games, gameId, playerId) {
         sheets: seats.map(() => Array(QUESTION_COUNT).fill(null)),
         step: 0,
         takenBy: {},
-        openedBy: {}
+        openedBy: {},
+        stepEndsAt: null
     };
     game.state = 'started';
     touchGame(game);
@@ -106,9 +112,10 @@ function startRound(games, gameId, playerId) {
 // A player writes the answer to this step's question on the sheet in front of
 // them - their own seat's, or, with `forPlayerId`, the sheet of an absent
 // player they have taken. While the step is on, a player may take their own
-// answer back and write it anew (takeBackAnswer). The step ends when every
-// sheet has its answer: the sheets move on (`stepEnded`)
-function writeAnswer(games, gameId, playerId, text, forPlayerId = null) {
+// answer back and write it anew (takeBackAnswer). When every sheet has its
+// answer (`allAnswered`), the pause before the sheets move on begins
+// (moveSheetsIfDue)
+function writeAnswer(games, gameId, playerId, text, forPlayerId = null, pauseMs = STEP_PAUSE_MS) {
     const { game, round, error } = roundOf(games, gameId);
     if (error) return { success: false, error };
     if (round.step >= READING_STEP) return { success: false, error: 'The questions are over' };
@@ -136,20 +143,30 @@ function writeAnswer(games, gameId, playerId, text, forPlayerId = null) {
     // The sheet of an absent player goes back on the table, answered
     delete round.takenBy[seatPlayerId];
 
-    const stepEnded = round.sheets.every(eachSheet => eachSheet[round.step]);
-    if (stepEnded) {
-        round.step += 1;
-        round.takenBy = {};
-    }
+    const allAnswered = round.sheets.every(eachSheet => eachSheet[round.step]);
+    if (allAnswered) round.stepEndsAt = Date.now() + pauseMs;
     touchGame(game);
-    return { success: true, stepEnded, step: round.step };
+    return { success: true, allAnswered };
+}
+
+// The pause after a step's last answer has run out: the sheets move on, all
+// at once (the room's timer calls this). False when nothing is due yet
+function moveSheetsIfDue(game) {
+    const round = game.round;
+    if (!round || !round.stepEndsAt || Date.now() < round.stepEndsAt) return false;
+    round.step += 1;
+    round.takenBy = {};
+    round.stepEndsAt = null;
+    touchGame(game);
+    return true;
 }
 
 // "Change the answer": a player takes back the answer they wrote on their own
 // seat's sheet at this step (`step`, the one their page shows), while the
-// step is on. The seat is blank again - the step waits for it - and they
-// write it anew (writeAnswer). Only an answer they wrote themselves: one
-// another player wrote for their seat stays
+// step is on - the pause after its last answer included. The seat is blank
+// again - the step waits for it, and the pause is off - and they write it
+// anew (writeAnswer). Only an answer they wrote themselves: one another
+// player wrote for their seat stays
 function takeBackAnswer(games, gameId, playerId, step) {
     const { game, round, error } = roundOf(games, gameId);
     if (error) return { success: false, error };
@@ -164,6 +181,7 @@ function takeBackAnswer(games, gameId, playerId, step) {
     if (answer.by !== playerId) return { success: false, error: 'Another player wrote this answer' };
 
     sheet[round.step] = null;
+    round.stepEndsAt = null;
     touchGame(game);
     return { success: true };
 }
@@ -365,6 +383,7 @@ module.exports = {
     serializeGame,
     startRound,
     writeAnswer,
+    moveSheetsIfDue,
     takeBackAnswer,
     takeSheet,
     returnSheet,
@@ -380,5 +399,6 @@ module.exports = {
     QUESTION_COUNT,
     MIN_PLAYERS,
     READING_STEP,
-    MAX_ANSWER_LENGTH
+    MAX_ANSWER_LENGTH,
+    STEP_PAUSE_MS
 };

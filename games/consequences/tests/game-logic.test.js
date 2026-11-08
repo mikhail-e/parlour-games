@@ -38,9 +38,18 @@ function roundOf(count) {
     return lobby;
 }
 
-// Every seat answers this step's question with "<who> <step>"
+// The pause after a step's last answer runs out, and the room's timer goes off
+function pauseRunsOut(game) {
+    jest.advanceTimersByTime(gameLogic.STEP_PAUSE_MS);
+    return gameLogic.moveSheetsIfDue(game);
+}
+
+// Every seat answers this step's question with "<who> <step>", and the sheets
+// move on
 function answerStep(games, ids, step) {
-    return ids.map(id => gameLogic.writeAnswer(games, CODE, id, `${id} ${step}`));
+    const results = ids.map(id => gameLogic.writeAnswer(games, CODE, id, `${id} ${step}`));
+    pauseRunsOut(games.get(CODE));
+    return results;
 }
 
 describe('the lobby', () => {
@@ -88,7 +97,7 @@ describe('starting a round', () => {
 describe('the answers', () => {
     test('an answer goes on the sheet in front of the player, trimmed, with who wrote it', () => {
         const { games, game, ids } = roundOf(3);
-        expect(gameLogic.writeAnswer(games, CODE, ids[1], '  the cat  ')).toEqual({ success: true, stepEnded: false, step: 0 });
+        expect(gameLogic.writeAnswer(games, CODE, ids[1], '  the cat  ')).toEqual({ success: true, allAnswered: false });
         expect(game.round.sheets[1][0]).toEqual({ text: 'the cat', by: ids[1] });
     });
 
@@ -138,11 +147,11 @@ describe('changing an answer', () => {
         expect(gameLogic.takeBackAnswer(games, CODE, ids[0], 0)).toEqual({ success: true });
         expect(game.round.sheets[0][0]).toBeNull();
         expect(gameLogic.roundView(game).seats[0]).toMatchObject({ answered: false, answeredBy: null });
-        expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b').stepEnded).toBe(false);
-        expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').stepEnded).toBe(false);
+        expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b').allAnswered).toBe(false);
+        expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').allAnswered).toBe(false);
         expect(game.round.step).toBe(0);
 
-        expect(gameLogic.writeAnswer(games, CODE, ids[0], 'second')).toEqual({ success: true, stepEnded: true, step: 1 });
+        expect(gameLogic.writeAnswer(games, CODE, ids[0], 'second')).toEqual({ success: true, allAnswered: true });
         expect(game.round.sheets[0][0]).toEqual({ text: 'second', by: ids[0] });
     });
 
@@ -190,11 +199,12 @@ describe('changing an answer', () => {
 describe('the steps', () => {
     test('a step waits for every sheet, then all the sheets move on at once', () => {
         const { games, game, ids } = roundOf(3);
-        expect(gameLogic.writeAnswer(games, CODE, ids[0], 'a').stepEnded).toBe(false);
-        expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').stepEnded).toBe(false);
+        expect(gameLogic.writeAnswer(games, CODE, ids[0], 'a').allAnswered).toBe(false);
+        expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').allAnswered).toBe(false);
         expect(game.round.step).toBe(0);
 
-        expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b')).toEqual({ success: true, stepEnded: true, step: 1 });
+        expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b')).toEqual({ success: true, allAnswered: true });
+        expect(pauseRunsOut(game)).toBe(true);
         expect(game.round.step).toBe(1);
         // Question 2 is written on the sheet the seat before had at question 1
         gameLogic.writeAnswer(games, CODE, ids[0], 'second');
@@ -208,6 +218,66 @@ describe('the steps', () => {
         }
         expect(game.round.step).toBe(gameLogic.READING_STEP);
         expect(gameLogic.writeAnswer(games, CODE, ids[0], 'late')).toEqual({ success: false, error: 'The questions are over' });
+    });
+
+    test('after the last answer the sheets stay for the pause, nothing is due before it ends, and it ends once', () => {
+        const { games, game, ids } = roundOf(2);
+        gameLogic.writeAnswer(games, CODE, ids[0], 'a');
+        expect(game.round.stepEndsAt).toBeNull();
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(false);
+
+        gameLogic.writeAnswer(games, CODE, ids[1], 'b');
+        jest.advanceTimersByTime(gameLogic.STEP_PAUSE_MS - 1);
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(false);
+        expect(game.round.step).toBe(0);
+        expect(gameLogic.roundView(game).step).toBe(0);
+
+        jest.advanceTimersByTime(1);
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(true);
+        expect(game.round.step).toBe(1);
+        expect(game.round.stepEndsAt).toBeNull();
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(false);
+        expect(game.round.step).toBe(1);
+    });
+
+    test('the room may give the pause its own length', () => {
+        const { games, game, ids } = roundOf(2);
+        gameLogic.writeAnswer(games, CODE, ids[0], 'a', null, 100);
+        gameLogic.writeAnswer(games, CODE, ids[1], 'b', null, 100);
+        jest.advanceTimersByTime(99);
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(false);
+        jest.advanceTimersByTime(1);
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(true);
+    });
+
+    test('taking an answer back in the pause stops it: the step waits, and the new answer starts a whole pause', () => {
+        const { games, game, ids } = roundOf(2);
+        gameLogic.writeAnswer(games, CODE, ids[0], 'a');
+        gameLogic.writeAnswer(games, CODE, ids[1], 'first');
+        jest.advanceTimersByTime(gameLogic.STEP_PAUSE_MS - 1);
+
+        expect(gameLogic.takeBackAnswer(games, CODE, ids[1], 0)).toEqual({ success: true });
+        expect(game.round.stepEndsAt).toBeNull();
+        expect(pauseRunsOut(game)).toBe(false);
+        expect(game.round.step).toBe(0);
+
+        gameLogic.writeAnswer(games, CODE, ids[1], 'second');
+        jest.advanceTimersByTime(gameLogic.STEP_PAUSE_MS - 1);
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(false);
+        jest.advanceTimersByTime(1);
+        expect(gameLogic.moveSheetsIfDue(game)).toBe(true);
+        expect(game.round.sheets[1][0]).toEqual({ text: 'second', by: ids[1] });
+    });
+
+    test('the last question has its pause too, before the reading', () => {
+        const { games, game, ids } = roundOf(2);
+        for (let step = 0; step < gameLogic.QUESTION_COUNT - 1; step++) answerStep(games, ids, step);
+        gameLogic.writeAnswer(games, CODE, ids[0], 'a');
+        gameLogic.writeAnswer(games, CODE, ids[1], 'b');
+        expect(game.round.step).toBe(gameLogic.QUESTION_COUNT - 1);
+
+        expect(pauseRunsOut(game)).toBe(true);
+        expect(game.round.step).toBe(gameLogic.READING_STEP);
     });
 
     // Every sheet gets one answer from each seat in turn, one question after
@@ -246,7 +316,7 @@ describe('the absent: offline players and leavers', () => {
         // The answered sheet goes back on the table: Anna holds nothing
         expect(game.round.takenBy).toEqual({});
 
-        expect(gameLogic.writeAnswer(games, CODE, vera, 'c')).toEqual({ success: true, stepEnded: true, step: 1 });
+        expect(gameLogic.writeAnswer(games, CODE, vera, 'c')).toEqual({ success: true, allAnswered: true });
     });
 
     test('a sheet is taken only from an absent seat, by a player who has answered and holds nothing', () => {
@@ -324,6 +394,7 @@ describe('the absent: offline players and leavers', () => {
         expect(gameLogic.writeAnswer(games, CODE, boris, 'mine')).toEqual({ success: false, error: 'Another player is writing on your sheet' });
         gameLogic.writeAnswer(games, CODE, anna, 'for Boris', boris);
         gameLogic.writeAnswer(games, CODE, vera, 'c');
+        pauseRunsOut(game);
 
         expect(game.round.step).toBe(1);
         expect(gameLogic.writeAnswer(games, CODE, boris, 'mine').success).toBe(true);
@@ -354,6 +425,7 @@ describe('the absent: offline players and leavers', () => {
             gameLogic.writeAnswer(games, CODE, vera, `c ${step}`);
             expect(gameLogic.takeSheet(games, CODE, anna, boris).success).toBe(true);
             gameLogic.writeAnswer(games, CODE, anna, `for Boris ${step}`, boris);
+            pauseRunsOut(game);
         }
         expect(game.round.step).toBe(2);
 
@@ -388,6 +460,7 @@ describe('the absent: offline players and leavers', () => {
             const helper = step % 2 === 0 ? anna : vera;
             expect(gameLogic.takeSheet(games, CODE, helper, boris).success).toBe(true);
             gameLogic.writeAnswer(games, CODE, helper, `for Boris ${step}`, boris);
+            pauseRunsOut(game);
         }
         expect(game.round.step).toBe(gameLogic.READING_STEP);
     });
@@ -539,6 +612,18 @@ describe('a new round', () => {
 });
 
 describe('the room\'s storage', () => {
+    test('a pause comes back from the storage, and ends on time', () => {
+        const { games, game, ids } = roundOf(2);
+        gameLogic.writeAnswer(games, CODE, ids[0], 'a');
+        gameLogic.writeAnswer(games, CODE, ids[1], 'b');
+
+        const loaded = gameFromStorage(JSON.parse(JSON.stringify(gameToStorage(game))));
+        expect(loaded.round.stepEndsAt).toBe(game.round.stepEndsAt);
+        expect(gameLogic.moveSheetsIfDue(loaded)).toBe(false);
+        expect(pauseRunsOut(loaded)).toBe(true);
+        expect(loaded.round.step).toBe(1);
+    });
+
     test('a round in the middle of the reading comes back from the storage as it was', () => {
         const { games, game, ids } = readingOf(3);
         markPlayerDisconnected(game, ids[1]);
