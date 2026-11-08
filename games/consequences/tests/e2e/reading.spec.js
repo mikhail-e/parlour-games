@@ -67,7 +67,7 @@ test('two players: each reads the sheet the other finished', async ({ newPlayer 
     await expect(answersOf(storyReadBy(boris.page, 'Boris')).last()).toHaveText('Anna 8');
 });
 
-test("a tapped sheet opens: eight answers, each under its question in the reader's language; the others' stay closed", async ({ newPlayer }) => {
+test("a tapped sheet opens: eight answers in order, read as one text without their questions, a line between them; the others' stay closed", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna', { locale: 'ru-RU' });
     const boris = await newPlayer('Boris');
     const vera = await newPlayer('Vera');
@@ -85,9 +85,14 @@ test("a tapped sheet opens: eight answers, each under its question in the reader
 
     await ownSheet(anna.page).locator('.closed-sheet').click();
 
-    await expect(ownSheet(anna.page).locator('.story__question')).toHaveText(
-        [1, 2, 3, 4, 5, 6, 7, 8].map(number => text(`question${number}`, 'ru')));
-    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+    await expect(answersOf(ownSheet(anna.page))).toHaveText([/ 1$/, / 2$/, / 3$/, / 4$/, / 5$/, / 6$/, / 7$/, / 8$/]);
+    for (const number of [1, 2, 3, 4, 5, 6, 7, 8]) {
+        await expect(ownSheet(anna.page).locator('.story')).not.toContainText(text(`question${number}`, 'ru'));
+    }
+    const lineUnder = item => item.evaluate(element => getComputedStyle(element).borderBottomStyle);
+    const lines = ownSheet(anna.page).locator('.story li');
+    expect(await lineUnder(lines.first())).toBe('dashed');
+    expect(await lineUnder(lines.last())).toBe('none');
     await expect(ownSheet(boris.page).locator('.closed-sheet')).toBeVisible();
     await expect(ownSheet(vera.page).locator('.closed-sheet')).toBeVisible();
     await expect(boris.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 1, count: 3 }));

@@ -55,11 +55,12 @@ test('the switch draws the reading and every story again in the other language',
     await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 0, count: 2 }));
     await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusClosed', 'en'));
     await anna.page.locator('#readingCard .closed-sheet').click();
-    await expect(anna.page.locator('#readingCard .story__question').first()).toHaveText(text('question1', 'en'));
+    await expect(anna.page.locator('#readingCard .story__answer').first()).toBeVisible();
 
     await boris.page.locator('#readingCard .closed-sheet').click();
     await expect(anna.page.locator('#storiesCard')).toBeVisible();
     await anna.page.locator('.lang-toggle-btn').click();
     await expect(anna.page.locator('#storyList .story-head').first()).toContainText(text('sheetNumber', 'ru', { number: 1 }));
-    await expect(anna.page.locator('#storyList .story__question').first()).toHaveText(text('question1', 'ru'));
+    await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'ru'));
+    await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'en'));
 });

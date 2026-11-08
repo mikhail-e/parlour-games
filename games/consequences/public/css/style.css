@@ -494,7 +494,7 @@
   text-align: center;
 }
 
-/* An open sheet: every question with its answer under it */
+/* An open sheet: the story, its answers one under another with a line between */
 .story {
   margin: 0;
   padding: 0;
@@ -509,15 +509,6 @@
 
 .story li:last-child {
   border-bottom: 0;
-}
-
-.story__question {
-  display: block;
-  color: var(--accent);
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
 }
 
 .story__answer {

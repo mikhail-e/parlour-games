@@ -367,15 +367,14 @@ function openSheet(sheetNumber) {
     return sheet;
 }
 
-// The answers in order, each under its question in the reader's language
+// The story: the answers in order, read as one text, without their questions
 function storyList(answers) {
     const list = element('ol', 'story');
-    answers.forEach((answer, index) => {
+    for (const answer of answers) {
         const item = element('li');
-        item.append(element('span', 'story__question', say(`question${index + 1}`)),
-            element('span', 'story__answer', answer || ''));
+        item.append(element('span', 'story__answer', answer || ''));
         list.append(item);
-    });
+    }
     return list;
 }
 
