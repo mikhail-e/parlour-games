@@ -27,11 +27,10 @@ let formSheet = null;
 let formFor = null;
 // An answer sent and not yet in the round: the button waits for it
 let answerSending = false;
-// Who answered for this player at this step while they were away: { step, name }
-let answeredForMe = null;
 // The player's own answer as this tab sent it ({ room, step, text }), kept in
-// the tab (a reload keeps it): «Change the answer» puts it back into the
-// field. The room never sends an answer's text back before the stories
+// the tab (a reload keeps it): shown while they wait, and «Change the answer»
+// puts it back into the field. The room never sends an answer's text back
+// before the stories
 let sentAnswer = AppStorage.session.get('sentAnswer');
 // The step whose answer the player asked to take back: the field opening on
 // it gets the focus
@@ -207,7 +206,6 @@ function renderWriting(round) {
 
     const mine = seatOf(round, currentPlayer.id);
     const held = heldSeat(round);
-    if (mine && mine.heldBy) answeredForMe = { step, name: nameOf(round, mine.heldBy) };
     // The sheet the form writes on: the absent player's that this player
     // took, or their own while it waits for their answer and nobody holds it
     const target = held || (mine && !mine.answered && !mine.heldBy ? mine : null);
@@ -219,8 +217,7 @@ function renderWriting(round) {
         // Their own sheet again at the step whose answer they took back: its
         // text comes back into the field, as this tab sent it
         const takenBack = !held && target && takingBack === step;
-        const kept = takenBack && sentAnswer && sentAnswer.room === currentGame.id && sentAnswer.step === step;
-        field.value = kept ? sentAnswer.text : '';
+        field.value = (takenBack && sentAnswerAt(step)) || '';
         answerSending = false;
         if (takenBack) {
             takingBack = null;
@@ -241,6 +238,10 @@ function renderWriting(round) {
     const hint = document.getElementById('sheetHint');
     hint.hidden = Boolean(target);
     hint.textContent = target ? '' : waitingHint(round, mine);
+    // Their own answer while they wait, so a slip can be seen and changed
+    const sent = !target && mine && mine.answeredBy === currentPlayer.id ? sentAnswerAt(step) : null;
+    document.getElementById('sentBlock').hidden = sent === null;
+    document.getElementById('sentText').textContent = sent || '';
     // Only an answer the player wrote themselves, while they wait for the others
     const edit = document.getElementById('editAnswer');
     edit.hidden = Boolean(target) || !mine || mine.answeredBy !== currentPlayer.id;
@@ -250,6 +251,12 @@ function renderWriting(round) {
         document.getElementById('questionText').textContent = say(`question${step + 1}`);
         updateAnswerField();
     }
+}
+
+// The player's own answer at this step, as this tab sent it, or null: the
+// room never sends an answer back before the stories
+function sentAnswerAt(step) {
+    return sentAnswer && sentAnswer.room === currentGame.id && sentAnswer.step === step ? sentAnswer.text : null;
 }
 
 // The answered questions of the sheet, a pleat each: the question, never the answer
@@ -262,7 +269,8 @@ function renderFolds(count) {
 // step, or who gets the sheet next
 function waitingHint(round, mine) {
     if (!mine) return '';
-    if (answeredForMe && answeredForMe.step === round.step) return say('answeredForYou', { name: answeredForMe.name });
+    const writer = mine.heldBy || (mine.answeredBy !== currentPlayer.id ? mine.answeredBy : null);
+    if (writer) return say('answeredForYou', { name: nameOf(round, writer) });
     const index = round.seats.indexOf(mine);
     const next = round.seats[(index + 1) % round.seats.length];
     return say('answerSaved', { name: next.name });

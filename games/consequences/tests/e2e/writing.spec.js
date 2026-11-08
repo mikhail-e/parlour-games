@@ -106,6 +106,84 @@ test('Change the answer: the field opens again with the answer, the step waits f
     await expect(anna.page.locator('#readingCard .story__answer').first()).toHaveText('Anna changed');
 });
 
+test('while they wait a player sees the answer they sent, as they wrote it, and only they do; a reload keeps it, the next question takes it away', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await expect(anna.page.locator('#sentBlock')).toBeHidden();
+
+    await answer(anna, 'A <b>pirate</b>\ngrandmother');
+
+    const sent = anna.page.locator('#sentText');
+    await expect(sent).toBeVisible();
+    expect(await sent.innerText()).toBe('A <b>pirate</b>\ngrandmother');
+    await expect(anna.page.locator('#sentBlock')).toContainText(text('yourAnswer'), { ignoreCase: true });
+    await expect(boris.page.locator('#sentBlock')).toBeHidden();
+    await expect(boris.page.locator('#writingCard')).not.toContainText('pirate');
+
+    await anna.page.reload();
+    await expect(sent).toBeVisible();
+    expect(await sent.innerText()).toBe('A <b>pirate</b>\ngrandmother');
+
+    await answer(boris, 'Boris 1');
+    await waitForStep([anna, boris], 1);
+    await expect(anna.page.locator('#sentBlock')).toBeHidden();
+    await expect(anna.page.locator('#writingCard')).not.toContainText('pirate');
+});
+
+test('the shown answer follows a change: gone while the field is open, then the new one', async ({ newPlayer }) => {
+    const { players: [anna] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await answer(anna, 'Anna first');
+    await expect(anna.page.locator('#sentText')).toHaveText('Anna first');
+
+    await anna.page.locator('#editAnswer').click();
+    await expect(anna.page.locator('#answerForm')).toBeVisible();
+    await expect(anna.page.locator('#sentBlock')).toBeHidden();
+
+    await answer(anna, 'Anna changed');
+    await expect(anna.page.locator('#sentBlock')).toBeVisible();
+    await expect(anna.page.locator('#sentText')).toHaveText('Anna changed');
+});
+
+test('only the tab that sent an answer shows it, and never the answer of an earlier step', async ({ newPlayer }) => {
+    const { players: [anna, boris], code } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await answer(anna, 'Anna 1');
+    await expect(anna.page.locator('#sentText')).toHaveText('Anna 1');
+
+    const secondTab = { name: 'Anna', page: await anna.context.newPage() };
+    await returnToRound(secondTab, code);
+    await expect(secondTab.page.locator('#sheetHint')).toBeVisible();
+    await expect(secondTab.page.locator('#sentBlock')).toBeHidden();
+
+    await answer(boris, 'Boris 1');
+    await waitForStep([anna, secondTab, boris], 1);
+    await answer(secondTab, 'Anna 2 from the second tab');
+    await expect(secondTab.page.locator('#sentText')).toHaveText('Anna 2 from the second tab');
+
+    await expect(anna.page.locator('#sheetHint')).toBeVisible();
+    await expect(anna.page.locator('#sentBlock')).toBeHidden();
+});
+
+test("an answer another player wrote for the seat is not shown as the player's own, nor does one written for another replace it", async ({ newPlayer }) => {
+    const { players: [katya, masha, petya], code } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    // What Petya sent, and took back, stays in his tab
+    await answer(petya, 'Petya mine');
+    await expect(petya.page.locator('#editAnswer')).toBeVisible();
+    await petya.page.locator('#editAnswer').click();
+    await expect(petya.page.locator('#answerForm')).toBeVisible();
+    await petya.page.goto('about:blank');
+
+    await answer(katya, 'Katya 1');
+    await answerFor(katya.page, 'Petya').click();
+    await expect(katya.page.locator('#writingTitle')).toBeVisible();
+    await expect(katya.page.locator('#sentBlock')).toBeHidden();
+    await answer(katya, 'for Petya 1');
+
+    await expect(katya.page.locator('#sentText')).toHaveText('Katya 1');
+    await petya.page.goto(`/game/${code}`);
+    await expect(petya.page.locator('#sheetHint')).toHaveText(text('answeredForYou', 'en', { name: 'Katya' }));
+    await expect(petya.page.locator('#sentBlock')).toBeHidden();
+    await expect(masha.page.locator('#sentBlock')).toBeHidden();
+});
+
 test('Change the answer pressed as the step ends changes nothing, and is no error', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await answer(anna, 'Anna 1');

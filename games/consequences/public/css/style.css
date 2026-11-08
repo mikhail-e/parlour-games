@@ -261,6 +261,30 @@
   font-weight: 700;
 }
 
+/* The player's own answer while they wait: a small label and the text */
+.sent-block {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(42, 29, 23, .25);
+}
+
+.sent-block__label {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.sent-block__text {
+  color: var(--ink);
+  font-size: 1.2rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
 .sheet__hint {
   margin: 0;
   color: var(--ink-soft);

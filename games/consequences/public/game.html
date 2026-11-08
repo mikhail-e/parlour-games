@@ -150,6 +150,11 @@
                             </button>
                         </div>
                     </form>
+                    <!-- The player's own answer while they wait, so a slip can be seen -->
+                    <div class="sent-block" id="sentBlock" hidden>
+                        <div class="sent-block__label" data-i18n="yourAnswer">Your answer</div>
+                        <div class="sent-block__text" id="sentText"></div>
+                    </div>
                     <p class="sheet__hint" id="sheetHint" role="status"></p>
                     <!-- The player's own answer back into the field, while the step is on.
                          Not in a .d-grid: its display: grid !important would beat hidden -->
