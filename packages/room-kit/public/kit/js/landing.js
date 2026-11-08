@@ -279,25 +279,23 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCreateButtonState();
     }
 
-    // Function to update Create New Game button state based on room code
+    // Create needs a name and no room code typed; the button says why it is off
     function updateCreateButtonState() {
-        if (createNewGameBtn) {
-            const roomCode = roomCodeInput.value.trim();
-            const hasValidRoomCode = roomCode.length === 6;
-
-            if (hasValidRoomCode) {
-                createNewGameBtn.disabled = true;
-                createNewGameBtn.classList.add('btn-secondary');
-                createNewGameBtn.classList.remove('btn-primary');
-                createNewGameBtn.title = getText('clearRoomCodeToCreate', 'Clear room code to create a new game');
-            } else {
-                createNewGameBtn.disabled = false;
-                createNewGameBtn.classList.remove('btn-secondary');
-                createNewGameBtn.classList.add('btn-primary');
-                createNewGameBtn.title = '';
-            }
+        if (!createNewGameBtn) return;
+        let whyOff = '';
+        if (roomCodeInput.value.trim().length === 6) {
+            whyOff = getText('clearRoomCodeToCreate', 'Clear room code to create a new game');
+        } else if (!playerNameInput.value.trim()) {
+            whyOff = getText('pleaseEnterName', 'Please enter your name');
         }
+        createNewGameBtn.disabled = Boolean(whyOff);
+        createNewGameBtn.classList.toggle('btn-secondary', Boolean(whyOff));
+        createNewGameBtn.classList.toggle('btn-primary', !whyOff);
+        createNewGameBtn.title = whyOff;
     }
+
+    if (playerNameInput) playerNameInput.addEventListener('input', updateCreateButtonState);
+    document.addEventListener('languagechanged', updateCreateButtonState);
 
     // Auto-uppercase room code input and manage Join button state
     if (roomCodeInput) {
@@ -318,12 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const playerName = document.getElementById('playerName').value.trim();
             const selectedAvatar = selectedAvatarInput.value;
             
-            if (!playerName) {
-                showMessage(getText('pleaseEnterName', 'Please enter your name first'))
-                    .then(() => document.getElementById('playerName').focus());
-                return;
-            }
-
             // Clear room code first (this will re-enable the button visually)
             roomCodeInput.value = '';
             updateJoinButtonState(); // This will also update the create button state
@@ -353,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const roomCode = roomCodeInput.value.trim();
             
             if (!playerName) {
-                showMessage(getText('pleaseEnterName', 'Please enter your name'));
+                showMessage(getText('pleaseEnterName', 'Please enter your name')).then(() => playerNameInput.focus());
                 return;
             }
 

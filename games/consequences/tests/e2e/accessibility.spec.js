@@ -30,7 +30,9 @@ test('the message window', async ({ newPlayer }) => {
     const { page } = await newPlayer('Anna');
     await page.goto('/');
     await waitForLanding(page);
-    await page.click('#createNewGame');
+    await page.fill('#playerName', '   ');
+    await page.fill('#roomCode', 'ABC123');
+    await page.click('#joinBtn');
     await expect(page.getByRole('dialog', { name: text('pleaseEnterName') })).toBeVisible();
 
     expect(await violations(page, '.message-window')).toEqual([]);
