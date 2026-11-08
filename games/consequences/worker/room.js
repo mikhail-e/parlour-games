@@ -33,19 +33,38 @@ export class Room extends GameRoom {
     constructor(ctx, env) {
         super(ctx, env, { rules: gameLogic, moves: MOVES });
         this.stepPauseMs = Number(env.STEP_PAUSE_MS) || gameLogic.STEP_PAUSE_MS;
+        // A browser test's stand-in for Cloudflare running an alarm late
+        this.lateAlarmMs = Number(env.LATE_ALARM_MS) || 0;
     }
 
     // The room's one timer goes off for the sheets too: their move on after a
-    // step's pause is kept in the round, so it survives the room's sleep
+    // step's pause is kept in the round, so it survives the room's sleep. But
+    // Cloudflare now and then runs an alarm many seconds late, so a room that
+    // is awake also counts the pause itself: whichever comes first moves them
     async setAlarmAt(times) {
-        await super.setAlarmAt([...times, this.game && this.game.round ? this.game.round.stepEndsAt : null]);
+        const stepEndsAt = this.game && this.game.round ? this.game.round.stepEndsAt : null;
+        this.countStepPause(stepEndsAt);
+        await super.setAlarmAt([...times, stepEndsAt ? stepEndsAt + this.lateAlarmMs : null]);
     }
 
-    async alarm() {
+    // A moment past the end: a room's clock can read a little behind
+    countStepPause(stepEndsAt) {
+        clearTimeout(this.stepTimer);
+        if (!stepEndsAt) return;
+        this.stepTimer = setTimeout(() => {
+            this.moveSheetsIfDue().catch(error => console.error('Moving the sheets failed:', error));
+        }, Math.max(0, stepEndsAt - Date.now()) + 10);
+    }
+
+    async moveSheetsIfDue() {
         if (this.game && gameLogic.moveSheetsIfDue(this.game)) {
             console.log(`Game ${this.roomCode} is at step ${this.game.round.step}`);
             await this.afterChange();
         }
+    }
+
+    async alarm() {
+        await this.moveSheetsIfDue();
         await super.alarm();
     }
 

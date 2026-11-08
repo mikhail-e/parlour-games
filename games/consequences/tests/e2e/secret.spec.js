@@ -18,7 +18,8 @@ async function listeningPlayer(newPlayer, name) {
 
 // The latest message of this event the page received, as data
 function latest(player, event) {
-    const messages = player.received.map(payload => JSON.parse(payload)).filter(message => message.event === event);
+    // A page's ping on a long run is answered with a bare "pong"
+    const messages = player.received.filter(payload => payload !== 'pong').map(payload => JSON.parse(payload)).filter(message => message.event === event);
     return messages.length ? messages[messages.length - 1].data : null;
 }
 
