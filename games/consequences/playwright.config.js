@@ -18,6 +18,6 @@ module.exports = defineConfig(roomKitPlaywright({
     port: TEST_PORT,
     servers: [
         { port: TEST_PORT, inspectorPort: 9232, state: 'consequences-e2e-state', vars: { STEP_PAUSE_MS: 50 } },
-        { port: FAST_TIMERS_PORT, inspectorPort: 9233, state: 'consequences-e2e-fast', vars: { ROOM_EMPTY_MS: 8000, GHOST_MS: 3000, STEP_PAUSE_MS: 3000 } },
+        { port: FAST_TIMERS_PORT, inspectorPort: 9233, state: 'consequences-e2e-fast', vars: { ROOM_EMPTY_MS: 8000, GHOST_MS: 3000, STEP_PAUSE_MS: 3000, LATE_ALARM_MS: 30000 } },
     ],
 }));
