@@ -224,9 +224,10 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
         const stories = player.page.locator('#storyList .sheet');
         await expect(stories).toHaveCount(3);
         // Sheet 1 began with Anna, its last answer is Boris's, and the seat after his read it
-        await expect(stories.nth(0).locator('.story-head')).toContainText(text('sheetNumber', 'en', { number: 1 }));
+        await expect(stories.nth(0).locator('.story-head')).toContainText(text('storyTitle1', 'en'));
         await expect(stories.nth(0).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Vera' }));
         await expect(stories.nth(0).locator('.story__answer').first()).toHaveText('Anna 1');
+        await expect(stories.nth(1).locator('.story-head')).toContainText(text('storyTitle2', 'en'));
         await expect(stories.nth(1).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Anna' }));
         await expect(stories.nth(2).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Boris' }));
     }

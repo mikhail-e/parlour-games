@@ -404,7 +404,7 @@ function renderStories(round) {
         const sheet = element('div', 'sheet');
         sheet.dataset.sheet = story.sheet;
         const head = element('div', 'story-head');
-        head.append(element('span', '', say('sheetNumber', { number: story.sheet + 1 })),
+        head.append(element('span', '', say(`storyTitle${story.sheet + 1}`)),
             element('small', '', say('storyReadBy', { name: nameOf(round, story.readBy) })));
         sheet.append(head, storyList(story.answers));
         return sheet;

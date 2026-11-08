@@ -60,7 +60,7 @@ test('the switch draws the reading and every story again in the other language',
     await boris.page.locator('#readingCard .closed-sheet').click();
     await showStories(anna);
     await anna.page.locator('.lang-toggle-btn').click();
-    await expect(anna.page.locator('#storyList .story-head').first()).toContainText(text('sheetNumber', 'ru', { number: 1 }));
+    await expect(anna.page.locator('#storyList .story-head').first()).toContainText(text('storyTitle1', 'ru'));
     await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'ru'));
     await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'en'));
 });
