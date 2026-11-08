@@ -18,13 +18,13 @@ npm run test:e2e:prod                      # браузерные тесты п�
 - `code-structure.test.js`: ни `style="..."`, ни `on...="..."` в страницах и скриптах игры (`inlineCodeProblems` ядра);
 - `shared-names.test.js`: общие имена скриптов страниц — игры и ядра вместе (`sharedNameProblems` ядра);
 - `translations.test.js`: оба языка словаря, одинаковые подстановки, словарь не повторяет тексты ядра, у каждой ошибки сервера есть русская копия (`translationProblems` ядра);
-- сверка копий, которые игра держит намеренно: предел ответа и наименьшее число игроков в `game-logic.js` и в `utils.js` (`input-limits.test.js`), три копии вывески (`brand-sign.test.js`), цвет приложения в страницах, манифесте и `--curtain-top` (`manifest.test.js`), список иконок service worker (`service-worker.test.js`: только иконки, и все они есть).
+- сверка копий, которые игра держит намеренно: предел ответа и наименьшее число игроков в `game-logic.js` и в `utils.js` (`input-limits.test.js`), три копии вывески (`brand-sign.test.js`), перо на иконке и на печати конверта (`seal.test.js`), цвет приложения в страницах, манифесте и `--curtain-top` (`manifest.test.js`), список иконок service worker (`service-worker.test.js`: только иконки, и все они есть).
 
 ## Серверы тестов
 
 Playwright запускает два `wrangler dev` (`playwright.config.js`):
-- на порту 3200 — обычный, для всех тестов;
-- на порту 3201 — с короткими таймерами комнаты (`ROOM_EMPTY_MS: 8000`, `GHOST_MS: 3000`): на нём идёт только `room-timers.spec.js` (`test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL })`).
+- на порту 3200 — обычный, для всех тестов; пауза после последнего ответа шага на нём почти нулевая (`STEP_PAUSE_MS: 50`): тесты играют много шагов;
+- на порту 3201 — с короткими таймерами комнаты (`ROOM_EMPTY_MS: 8000`, `GHOST_MS: 3000`, `STEP_PAUSE_MS: 3000`): на нём идёт только `room-timers.spec.js` (`test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL })`).
 
 Порты whoami — 3100 и 3101, так что прогоны двух игр не встречаются; запущенный `npm start` (8788) тоже не мешает.
 
@@ -36,7 +36,7 @@ Playwright запускает два `wrangler dev` (`playwright.config.js`):
 |---|---|
 | `text(ключ, язык, подстановки)`, `serverErrorText(текст, язык)` | тексты `translations.js` игры поверх текстов ядра (`pageTexts` ядра) |
 | `startRound(игроки)`, `startedRound(newPlayer, имена)` | «Начать» у первого и ожидание первого вопроса у всех; целая комната с начатым раундом |
-| `answer(игрок, текст)` | ответ в поле и «Загнуть и передать» |
+| `answer(игрок, текст)` | ответ в поле и «Сохранить и передать» |
 | `answerStep(игроки, шаг, ответ?)` | каждый отвечает на вопрос шага, ожидание следующего шага у всех |
 | `writeToReading(игроки, ответ?)` | все восемь шагов: раунд дошёл до чтения |
 | `waitForStep(игроки, шаг)`, `roundStep(страница)` | шаг раунда, каким его знает страница (`currentGame.round.step`: 0–7 вопросы, 8 чтение, `null` в лобби) — на любом языке |

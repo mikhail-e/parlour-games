@@ -9,7 +9,7 @@
 // shown, hidden and relabelled, so an answer being typed survives the others'
 // moves and a language change. It is emptied when its sheet changes - the next
 // step, another seat's sheet.
-/* global getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
+/* global createIcon, shareOrCopy, AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
 // From the kit's room-page.js
 /* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
 
@@ -27,8 +27,18 @@ let formSheet = null;
 let formFor = null;
 // An answer sent and not yet in the round: the button waits for it
 let answerSending = false;
-// Who answered for this player at this step while they were away: { step, name }
-let answeredForMe = null;
+// This player has pressed «Every story»: each comes to them in their own time,
+// so the last sheet to open changes nobody's screen - or its reader would
+// never see it. Nothing the room knows: a reload goes back to the reading
+let storiesAsked = false;
+// The player's own answer as this tab sent it ({ room, step, text }), kept in
+// the tab (a reload keeps it): shown while they wait, and «Change the answer»
+// puts it back into the field. The room never sends an answer's text back
+// before the stories
+let sentAnswer = AppStorage.session.get('sentAnswer');
+// The step whose answer the player asked to take back: the field opening on
+// it gets the focus
+let takingBack = null;
 
 let newRoundModal = null;
 
@@ -41,7 +51,9 @@ const LOST_RACES = [
     'This player is here',
     'This answer has already been written',
     'This sheet is already open',
-    'You are already holding a sheet'
+    'You are already holding a sheet',
+    'This step is over',
+    'There is no answer to change'
 ];
 
 // The page's texts (i18n.js is loaded before this script)
@@ -95,6 +107,7 @@ startRoomPage({
     },
     afterError() {
         answerSending = false;
+        takingBack = null;
         renderRoom();
     },
     ignoreError: error => LOST_RACES.includes(error),
@@ -131,7 +144,7 @@ function renderRoom() {
     if (!currentGame) return;
     const round = currentGame.round || null;
     const reading = Boolean(round) && round.step >= round.questionCount;
-    const stories = round ? round.stories : null;
+    const stories = round && storiesAsked ? round.stories : null;
 
     showCard('shareCard', !round);
     showCard('playersCard', !round);
@@ -140,9 +153,17 @@ function renderRoom() {
     showCard('storiesCard', Boolean(stories));
     showCard('seatsCard', Boolean(round) && !stories);
     showCard('newRound', Boolean(round) && !stories);
-    if ((!round || stories) && newRoundModal) newRoundModal.hide();
+    if (!round && newRoundModal) newRoundModal.hide();
 
-    if (!round) openSheets.clear();
+    if (!round) {
+        openSheets.clear();
+        storiesAsked = false;
+        // A round's answer is no answer of the next one
+        if (sentAnswer) {
+            sentAnswer = null;
+            AppStorage.session.remove('sentAnswer');
+        }
+    }
     renderLobby();
     if (round && !reading) renderWriting(round);
     if (reading && !stories) renderReading(round);
@@ -179,8 +200,8 @@ function playerCard(player) {
     return card;
 }
 
-// The writing: the step, the sheet in front of the player with its answers
-// folded away, and the question - or, once answered, what happens next
+// The writing: the step, the sheet in front of the player with its answered
+// questions as pleats, and the question - or, once answered, what happens next
 function renderWriting(round) {
     const { step, questionCount } = round;
     document.getElementById('stepLabel').textContent = say('stepOf', { step: step + 1, count: questionCount });
@@ -190,7 +211,6 @@ function renderWriting(round) {
 
     const mine = seatOf(round, currentPlayer.id);
     const held = heldSeat(round);
-    if (mine && mine.heldBy) answeredForMe = { step, name: nameOf(round, mine.heldBy) };
     // The sheet the form writes on: the absent player's that this player
     // took, or their own while it waits for their answer and nobody holds it
     const target = held || (mine && !mine.answered && !mine.heldBy ? mine : null);
@@ -199,8 +219,18 @@ function renderWriting(round) {
     if (key !== formSheet) {
         formSheet = key;
         formFor = held ? held.playerId : null;
-        field.value = '';
+        // Their own sheet again at the step whose answer they took back: its
+        // text comes back into the field, as this tab sent it
+        const takenBack = !held && target && takingBack === step;
+        field.value = (takenBack && sentAnswerAt(step)) || '';
         answerSending = false;
+        if (takenBack) {
+            takingBack = null;
+            setTimeout(() => {
+                field.focus();
+                field.setSelectionRange(field.value.length, field.value.length);
+            });
+        }
     }
 
     const title = document.getElementById('writingTitle');
@@ -213,6 +243,14 @@ function renderWriting(round) {
     const hint = document.getElementById('sheetHint');
     hint.hidden = Boolean(target);
     hint.textContent = target ? '' : waitingHint(round, mine);
+    // Their own answer while they wait, so a slip can be seen and changed
+    const sent = !target && mine && mine.answeredBy === currentPlayer.id ? sentAnswerAt(step) : null;
+    document.getElementById('sentBlock').hidden = sent === null;
+    document.getElementById('sentText').textContent = sent || '';
+    // Only an answer the player wrote themselves, while they wait for the others
+    const edit = document.getElementById('editAnswer');
+    edit.hidden = Boolean(target) || !mine || mine.answeredBy !== currentPlayer.id;
+    edit.disabled = takingBack === step;
     if (target) {
         document.getElementById('questionNumber').textContent = say('questionOf', { number: step + 1, count: questionCount });
         document.getElementById('questionText').textContent = say(`question${step + 1}`);
@@ -220,24 +258,27 @@ function renderWriting(round) {
     }
 }
 
-// The answered questions of the sheet, a pleat each: the question, never the answer
-function renderFolds(count) {
-    document.getElementById('folds').replaceChildren(...Array.from({ length: count }, (_, index) => {
-        const fold = element('div', 'fold');
-        fold.append(element('span', '', `${index + 1}. ${say(`question${index + 1}`)}`),
-            element('span', 'fold__mark', `▾ ${say('folded')}`));
-        return fold;
-    }));
+// The player's own answer at this step, as this tab sent it, or null: the
+// room never sends an answer back before the stories
+function sentAnswerAt(step) {
+    return sentAnswer && sentAnswer.room === currentGame.id && sentAnswer.step === step ? sentAnswer.text : null;
 }
 
-// Under the folded answer: who answers (or answered) for this player at this
+// The answered questions of the sheet, a pleat each: the question, never the answer
+function renderFolds(count) {
+    document.getElementById('folds').replaceChildren(...Array.from({ length: count },
+        (_, index) => element('div', 'fold', `${index + 1}. ${say(`question${index + 1}`)}`)));
+}
+
+// Under the sent answer: who answers (or answered) for this player at this
 // step, or who gets the sheet next
 function waitingHint(round, mine) {
     if (!mine) return '';
-    if (answeredForMe && answeredForMe.step === round.step) return say('answeredForYou', { name: answeredForMe.name });
+    const writer = mine.heldBy || (mine.answeredBy !== currentPlayer.id ? mine.answeredBy : null);
+    if (writer) return say('answeredForYou', { name: nameOf(round, writer) });
     const index = round.seats.indexOf(mine);
     const next = round.seats[(index + 1) % round.seats.length];
-    return say('answerFolded', { name: next.name });
+    return say('answerSaved', { name: next.name });
 }
 
 // The answer's characters as a person counts them (an emoji is one)
@@ -252,7 +293,7 @@ function updateAnswerField() {
     const count = document.getElementById('answerCount');
     count.textContent = `${length}/${MAX_ANSWER_LENGTH}`;
     count.classList.toggle('sheet__count--over', length > MAX_ANSWER_LENGTH);
-    document.getElementById('foldAndPass').disabled = answerSending || length > MAX_ANSWER_LENGTH;
+    document.getElementById('saveAndPass').disabled = answerSending || length > MAX_ANSWER_LENGTH;
     field.style.height = 'auto';
     field.style.height = `${field.scrollHeight + 2}px`;
 }
@@ -268,6 +309,10 @@ function sendAnswer(event) {
     }
     answerSending = true;
     updateAnswerField();
+    if (!formFor) {
+        sentAnswer = { room: currentGame.id, step: currentGame.round.step, text };
+        AppStorage.session.set('sentAnswer', sentAnswer);
+    }
     sendMove('write-answer', formFor ? { text, for: formFor } : { text });
 }
 
@@ -283,7 +328,22 @@ function renderReading(round) {
         else if (isMe(seat.openedBy)) parts.push(sheetSection(say('sheetOfPlayer', { name: seat.name }), openSheet(seat.sheet)));
     }
     parts.push(element('p', 'opened-count', say('openedCount', { opened: round.opened, count: round.seats.length })));
+    parts.push(storiesButton(round));
     document.getElementById('readingCard').replaceChildren(...parts);
+}
+
+// «Every story»: there from the start of the reading, off until the last sheet is open
+function storiesButton(round) {
+    const show = button('btn btn-primary btn-lg', say('allStories'), () => {
+        storiesAsked = true;
+        renderRoom();
+        document.getElementById('storiesCard').scrollIntoView({ block: 'start', behavior: 'instant' });
+    });
+    show.id = 'showStories';
+    show.disabled = !round.stories;
+    const row = element('div', 'd-grid mt-3');
+    row.append(show);
+    return row;
 }
 
 function sheetSection(title, ...content) {
@@ -294,7 +354,7 @@ function sheetSection(title, ...content) {
 
 function ownSheet(round, mine) {
     if (isMe(mine.openedBy)) {
-        return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('othersWillSee')), openSheet(mine.sheet));
+        return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('readThisAloud')), openSheet(mine.sheet));
     }
     const reader = mine.openedBy || mine.heldBy;
     if (reader) return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('yourSheetReadBy', { name: nameOf(round, reader) })));
@@ -308,13 +368,13 @@ function takenSheet(seat) {
         button('btn btn-outline-primary', say('giveSheetBack'), () => sendMove('return-sheet', { playerId: seat.playerId })));
 }
 
-// A closed sheet: a packet of pleats to tap
+// A closed sheet: a sealed envelope to tap
 function closedSheet(onOpen) {
     const sheet = button('closed-sheet', undefined, onOpen);
-    const packet = element('span', 'packet');
-    packet.setAttribute('aria-hidden', 'true');
-    for (let pleat = 0; pleat < 5; pleat++) packet.append(element('span'));
-    sheet.append(packet, element('span', 'closed-sheet__label', say('tapToUnfold')));
+    const envelope = element('span', 'envelope');
+    envelope.setAttribute('aria-hidden', 'true');
+    envelope.append(element('span', 'envelope__seal'));
+    sheet.append(envelope, element('span', 'closed-sheet__label', say('tapToOpen')));
     return sheet;
 }
 
@@ -327,15 +387,14 @@ function openSheet(sheetNumber) {
     return sheet;
 }
 
-// The answers in order, each under its question in the reader's language
+// The story: the answers in order, read as one text, without their questions
 function storyList(answers) {
     const list = element('ol', 'story');
-    answers.forEach((answer, index) => {
+    for (const answer of answers) {
         const item = element('li');
-        item.append(element('span', 'story__question', say(`question${index + 1}`)),
-            element('span', 'story__answer', answer || ''));
+        item.append(element('span', 'story__answer', answer || ''));
         list.append(item);
-    });
+    }
     return list;
 }
 
@@ -345,18 +404,30 @@ function renderStories(round) {
         const sheet = element('div', 'sheet');
         sheet.dataset.sheet = story.sheet;
         const head = element('div', 'story-head');
-        head.append(element('span', '', say('sheetNumber', { number: story.sheet + 1 })),
+        head.append(element('span', '', say(`storyTitle${story.sheet + 1}`)),
             element('small', '', say('storyReadBy', { name: nameOf(round, story.readBy) })));
-        sheet.append(head, storyList(story.answers));
+        const share = element('button', 'story-share');
+        share.type = 'button';
+        share.append(createIcon('share'), element('span', '', say('shareStory')));
+        share.addEventListener('click', () => shareStory(share, story.answers));
+        sheet.append(head, storyList(story.answers), share);
         return sheet;
     }));
+}
+
+// A story for friends: its text, then an invitation with the game's name and
+// its site. The address is inside the text, not in the share sheet's `url`:
+// some apps keep only one of the two
+function shareStory(button, answers) {
+    const text = `${answers.join('\n')}\n\n${say('shareStoryInvitation', { site: window.location.host })}`;
+    shareOrCopy(button, { title: say('title'), text }, text);
 }
 
 // The table: every seat - here or away, its step done or not, who answers or
 // reads for it - with "Answer for" / "Read for" an absent seat's sheet for a
 // player free to take it, and the newcomers waiting for the next round
 function renderSeats(round, reading) {
-    document.getElementById('seatsTitle').textContent = say(reading ? 'sheets' : 'atTheTable');
+    document.getElementById('seatsTitle').textContent = say(reading ? 'sheets' : 'tellingTheStory');
     const mine = seatOf(round, currentPlayer.id);
     const free = Boolean(mine) && !heldSeat(round) && (reading || mine.answered);
     document.getElementById('seatList').replaceChildren(...round.seats.map(seat => seatRow(round, seat, reading, free)));
@@ -405,6 +476,23 @@ function setUpRoomGame() {
 
     document.getElementById('answerForm').addEventListener('submit', sendAnswer);
     document.getElementById('answerText').addEventListener('input', updateAnswerField);
+    // A computer's Enter sends the answer as the button does, Shift + Enter
+    // starts a new line in it. A phone's Enter is a new line (its keyboard has
+    // no Shift + Enter): the button at the field's right sends (style.css).
+    // An Enter that ends a word of an input method is not one (Safari reports
+    // it as key code 229)
+    const computerKeyboard = matchMedia('(hover: hover) and (pointer: fine)');
+    document.getElementById('answerText').addEventListener('keydown', event => {
+        if (!computerKeyboard.matches) return;
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
+        sendAnswer(event);
+    });
+    document.getElementById('editAnswer').addEventListener('click', event => {
+        if (!currentGame || !currentGame.round) return;
+        takingBack = currentGame.round.step;
+        event.currentTarget.disabled = true;
+        sendMove('take-back-answer', { step: takingBack });
+    });
     document.getElementById('giveSheetBack').addEventListener('click', () => {
         const held = currentGame && currentGame.round ? heldSeat(currentGame.round) : null;
         if (held) sendMove('return-sheet', { playerId: held.playerId });
@@ -412,11 +500,12 @@ function setUpRoomGame() {
 
     // A new round in the middle of one asks first: its sheets are lost
     newRoundModal = new bootstrap.Modal(document.getElementById('newRoundModal'));
-    document.getElementById('newRound').addEventListener('click', () => newRoundModal.show());
+    // Both ask first: after every story too, another player may still be reading their sheet
+    for (const id of ['newRound', 'anotherRound']) {
+        document.getElementById(id).addEventListener('click', () => newRoundModal.show());
+    }
     document.getElementById('confirmNewRound').addEventListener('click', () => {
         newRoundModal.hide();
         sendMove('new-round');
     });
-    // After every story there is nothing to lose
-    document.getElementById('anotherRound').addEventListener('click', () => sendMove('new-round'));
 }

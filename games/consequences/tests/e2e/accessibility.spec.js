@@ -4,8 +4,9 @@
 const { AxeBuilder } = require('@axe-core/playwright');
 const {
     test, expect, text, PAGE_STATUS_404, createRoom, roomWith, askToJoin, startedRound, answer, writeToReading,
-    seatRow,
+    showStories, seatRow, waitForLanding,
 } = require('./helpers');
+/* global showMessage -- the kit's notify.js, called in the page */
 
 const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -25,6 +26,16 @@ async function violations(page, only) {
     return result.violations.map(violation =>
         `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`);
 }
+
+test('the message window', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Anna');
+    await page.goto('/');
+    await waitForLanding(page);
+    await page.evaluate(() => { showMessage('A message'); });
+    await expect(page.getByRole('dialog', { name: 'A message' })).toBeVisible();
+
+    expect(await violations(page, '.message-window')).toEqual([]);
+});
 
 test('the landing page', async ({ newPlayer }) => {
     const { page } = await newPlayer('Anna');
@@ -103,7 +114,7 @@ test('every story', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
-    await expect(players[0].page.locator('#storiesCard')).toBeVisible();
+    await showStories(players[0]);
 
     expect(await violations(players[0].page)).toEqual([]);
 });

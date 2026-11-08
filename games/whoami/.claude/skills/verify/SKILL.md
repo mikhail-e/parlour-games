@@ -13,7 +13,7 @@ The game lives in `games/whoami/` of the parlour-games monorepo; paths below are
 npm start -w games/whoami   # from the repository root (or `npm start` in games/whoami/): wrangler dev; background it; ready when it prints "Ready on http://localhost:8787"
 ```
 
-wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). Changing a file the Worker bundles (worker/, game-logic.js, package.json) or anything in public/ reloads it, and the reload drops every open socket: the pages reconnect.
+wrangler first copies the kit's files into `public/kit/` and `public/_headers` (`npm run build`; they are copies — edit them in `packages/room-kit/public/`). Stop with `pkill -f "wrangler dev"`. The rooms' storage stays in the game's `.wrangler/` between runs (gitignored). **Restart `npm start` after changing any file of the game**: the server reads `public/` from disk but keeps the files' ETags from its start (a file created after it is not served at all, a changed one is answered 304 to a browser holding the old copy), so a browser that loaded the page before the change keeps the old script next to the new HTML, and the page breaks. A restart drops every open socket: the pages reconnect, the rooms stay.
 
 ## Drive (Playwright MCP)
 
@@ -27,6 +27,5 @@ wrangler first copies the kit's files into `public/kit/` and `public/_headers` (
 
 - Playwright MCP saves screenshots and snapshots only inside the repository (`.playwright-mcp/` is gitignored) — delete `.playwright-mcp/` before finishing.
 - `navigator.share` exists in Playwright's Chromium; a real click on the Share button opens the macOS share sheet, which blocks automation. Stub it via evaluate (`Object.defineProperty(navigator, 'share', {configurable: true, writable: true, value: ...})`) and drive the button with `btn.click()` inside evaluate.
-- Button-feedback flashes («✅ Скопировано!») revert after a short delay — read `textContent` in the same evaluate call as the click, not in a separate round trip.
-- After any button flash, `textContent = originalText` flattens the `data-i18n` span, so language switching stops updating that button until reload. Reload before testing i18n labels.
+- Button-feedback flashes («Скопировано!») revert after a short delay — read `textContent` in the same evaluate call as the click, not in a separate round trip.
 - A room lives in its Durable Object's storage: it survives restarting `npm start`, and goes 2 hours after its last player's page closed (or at once when its last player leaves). `npx wrangler tail whoami-game` shows the deployed version's log.

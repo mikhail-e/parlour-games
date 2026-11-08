@@ -25,18 +25,18 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Consequences">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="Consequences · the folded-paper story game for friends">
-    <meta property="og:description" content="Play the classic parlour game remotely: everyone answers the same question, folds the answer away and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta property="og:title" content="Consequences · the parlour story game for friends">
+    <meta property="og:description" content="Play the classic parlour game remotely: everyone answers the same question without seeing the answers before it and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
     <meta property="og:image" content="https://story.escapist.club/img/og-image.jpg">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Consequences sign on a theatre curtain, and a sheet folded like an accordion: five answers folded away and the sixth question, How did it all end?, being answered.">
+    <meta property="og:image:alt" content="Consequences sign on a theatre curtain, and a sheet in the middle of a round: five questions answered and the sixth, How did it all end?, being answered.">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Consequences · the folded-paper story game for friends">
-    <meta name="twitter:description" content="Play the classic parlour game remotely: everyone answers the same question, folds the answer away and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
+    <meta name="twitter:title" content="Consequences · the parlour story game for friends">
+    <meta name="twitter:description" content="Play the classic parlour game remotely: everyone answers the same question without seeing the answers before it and passes the sheet on; at the end the stories are read out. Free, on a phone or a computer, no account.">
     <meta name="twitter:image" content="https://story.escapist.club/img/og-image.jpg">
-    <meta name="twitter:image:alt" content="Consequences sign on a theatre curtain, and a sheet folded like an accordion: five answers folded away and the sixth question, How did it all end?, being answered.">
+    <meta name="twitter:image:alt" content="Consequences sign on a theatre curtain, and a sheet in the middle of a round: five questions answered and the sixth, How did it all end?, being answered.">
 
     <!-- The sign's font, fetched before the stylesheet asks for it -->
     <link rel="preload" href="/kit/fonts/oswald-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -99,12 +99,12 @@
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
-                        📋 <span data-i18n="copyLink">Copy Link</span>
+                        <span class="icon icon--copy" aria-hidden="true"></span><span data-i18n="copyLink">Copy Link</span>
                     </button>
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="shareButton">
-                        📤 <span data-i18n="share">Share</span>
+                        <span class="icon icon--share" aria-hidden="true"></span><span data-i18n="share">Share</span>
                     </button>
                 </div>
             </div>
@@ -128,20 +128,39 @@
                 <span class="step-marks" id="stepMarks" aria-hidden="true"></span>
             </div>
             <h6 class="sheet-title" id="writingTitle" hidden></h6>
-            <div class="sheet">
+            <div class="sheet sheet--pleated">
                 <div id="folds"></div>
                 <div class="sheet__open">
                     <form id="answerForm" novalidate>
                         <div class="sheet__number" id="questionNumber"></div>
                         <h2 class="sheet__question" id="questionText"></h2>
                         <textarea class="form-control" id="answerText" rows="3" data-i18n-aria-label="yourAnswer" aria-label="Your answer" data-i18n-placeholder="yourAnswer" placeholder="Your answer"></textarea>
-                        <div class="sheet__count" id="answerCount"></div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg" id="foldAndPass" data-i18n="foldAndPass">Fold and pass on →</button>
+                        <!-- The keys, for a computer's keyboard only (style.css), and the count -->
+                        <div class="sheet__under">
+                            <span class="sheet__keys" data-i18n="answerKeys">Enter to send · Shift + Enter for a new line</span>
+                            <span class="sheet__count" id="answerCount"></span>
+                        </div>
+                        <!-- The send button: on a computer under the field, on a phone a
+                             square at its right (style.css). The label is a span of its own:
+                             data-i18n replaces an element's text, and would take the plane -->
+                        <div class="d-grid answer-send">
+                            <button type="submit" class="btn btn-primary btn-lg" id="saveAndPass">
+                                <span class="answer-send__label" data-i18n="saveAndPass">Save and pass on →</span>
+                                <svg class="answer-send__plane" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="answer-send__wing" d="M3.5 4.2 21 12 3.5 19.8 6.4 12z"/><path class="answer-send__fold" d="M6.4 12h7"/></svg>
+                            </button>
                         </div>
                     </form>
+                    <!-- The player's own answer while they wait, so a slip can be seen -->
+                    <div class="sent-block" id="sentBlock" hidden>
+                        <div class="sent-block__label" data-i18n="yourAnswer">Your answer</div>
+                        <div class="sent-block__text" id="sentText"></div>
+                    </div>
                     <p class="sheet__hint" id="sheetHint" role="status"></p>
-                    <!-- Not in a .d-grid: its display: grid !important would beat hidden -->
+                    <!-- The player's own answer back into the field, while the step is on.
+                         Not in a .d-grid: its display: grid !important would beat hidden -->
+                    <button type="button" class="btn btn-outline-primary w-100 mt-3" id="editAnswer" hidden>
+                        <span class="icon icon--edit" aria-hidden="true"></span><span data-i18n="editAnswer">Change the answer</span>
+                    </button>
                     <button type="button" class="btn btn-outline-primary w-100 mt-3" id="giveSheetBack" data-i18n="giveSheetBack" hidden>Give the sheet back</button>
                 </div>
             </div>
@@ -171,10 +190,10 @@
         <div class="game-card text-center">
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <button type="button" class="btn btn-outline-danger" id="newRound" hidden>
-                    🔄 <span data-i18n="newRound">New round</span>
+                    <span class="icon icon--refresh" aria-hidden="true"></span><span data-i18n="newRound">New round</span>
                 </button>
                 <button type="button" class="btn btn-outline-secondary" id="leaveGame">
-                    🚪 <span data-i18n="leaveGame">Leave Game</span>
+                    <span class="icon icon--door" aria-hidden="true"></span><span data-i18n="leaveGame">Leave Game</span>
                 </button>
             </div>
         </div>
@@ -188,7 +207,7 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="leaveModalLabel" data-i18n="leaveModalTitle">🚪 Leave Game</h5>
+                    <h5 class="modal-title" id="leaveModalLabel"><span class="icon icon--door" aria-hidden="true"></span><span data-i18n="leaveModalTitle">Leave Game</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -207,7 +226,7 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="newRoundModalLabel">🔄 <span data-i18n="newRound">New round</span></h5>
+                    <h5 class="modal-title" id="newRoundModalLabel"><span class="icon icon--refresh" aria-hidden="true"></span><span data-i18n="newRound">New round</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

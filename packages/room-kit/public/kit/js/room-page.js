@@ -8,7 +8,7 @@
 // finds its parts by their ids and classes - the list is in the kit's
 // CLAUDE.md (The room page).
 /* exported socket, currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
-/* global debugLog, getText, serverErrorText, showNotification, handleApiError, AppStorage, PLAYER_ID, PLAYER_SECRET,
+/* global debugLog, getText, serverErrorText, showNotification, showMessage, handleApiError, AppStorage, PLAYER_ID, PLAYER_SECRET,
    isCustomAvatar, keepScreenAwake, RoomSocket, setUpInvitation */
 
 // The room's socket (the kit's RoomSocket), the game as the page knows it
@@ -82,8 +82,7 @@ function openRoomPage() {
     const roomCode = window.location.pathname.split('/').pop().toUpperCase();
 
     if (!roomCode || roomCode.length !== 6) {
-        alert(getText('invalidRoomCode', 'Invalid room code'));
-        window.location.href = '/';
+        showMessage(getText('invalidRoomCode', 'Invalid room code')).then(() => { window.location.href = '/'; });
         return;
     }
 
@@ -194,8 +193,9 @@ function connectToRoom(roomCode) {
         roomGame.render();
 
         showNotification(
-            getText('playerLeftNotification', `👋 ${data.playerName} left the game`, { playerName: data.playerName }),
-            'info'
+            getText('playerLeftNotification', `${data.playerName} left the game`, { playerName: data.playerName }),
+            'info',
+            { icon: 'left' }
         );
     });
 
@@ -208,8 +208,7 @@ function connectToRoom(roomCode) {
         // A newcomer's request was refused (the room is full, say): nothing
         // to wait for
         if (isWaitingForAdmission()) {
-            alert(serverErrorText(error));
-            window.location.href = '/';
+            showMessage(serverErrorText(error)).then(() => { window.location.href = '/'; });
             return;
         }
         console.error('Socket error:', error);
@@ -220,7 +219,7 @@ function connectToRoom(roomCode) {
             leaveFallbackTimer = null;
         }
         if (roomGame.afterError) roomGame.afterError();
-        alert(serverErrorText(error));
+        showMessage(serverErrorText(error));
     });
 
     socket.on('disconnect', () => {
@@ -257,6 +256,9 @@ function enterRoom(roomCode) {
 }
 
 async function joinGameRoom(roomCode) {
+    // Only the request is the connection's: no answer, or one the page cannot
+    // read, is "Connection error" and the way home
+    let result;
     try {
         debugLog('Joining game:', roomCode, 'as player', currentPlayer.id);
 
@@ -273,41 +275,49 @@ async function joinGameRoom(roomCode) {
         });
 
         debugLog('Response status:', response.status);
-        const result = await response.json();
+        result = await response.json();
         debugLog('Join game result:', result);
-
-        // A newcomer to a started round waits
-        if (result.waitingForApproval) {
-            showWaitingScreen();
-            return 'waiting';
-        }
-
-        if (result.success) {
-            debugLog('Successfully joined game');
-            currentGame = result.game;
-            // The player as the server keeps them
-            currentPlayer = result.player;
-
-            AppStorage.session.set('playerData', {
-                name: currentPlayer.name,
-                avatar: currentPlayer.avatar,
-                roomCode: currentGame.id,
-                id: currentPlayer.id
-            });
-
-            roomGame.render();
-            return 'joined';
-        } else {
-            console.error('Join game failed:', result.error);
-
-            alert(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
-            window.location.href = '/';
-        }
     } catch (error) {
         console.error('Error joining game:', error);
-        handleApiError(error, 'joining game room');
+        await handleApiError(error, 'joining game room');
         window.location.href = '/';
+        return undefined;
     }
+
+    // A newcomer to a started round waits
+    if (result.waitingForApproval) {
+        showWaitingScreen();
+        return 'waiting';
+    }
+
+    if (!result.success) {
+        console.error('Join game failed:', result.error);
+        await showMessage(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
+        window.location.href = '/';
+        return undefined;
+    }
+
+    debugLog('Successfully joined game');
+    currentGame = result.game;
+    // The player as the server keeps them
+    currentPlayer = result.player;
+
+    AppStorage.session.set('playerData', {
+        name: currentPlayer.name,
+        avatar: currentPlayer.avatar,
+        roomCode: currentGame.id,
+        id: currentPlayer.id
+    });
+
+    // Drawing is the page's own work: a failure in it is the page's error,
+    // logged as one, and the page still enters the room - never sent home as
+    // if the connection had failed. The room's game-state draws it again
+    try {
+        roomGame.render();
+    } catch (error) {
+        console.error('Drawing the room failed:', error);
+    }
+    return 'joined';
 }
 
 // A player's avatar into an element: a photo (a validated data:image URL,

@@ -5,10 +5,10 @@
 <title>App icon (source)</title>
 <!-- The source of the app's icons: `npm run icons` (the kit's command) takes every size
      from it (public/icons/*.png, public/favicon.ico). It lies outside public/,
-     so the site never serves it. The drawing is the game's sheet folded like an
-     accordion: four pleats of answers folded away and the last panel still open,
-     with a line of writing in the game's color (--accent in style.css) - the
-     colors of the sheet on the page (.fold, .sheet). Every corner stays inside the
+     so the site never serves it. The drawing is a goose quill writing a wavy
+     line, in the sheet's cream on the game's color (--accent in style.css):
+     the owner's pick from a page of variants. The notches in its vane are what
+     keeps it a quill and not a leaf at small sizes. Everything stays inside the
      circle Android cuts a maskable icon to (40% of the size from the center).
      The icon is the game's brand: not covered by the MIT License (README, License) -->
 <style>
@@ -18,19 +18,20 @@
 </head>
 <body>
   <svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="down" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf5e6"/><stop offset="1" stop-color="#d6c296"/></linearGradient>
-      <linearGradient id="up" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cbb586"/><stop offset="1" stop-color="#f3e8cd"/></linearGradient>
-    </defs>
-    <rect width="192" height="192" fill="#f4e8cc"/>
-    <g stroke="#2a1d17" stroke-width="3" stroke-linejoin="round">
-      <polygon points="50,40 142,40 150,60 42,60" fill="url(#down)"/>
-      <polygon points="42,60 150,60 142,80 50,80" fill="url(#up)"/>
-      <polygon points="50,80 142,80 150,100 42,100" fill="url(#down)"/>
-      <polygon points="42,100 150,100 142,120 50,120" fill="url(#up)"/>
-      <polygon points="50,120 142,120 142,154 50,154" fill="#fbf5e6"/>
+    <rect width="192" height="192" fill="#1d4f3a"/>
+    <g transform="translate(62 140) rotate(42)">
+      <path d="M0 -14 C-24 -36 -30 -74 -6 -122 C20 -100 28 -58 0 -14 Z" fill="#fbf5e6"/>
+      <!-- The vane's notches, in the color of the background -->
+      <g fill="#1d4f3a">
+        <path d="M-32 -60 L-14 -52 L-32 -47 Z"/>
+        <path d="M-32 -92 L-14 -84 L-32 -79 Z"/>
+        <path d="M30 -74 L12 -66 L30 -61 Z"/>
+        <path d="M26 -102 L8 -94 L26 -89 Z"/>
+      </g>
+      <line x1="0" y1="0" x2="0" y2="-18" stroke="#fbf5e6" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="0" y1="-16" x2="-5" y2="-106" stroke="#1d4f3a" stroke-width="3" stroke-linecap="round"/>
     </g>
-    <path d="M60 136 q6 -7 12 0 t12 0 t12 0 t12 0 t12 0" fill="none" stroke="#1d4f3a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M70 153 q6 -7 12 0 t12 0 t12 0 t12 0 t12 0" fill="none" stroke="#fbf5e6" stroke-width="5" stroke-linecap="round"/>
   </svg>
 </body>
 </html>

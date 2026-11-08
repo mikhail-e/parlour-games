@@ -1,7 +1,7 @@
 // English and Russian: the browser's language, the saved choice, the switch,
 // and texts the game builds itself (status, cards, notifications)
 const {
-    test, expect, text, serverErrorText, seedStorage, createRoom, joinRoom, playerCard, waitForPlayers, waitForLanding,
+    test, expect, text, answerMessage, serverErrorText, seedStorage, createRoom, joinRoom, playerCard, waitForPlayers, waitForLanding,
     startedGame, revealOwnCharacter,
 } = require('./helpers');
 
@@ -123,7 +123,6 @@ test("the reveal notification reads in each player's language", async ({ newPlay
 
 test("a server error reads in the player's language", async ({ newPlayer }) => {
     const dasha = await newPlayer('Даша', { locale: 'ru-RU' });
-    dasha.expectDialog(serverErrorText('Game not found', 'ru'));
     // The server answers 400; the browser logs that response itself
     dasha.allowConsoleError(/status of 400/);
 
@@ -133,7 +132,8 @@ test("a server error reads in the player's language", async ({ newPlayer }) => {
     await dasha.page.fill('#playerName', 'Даша');
     await dasha.page.click('#joinBtn');
 
-    await expect.poll(() => dasha.expectedDialogs.length).toBe(0);
+    await expect(dasha.page.locator('.message-window button')).toHaveText(text('messageOk', 'ru'));
+    await answerMessage(dasha.page, serverErrorText('Game not found', 'ru'));
 });
 
 test("the close buttons are named in the player's language", async ({ newPlayer }) => {

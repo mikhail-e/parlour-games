@@ -1,7 +1,7 @@
 {
   "name": "Consequences",
   "short_name": "Consequences",
-  "description": "The classic folded-paper story game, for friends and family",
+  "description": "The classic parlour story game, for friends and family",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1b4a36",

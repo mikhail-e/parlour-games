@@ -2,8 +2,11 @@
 // "Copy Link" and "Share". The page's markup is the game's (game.html); this
 // script finds its parts by their ids - the list is in the kit's CLAUDE.md
 // (The room page).
-/* exported setUpInvitation, copyRoomLink, shareRoomLink */
-/* global getText */
+/* exported setUpInvitation, copyRoomLink, shareRoomLink, shareOrCopy */
+/* global getText, createIcon */
+
+// The buttons showing "Copied!" right now
+const flashing = new WeakSet();
 
 // The room code in #roomCode, the link in #shareLink, and the buttons of the
 // lobby's invitation (#copyLink, #shareButton) and of a started round's
@@ -24,48 +27,59 @@ function setUpInvitation(roomCode) {
     }
 }
 
-// Copy the room link and flash "Copied!" on the button that was pressed. The
-// link goes straight to the clipboard: a started round's invitation has no link
-// field to select. A page the clipboard is closed to (plain http, as a phone on
-// the home network) copies the old way, selecting the lobby's link field -
-// hidden in a started round, where not every browser copies from it
-async function copyRoomLink(button) {
-    const shareLink = document.getElementById('shareLink');
+// Copy a text and flash "Copied!" on the button that was pressed. A page the
+// clipboard is closed to (plain http, as a phone on the home network) copies
+// the old way, from a field made for it
+async function copyAndSay(button, text) {
     try {
-        await navigator.clipboard.writeText(shareLink.value);
+        await navigator.clipboard.writeText(text);
     } catch {
-        shareLink.select();
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.style.position = 'fixed'; // selecting it must not scroll the page
+        document.body.append(field);
+        field.select();
         document.execCommand('copy');
+        field.remove();
     }
 
-    const originalText = button.textContent;
-    button.textContent = getText('copiedSuccess', '✅ Copied!');
+    // A second press during the flash must not take "Copied!" for the label.
+    // The button's own elements come back, so its label still follows the language
+    if (flashing.has(button)) return;
+    flashing.add(button);
+    const label = [...button.childNodes];
+    const copied = document.createElement('span');
+    copied.textContent = getText('copiedSuccess', 'Copied!');
+    button.replaceChildren(createIcon('check'), copied);
     setTimeout(() => {
-        button.textContent = originalText;
+        button.replaceChildren(...label);
+        flashing.delete(button);
     }, 2000);
 }
 
-// Open the native share sheet with the room link, or copy the link as a
-// fallback. The sheet's title and text are the game's (its texts `title` and
-// `shareText`). No await before navigator.share: iOS refuses a share sheet
-// that is not opened right in the click
-async function shareRoomLink(button) {
-    const url = document.getElementById('shareLink').value;
+function copyRoomLink(button) {
+    return copyAndSay(button, document.getElementById('shareLink').value);
+}
 
+// Open the system's share sheet with this data; a browser without one, or a
+// sheet that fails, copies `copied` instead. No await before navigator.share:
+// iOS refuses a share sheet that is not opened right in the click
+async function shareOrCopy(button, data, copied) {
     if (navigator.share) {
         try {
-            await navigator.share({
-                title: getText('title', document.title),
-                text: getText('shareText', ''),
-                url: url
-            });
+            await navigator.share(data);
+            return;
         } catch (error) {
-            // AbortError = the user closed the share sheet - not a failure
-            if (error.name !== 'AbortError') {
-                copyRoomLink(button);
-            }
+            // AbortError = the player closed the share sheet - not a failure
+            if (error.name === 'AbortError') return;
         }
-    } else {
-        copyRoomLink(button);
     }
+    copyAndSay(button, copied);
+}
+
+// The room link to the share sheet. The sheet's title and text are the
+// game's (its texts `title` and `shareText`)
+function shareRoomLink(button) {
+    const url = document.getElementById('shareLink').value;
+    return shareOrCopy(button, { title: getText('title', document.title), text: getText('shareText', ''), url }, url);
 }

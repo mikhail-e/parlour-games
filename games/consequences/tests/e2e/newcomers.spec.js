@@ -3,7 +3,7 @@
 // in without a tap, and a newcomer who gives up. The waiting screen and the
 // request are the kit's; letting in at the next round is the game's
 const {
-    test, expect, text, askToJoin, waitForPlayers, startedRound, writeToReading, seatRow,
+    test, expect, text, askToJoin, waitForPlayers, startedRound, writeToReading, showStories, confirmAnotherRound, seatRow,
 } = require('./helpers');
 
 const waitingLine = page => page.locator('#waitingNewcomers');
@@ -34,8 +34,9 @@ test('Another round lets the waiting newcomer into the lobby without a tap', asy
     await askToJoin(dasha, code);
     await writeToReading(players);
     for (const player of players) await player.page.locator('#readingCard .closed-sheet').first().click();
+    await showStories(players[0]);
 
-    await players[0].page.click('#anotherRound');
+    await confirmAnotherRound(players[0]);
 
     await expect(dasha.page.locator('#waitingSheet')).toBeHidden();
     for (const player of [...players, dasha]) {

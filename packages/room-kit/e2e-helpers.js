@@ -236,8 +236,23 @@ function pngFile(width = 64, height = 64) {
     return { name: 'photo.png', mimeType: 'image/png', buffer };
 }
 
+// The kit's message window says this, and the player presses its button
+async function answerMessage(page, message) {
+    await expect(page.locator('.message-window p')).toHaveText(message);
+    await page.locator('.message-window button').click();
+}
+
+// How many icons a page has, and the masks of those that have no picture
+async function iconsOf(page) {
+    const masks = await page.evaluate(() =>
+        [...document.querySelectorAll('.icon')].map(icon => getComputedStyle(icon).webkitMaskImage));
+    return { count: masks.length, broken: masks.filter(mask => !mask.startsWith('url("data:image/svg+xml')) };
+}
+
 module.exports = {
     pageTexts,
+    iconsOf,
+    answerMessage,
     PAGE_STATUS_404,
     pngFile,
     seedStorage,

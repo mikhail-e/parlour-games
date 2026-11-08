@@ -41,10 +41,10 @@ async function startedRound(newPlayer, names) {
     return room;
 }
 
-// Write an answer on the sheet in front of the player and fold it
+// Write an answer on the sheet in front of the player and send it
 async function answer(player, text) {
     await player.page.fill('#answerText', text);
-    await player.page.click('#foldAndPass');
+    await player.page.click('#saveAndPass');
 }
 
 // The answer a player writes at a step, unless a test says otherwise:
@@ -60,6 +60,19 @@ async function answerStep(players, step, answerOf = answerText) {
 // The whole writing, every player answering every step: the round is at the reading
 async function writeToReading(players, answerOf = answerText) {
     for (let step = 0; step < 8; step++) await answerStep(players, step, answerOf);
+}
+
+// A player goes on from the reading to every story, by their own press
+async function showStories(player) {
+    await player.page.click('#showStories');
+    await expect(player.page.locator('#storiesCard')).toBeVisible();
+}
+
+// Another round: the player presses it and says yes in the window
+async function confirmAnotherRound(player) {
+    await player.page.click('#anotherRound');
+    await expect(player.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+    await player.page.click('#confirmNewRound');
 }
 
 // A player back in the started round by its link, from a new page of their
@@ -97,6 +110,8 @@ module.exports = {
     answerText,
     answerStep,
     writeToReading,
+    showStories,
+    confirmAnotherRound,
     returnToRound,
     seatRow,
 };

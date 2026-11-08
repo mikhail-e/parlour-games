@@ -1,5 +1,5 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, seedStorage, createRoom, joinRoom } = require('./helpers');
+const { test, expect, text, seedStorage, createRoom, joinRoom, waitForLanding } = require('./helpers');
 
 const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
@@ -56,6 +56,7 @@ test('the grid has 4 columns on a phone and 6 on a desktop; tiles are square', a
 test('Join needs a 6-character code, which disables Create', async ({ newPlayer }) => {
     const { page } = await newPlayer('Alice');
     await page.goto('/');
+    await page.fill('#playerName', 'Alice');
     const join = page.locator('#joinBtn');
     const create = page.locator('#createNewGame');
 
@@ -80,18 +81,69 @@ test('a ?join= link fills in the code', async ({ newPlayer }) => {
     await page.goto('/?join=abc123');
 
     await expect(page.locator('#roomCode')).toHaveValue('ABC123');
+    await page.fill('#playerName', 'Alice');
     await expect(page.locator('#joinBtn')).toBeEnabled();
 });
 
-test('an empty name asks for a name', async ({ newPlayer }) => {
+test('Create is off until there is a name, and says why', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Alice');
+    await page.goto('/');
+    await waitForLanding(page);
+    const create = page.locator('#createNewGame');
+
+    await expect(create).toBeDisabled();
+    await expect(create).toHaveAttribute('title', text('pleaseEnterName'));
+    await page.fill('#playerName', '   ');
+    await expect(create).toBeDisabled();
+
+    await page.fill('#playerName', 'Alice');
+    await expect(create).toBeEnabled();
+    await expect(create).toHaveAttribute('title', '');
+
+    await page.fill('#playerName', '');
+    await expect(create).toBeDisabled();
+});
+
+test('why Create is off follows the language', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Alice', { locale: 'en-GB' });
+    await page.goto('/');
+    await waitForLanding(page);
+
+    await page.locator('.lang-toggle-btn').click();
+
+    await expect(page.locator('#createNewGame')).toHaveAttribute('title', text('pleaseEnterName', 'ru'));
+    await expect(page.locator('#joinBtn')).toHaveAttribute('title', text('pleaseEnterName', 'ru'));
+});
+
+test('a saved name turns Create on as the page opens', async ({ newPlayer }) => {
     const alice = await newPlayer('Alice');
-    await alice.page.goto('/');
-    alice.expectDialog(text('pleaseEnterName'));
+    await seedStorage(alice, { 'whoami-player-name': JSON.stringify('Alice') });
 
-    await alice.page.click('#createNewGame');
+    await alice.page.reload();
+    await waitForLanding(alice.page);
 
-    await expect.poll(() => alice.expectedDialogs.length).toBe(0);
-    await expect(alice.page).toHaveURL(/\/$/);
+    await expect(alice.page.locator('#playerName')).toHaveValue('Alice');
+    await expect(alice.page.locator('#createNewGame')).toBeEnabled();
+});
+
+test('Join is off without a name, even with a code, and says why', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Alice');
+    await page.goto('/');
+    await waitForLanding(page);
+    const join = page.locator('#joinBtn');
+    await page.fill('#roomCode', 'ABC123');
+
+    await expect(join).toBeDisabled();
+    await expect(join).toHaveAttribute('title', text('pleaseEnterName'));
+    await page.fill('#playerName', '   ');
+    await expect(join).toBeDisabled();
+
+    await page.fill('#playerName', 'Alice');
+    await expect(join).toBeEnabled();
+    await expect(join).toHaveAttribute('title', '');
+
+    await page.fill('#playerName', '');
+    await expect(join).toBeDisabled();
 });
 
 test('a name longer than the limit is cut', async ({ newPlayer }) => {

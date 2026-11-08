@@ -53,6 +53,8 @@
   --sheet-paper: #fbf5e6;
   --fold-light: #f3e8cd;
   --fold-dark: #dccaa1;
+  /* How far a pleat's edge breaks, to the side, at each crease */
+  --fold-shift: 7px;
 }
 
 /* The step: "Step 4 of 8" and eight marks, the one being answered in the
@@ -109,6 +111,26 @@
   padding: 18px 20px 20px;
 }
 
+/* The sheet with pleats: their edges are cut (clip-path), and a cut would
+   show the sheet's own rectangle behind them, so the paper is the open
+   part's, and the shadow follows the cut (a box-shadow would not). The
+   pleats' zigzag leaves the open part a step narrower; with no pleats yet
+   it takes the whole width */
+.sheet--pleated {
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 5px 8px rgba(42, 29, 23, .32));
+}
+
+.sheet--pleated .sheet__open {
+  margin-right: var(--fold-shift);
+  background: var(--sheet-paper);
+}
+
+#folds:empty + .sheet__open {
+  margin-right: 0;
+}
+
 .sheet__number {
   color: var(--ink-soft);
   font-size: .8rem;
@@ -138,16 +160,143 @@
   font-size: 1.15rem;
 }
 
-.sheet__count {
+/* Under the field: the keys on the left, the count on the right */
+.sheet__under {
+  display: flex;
+  gap: 12px;
   margin: 4px 0 12px;
   color: var(--ink-soft);
   font-size: .85rem;
-  text-align: right;
+}
+
+/* Only for a computer's keyboard: a phone's has no Shift + Enter, and its
+   Enter starts a new line */
+.sheet__keys {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sheet__keys {
+    display: inline;
+  }
+}
+
+/* The send button. On a computer it is the main button under the field. On
+   a phone - a touch screen, no mouse - the keyboard covers what is under the
+   field: a square at the field's right, level with its bottom, as messengers
+   have it, in the game's color with a paper plane; its label stays for a
+   screen reader */
+.answer-send__plane {
+  display: none;
+}
+
+.answer-send__wing {
+  fill: currentColor;
+}
+
+.answer-send__fold {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+@media not all and (hover: hover) and (pointer: fine) {
+  #answerForm {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 10px;
+  }
+
+  #answerForm > * {
+    grid-column: 1 / -1;
+  }
+
+  #answerForm > .sheet__number {
+    grid-row: 1;
+  }
+
+  #answerForm > .sheet__question {
+    grid-row: 2;
+  }
+
+  #answerForm > #answerText {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  #answerForm > .answer-send {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  #answerForm > .sheet__under {
+    grid-row: 4;
+  }
+
+  #saveAndPass {
+    --bs-btn-color: var(--paper-light);
+    --bs-btn-bg: var(--accent);
+    --bs-btn-border-color: var(--accent);
+    --bs-btn-active-color: var(--paper-light);
+    --bs-btn-active-bg: var(--curtain-bottom);
+    --bs-btn-active-border-color: var(--curtain-bottom);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+  }
+
+  .answer-send__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .answer-send__plane {
+    display: block;
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.sheet__count {
+  margin-left: auto;
 }
 
 .sheet__count--over {
   color: var(--ink);
   font-weight: 700;
+}
+
+/* The player's own answer while they wait: a small label and the text */
+.sent-block {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(42, 29, 23, .25);
+}
+
+.sent-block__label {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.sent-block__text {
+  color: var(--ink);
+  font-size: 1.2rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
 .sheet__hint {
@@ -160,12 +309,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   min-height: 30px;
   padding: 4px 20px;
   border-bottom: 1px solid rgba(42, 29, 23, .25);
-  background: linear-gradient(to bottom, var(--fold-light) 0%, var(--fold-light) 55%, var(--fold-dark) 100%);
   color: rgba(42, 29, 23, .7);
   font-size: .8rem;
   font-weight: 600;
@@ -173,15 +319,22 @@
   text-transform: uppercase;
 }
 
-.fold:nth-child(even) {
-  background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 45%, var(--fold-light) 100%);
+/* Both edges break the same way, as paper folded back and forth. Counted
+   from the last pleat, so that it always ends level with the open part */
+.fold:nth-last-child(odd) {
+  clip-path: polygon(var(--fold-shift) 0, 100% 0, calc(100% - var(--fold-shift)) 100%, 0 100%);
+  background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 65%);
 }
 
-.fold__mark {
-  flex: none;
-  font-weight: 400;
-  letter-spacing: .06em;
-  text-transform: none;
+.fold:nth-last-child(even) {
+  clip-path: polygon(0 0, calc(100% - var(--fold-shift)) 0, 100% 100%, var(--fold-shift) 100%);
+  background: linear-gradient(to bottom, var(--fold-light) 35%, var(--fold-dark) 100%);
+}
+
+/* A title that takes two lines splits them evenly, so a star never stays
+   alone on the second («★ Историю / рассказывают ★») */
+.sheet-title {
+  text-wrap: balance;
 }
 
 /* The table: who writes or reads, who is away, who is done */
@@ -270,7 +423,8 @@
   margin: 0 0 14px;
 }
 
-/* A closed sheet: a folded packet of pleats, a button */
+/* A closed sheet: a sealed envelope, a button. The flap is two diagonal
+   lines drawn by gradients */
 .closed-sheet {
   display: block;
   width: 100%;
@@ -283,29 +437,36 @@
   cursor: pointer;
 }
 
-.packet {
+.envelope {
+  /* How far down the seal is, and the flap's point under it. The point is
+     hidden by the wax and the eye carries the lines on to a meeting above
+     it: 8px lower is what looks centered (the owner's pick by eye) */
+  --seal-center: 60%;
+  --flap-point: calc(var(--seal-center) + 8px);
   position: relative;
   display: block;
-  height: 150px;
+  width: min(100%, 300px);
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  border: 1px solid rgba(42, 29, 23, .45);
+  background:
+    linear-gradient(to top right, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) left top / 50% var(--flap-point) no-repeat,
+    linear-gradient(to top left, transparent calc(50% - .75px), rgba(42, 29, 23, .45) 50%, transparent calc(50% + .75px)) right top / 50% var(--flap-point) no-repeat,
+    var(--sheet-paper);
+  box-shadow: 0 3px 8px rgba(42, 29, 23, .3);
 }
 
-.packet span {
+/* The wax seal. The shadow follows the wax's uneven edge */
+.envelope__seal {
   position: absolute;
-  left: 12%;
-  right: 12%;
-  height: 26px;
-  border: 1px solid rgba(42, 29, 23, .25);
-  background: linear-gradient(to bottom, var(--fold-light), var(--fold-dark));
-  box-shadow: 0 2px 3px rgba(42, 29, 23, .2);
+  left: 50%;
+  top: var(--seal-center);
+  width: 84px;
+  height: 84px;
+  transform: translate(-50%, -50%);
+  background: url('../img/seal.svg') center / contain no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .45));
 }
-
-.packet span:nth-child(odd) { transform: skewX(-8deg); }
-.packet span:nth-child(even) { transform: skewX(8deg); }
-.packet span:nth-child(1) { top: 10px; }
-.packet span:nth-child(2) { top: 36px; }
-.packet span:nth-child(3) { top: 62px; }
-.packet span:nth-child(4) { top: 88px; }
-.packet span:nth-child(5) { top: 114px; }
 
 .closed-sheet__label {
   display: block;
@@ -325,7 +486,7 @@
   text-align: center;
 }
 
-/* An open sheet: every question with its answer under it */
+/* An open sheet: the story, its answers one under another with a line between */
 .story {
   margin: 0;
   padding: 0;
@@ -342,17 +503,10 @@
   border-bottom: 0;
 }
 
-.story__question {
-  display: block;
-  color: var(--accent);
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
-
 .story__answer {
   display: block;
+  /* A line the author broke with Shift + Enter stays broken */
+  white-space: pre-line;
   font-size: 1.2rem;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -398,4 +552,26 @@
   color: var(--ink-soft);
   font-weight: 400;
   text-align: right;
+}
+
+/* Sharing a story: a strip across the bottom of its sheet (the owner's pick
+   from a page of variants) */
+.story-share {
+  display: block;
+  width: 100%;
+  padding: 12px 10px;
+  border: 0;
+  border-top: 1px solid rgba(42, 29, 23, .25);
+  background: none;
+  color: var(--ink);
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .story-share:hover {
+    background: var(--accent-tint);
+  }
 }

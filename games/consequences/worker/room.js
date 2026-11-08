@@ -19,6 +19,7 @@ import { GameRoom, isPlayer, isPlayerOf } from '@parlour-games/room-kit/worker/g
 const MOVES = {
     'start-round': 'startRound',
     'write-answer': 'writeAnswer',
+    'take-back-answer': 'takeBackAnswer',
     'take-sheet': 'takeSheet',
     'return-sheet': 'returnSheet',
     'open-sheet': 'openSheet',
@@ -31,6 +32,21 @@ const idFrom = value => (typeof value === 'string' ? value : null);
 export class Room extends GameRoom {
     constructor(ctx, env) {
         super(ctx, env, { rules: gameLogic, moves: MOVES });
+        this.stepPauseMs = Number(env.STEP_PAUSE_MS) || gameLogic.STEP_PAUSE_MS;
+    }
+
+    // The room's one timer goes off for the sheets too: their move on after a
+    // step's pause is kept in the round, so it survives the room's sleep
+    async setAlarmAt(times) {
+        await super.setAlarmAt([...times, this.game && this.game.round ? this.game.round.stepEndsAt : null]);
+    }
+
+    async alarm() {
+        if (this.game && gameLogic.moveSheetsIfDue(this.game)) {
+            console.log(`Game ${this.roomCode} is at step ${this.game.round.step}`);
+            await this.afterChange();
+        }
+        await super.alarm();
     }
 
     // Every change is saved, then the pages get the round as it is now
@@ -94,12 +110,23 @@ export class Room extends GameRoom {
     // The answer to this step's question on the sheet in front of the sender,
     // or (`for`) on the absent player's sheet they hold
     async writeAnswer(ws, data, me) {
-        const result = gameLogic.writeAnswer(this.games, me.gameId, me.playerId, data.text, idFrom(data.for));
+        const result = gameLogic.writeAnswer(this.games, me.gameId, me.playerId, data.text, idFrom(data.for), this.stepPauseMs);
         if (!result.success) {
             this.send(ws, 'error', result.error);
             return;
         }
-        if (result.stepEnded) console.log(`Game ${me.gameId} is at step ${result.step}`);
+        await this.afterChange();
+    }
+
+    // "Change the answer": the sender's own answer at the step their page
+    // shows (`step`) is taken back, and their seat waits for it again
+    async takeBackAnswer(ws, data, me) {
+        const step = Number.isInteger(data && data.step) ? data.step : -1;
+        const result = gameLogic.takeBackAnswer(this.games, me.gameId, me.playerId, step);
+        if (!result.success) {
+            this.send(ws, 'error', result.error);
+            return;
+        }
         await this.afterChange();
     }
 

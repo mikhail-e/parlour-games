@@ -4,7 +4,8 @@
 // A round: every player of the list takes a seat in the circle, in the list's
 // order, with a blank sheet of eight questions. At step s (0-7) every seat
 // answers question s on the sheet in front of it; when every sheet has its
-// answer the sheets move on to the next seat, all at once. After the eighth
+// answer, and a short pause has passed, the sheets move on to the next seat,
+// all at once. After the eighth
 // question they move once more, and each seat reads the sheet that came to it
 // (step 8). The round in the game:
 //
@@ -14,6 +15,7 @@
 //     step:     0-7 the questions, 8 the reading
 //     takenBy:  { [the seat's playerId]: playerId }, // who writes for an absent seat at this step, or reads its sheet
 //     openedBy: { [sheet number]: playerId },         // which sheets are open, and who opened them
+//     stepEndsAt: time | null,  // every sheet has this step's answer: when they move on
 //   }
 
 // The players of the room - joining with the browser's secret, a leaver's
@@ -32,6 +34,9 @@ const MIN_PLAYERS = 2;
 // The answer's limit, counted as a person counts characters (an emoji is one).
 // The browser's copy is in public/js/utils.js; a test keeps the two equal
 const MAX_ANSWER_LENGTH = 200;
+// The pause after a step's last answer, before the sheets move on: time for
+// whoever wrote it to press "Change the answer". The room's tests shorten it
+const STEP_PAUSE_MS = 5000;
 
 const {
     createGame,
@@ -96,7 +101,8 @@ function startRound(games, gameId, playerId) {
         sheets: seats.map(() => Array(QUESTION_COUNT).fill(null)),
         step: 0,
         takenBy: {},
-        openedBy: {}
+        openedBy: {},
+        stepEndsAt: null
     };
     game.state = 'started';
     touchGame(game);
@@ -105,9 +111,11 @@ function startRound(games, gameId, playerId) {
 
 // A player writes the answer to this step's question on the sheet in front of
 // them - their own seat's, or, with `forPlayerId`, the sheet of an absent
-// player they have taken. The answer is final once sent. The step ends when
-// every sheet has its answer: the sheets move on (`stepEnded`)
-function writeAnswer(games, gameId, playerId, text, forPlayerId = null) {
+// player they have taken. While the step is on, a player may take their own
+// answer back and write it anew (takeBackAnswer). When every sheet has its
+// answer (`allAnswered`), the pause before the sheets move on begins
+// (moveSheetsIfDue)
+function writeAnswer(games, gameId, playerId, text, forPlayerId = null, pauseMs = STEP_PAUSE_MS) {
     const { game, round, error } = roundOf(games, gameId);
     if (error) return { success: false, error };
     if (round.step >= READING_STEP) return { success: false, error: 'The questions are over' };
@@ -135,13 +143,47 @@ function writeAnswer(games, gameId, playerId, text, forPlayerId = null) {
     // The sheet of an absent player goes back on the table, answered
     delete round.takenBy[seatPlayerId];
 
-    const stepEnded = round.sheets.every(eachSheet => eachSheet[round.step]);
-    if (stepEnded) {
-        round.step += 1;
-        round.takenBy = {};
-    }
+    const allAnswered = round.sheets.every(eachSheet => eachSheet[round.step]);
+    if (allAnswered) round.stepEndsAt = Date.now() + pauseMs;
     touchGame(game);
-    return { success: true, stepEnded, step: round.step };
+    return { success: true, allAnswered };
+}
+
+// The pause after a step's last answer has run out: the sheets move on, all
+// at once (the room's timer calls this). False when nothing is due yet
+function moveSheetsIfDue(game) {
+    const round = game.round;
+    if (!round || !round.stepEndsAt || Date.now() < round.stepEndsAt) return false;
+    round.step += 1;
+    round.takenBy = {};
+    round.stepEndsAt = null;
+    touchGame(game);
+    return true;
+}
+
+// "Change the answer": a player takes back the answer they wrote on their own
+// seat's sheet at this step (`step`, the one their page shows), while the
+// step is on - the pause after its last answer included. The seat is blank
+// again - the step waits for it, and the pause is off - and they write it
+// anew (writeAnswer). Only an answer they wrote themselves: one another
+// player wrote for their seat stays
+function takeBackAnswer(games, gameId, playerId, step) {
+    const { game, round, error } = roundOf(games, gameId);
+    if (error) return { success: false, error };
+    const seatIndex = round.seats.indexOf(playerId);
+    if (!game.players.some(player => player.id === playerId) || seatIndex === -1) {
+        return { success: false, error: 'You are not in this round' };
+    }
+    if (round.step !== step) return { success: false, error: 'This step is over' };
+    const sheet = round.sheets[sheetAt(round, seatIndex)];
+    const answer = sheet[round.step];
+    if (!answer) return { success: false, error: 'There is no answer to change' };
+    if (answer.by !== playerId) return { success: false, error: 'Another player wrote this answer' };
+
+    sheet[round.step] = null;
+    round.stepEndsAt = null;
+    touchGame(game);
+    return { success: true };
 }
 
 // A seat is absent when its player is offline or has left the room (a
@@ -285,7 +327,8 @@ function newRound(games, gameId, playerId) {
 }
 
 // The round as every page gets it: the step, and for each seat whose it is,
-// whether it is here, whether its sheet has this step's answer, who holds its
+// whether it is here, whether its sheet has this step's answer and who wrote
+// it (the seat's player may change only their own: takeBackAnswer), who holds its
 // sheet, which sheet it reads and who opened that. **No answer's text**: the
 // answers are secrets until the last sheet is open, and then every story is
 // in it. A leaver's name and avatar come from what the kit keeps of them
@@ -300,13 +343,15 @@ function roundView(game) {
             const player = game.players.find(each => each.id === playerId)
                 || (game.recentlyLeft.get(playerId) || {});
             const sheetNumber = sheetAt(round, seatIndex);
+            const answer = reading ? null : round.sheets[sheetNumber][round.step];
             return {
                 playerId,
                 name: player.name || '',
                 avatar: player.avatar || '',
                 absent: !game.players.some(each => each.id === playerId) ? 'left'
                     : (isAbsent(game, playerId) ? 'offline' : null),
-                answered: !reading && Boolean(round.sheets[sheetNumber][round.step]),
+                answered: Boolean(answer),
+                answeredBy: answer ? answer.by : null,
                 heldBy: round.takenBy[playerId] || null,
                 sheet: reading ? sheetNumber : null,
                 openedBy: reading ? (round.openedBy[sheetNumber] || null) : null
@@ -338,6 +383,8 @@ module.exports = {
     serializeGame,
     startRound,
     writeAnswer,
+    moveSheetsIfDue,
+    takeBackAnswer,
     takeSheet,
     returnSheet,
     releaseSheetsOf,
@@ -352,5 +399,6 @@ module.exports = {
     QUESTION_COUNT,
     MIN_PLAYERS,
     READING_STEP,
-    MAX_ANSWER_LENGTH
+    MAX_ANSWER_LENGTH,
+    STEP_PAUSE_MS
 };

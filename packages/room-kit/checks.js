@@ -10,6 +10,7 @@ const vm = require('vm');
 
 // The kit's own page scripts: a game's checks read them next to its own
 const KIT_SCRIPTS = path.join(__dirname, 'public', 'kit', 'js');
+const KIT_STYLES = path.join(__dirname, 'public', 'kit', 'css');
 
 // [name, text] of every file in dir with this extension (not in subfolders)
 function filesOf(dir, extension) {
@@ -134,7 +135,48 @@ function translationProblems(translationsFile, gameServerFiles) {
     ];
 }
 
+// Every page file of these folders, as [folder, name, text]
+function pageFiles(folders, extensions = ['.html', '.js', '.css']) {
+    return folders.flatMap(folder => extensions.flatMap(extension =>
+        filesOf(folder, extension).map(([file, text]) => [folder, file, text])));
+}
+
+// Emoji are the players' avatars and nothing else: what a player sees next to
+// a text is an icon (CLAUDE.md, Icons). ✓, → and ★ are text and stay. Not
+// counted: the avatars themselves (the pool in landing.js, the landing form's
+// first avatar) and lines only a console shows
+function emojiProblems(folders) {
+    const emoji = /\p{Emoji_Presentation}|\uFE0F/u;
+    const notSeen = /debugLog\(|console\.(log|warn|error)\(|id="selectedAvatar"/;
+    return pageFiles(folders)
+        .filter(([, file]) => file !== 'landing.js')
+        .flatMap(([, file, text]) => text.split('\n')
+            .map((line, index) => [line, index + 1])
+            .filter(([line]) => emoji.test(line) && !notSeen.test(line))
+            .map(([line, number]) => `${file}:${number}: ${line.trim()}`));
+}
+
+// Every icon a page or a script names has a style in the kit's or the game's
+// style sheet, and every style a picture that can be drawn - a wrong name or a
+// broken picture draws nothing, and nothing complains
+function iconProblems(folders) {
+    const files = pageFiles([...folders, KIT_SCRIPTS, KIT_STYLES]);
+    const styled = files
+        .filter(([, file]) => file.endsWith('.css'))
+        .flatMap(([, , text]) => [...text.matchAll(/\.icon--([a-z-]+)\s*\{(?:\s*\/\*.*?\*\/)?\s*--icon:\s*url\("data:image\/svg\+xml,([^"]*)"\)/g)]);
+    const names = new Set(styled.map(match => match[1]));
+    const named = files
+        .filter(([, file]) => !file.endsWith('.css'))
+        .flatMap(([, , text]) => [...text.matchAll(/\bicon--([a-z-]+)|createIcon\('([a-z-]+)'\)|\bicon: '([a-z-]+)'/g)])
+        .map(match => match[1] || match[2] || match[3]);
+    return [
+        ...[...new Set(named)].filter(name => !names.has(name)).map(name => `icon "${name}" has no style`),
+        ...styled.filter(match => !/^<svg [^>]*viewBox=.*<\/svg>$/.test(decodeURIComponent(match[2])) || /[<>#]/.test(match[2]))
+            .map(match => `icon "${match[1]}": a broken picture`)
+    ];
+}
+
 module.exports = {
-    KIT_SCRIPTS, KIT_SERVER_FILES, sharedNameProblems, inlineCodeProblems, serverErrorTexts, brandSignProblems,
+    KIT_SCRIPTS, KIT_SERVER_FILES, emojiProblems, iconProblems, sharedNameProblems, inlineCodeProblems, serverErrorTexts, brandSignProblems,
     loadPageScript, translationProblems,
 };

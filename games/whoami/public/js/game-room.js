@@ -48,8 +48,9 @@ startRoomPage({
             closeJoinRequest(data.playerId);
             if (data.outcome === 'admitted') {
                 showNotification(
-                    getText('playerAdmittedNotification', `👋 ${data.playerName} is in the game now`, { playerName: data.playerName }),
-                    'info'
+                    getText('playerAdmittedNotification', `${data.playerName} is in the game now`, { playerName: data.playerName }),
+                    'info',
+                    { icon: 'arrived' }
                 );
             }
         },
@@ -115,7 +116,7 @@ startRoomPage({
                 updateGameDisplay();
 
                 // Show a success message
-                showNotification(getText('gameRestarted', '⏮️ Game restarted! Character assignments cleared.'), 'success');
+                showNotification(getText('gameRestarted', 'Game restarted! Character assignments cleared.'), 'success', { icon: 'restart' });
             }
         },
 
@@ -127,9 +128,9 @@ startRoomPage({
             const playerName = data.playerName;
             const character = data.character;
 
-            const message = getText('playerRevealedNotification', `🎭 ${playerName} revealed their character: "${character}"!`, { playerName, character });
+            const message = getText('playerRevealedNotification', `${playerName} revealed their character: "${character}"!`, { playerName, character });
 
-            showNotification(message, 'warning');
+            showNotification(message, 'warning', { icon: 'mask' });
         }
     }
 });

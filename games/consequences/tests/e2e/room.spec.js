@@ -4,9 +4,10 @@
 // (ghosts, an empty room) are in room-timers.spec.js, entering from the
 // landing page in landing.spec.js
 const {
-    test, expect, text, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
+    test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
     seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow,
 } = require('./helpers');
+/* global showMessage -- the kit's notify.js, called in the page */
 
 // The names of the lobby's cards, in their order, without "(You)"
 const listedNames = page => page.locator('.player-name').evaluateAll(names =>
@@ -36,6 +37,38 @@ test('Copy Link puts the room link on the clipboard', async ({ newPlayer }) => {
     expect(await anna.page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/game/${code}$`));
 });
 
+test('"Copied!" goes by itself, a second press included, and the button is back with its icon and a label that follows the language', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna', { locale: 'en-GB' });
+    await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await createRoom(anna);
+    const button = anna.page.locator('#copyLink');
+
+    await button.click();
+    await expect(button.locator('.icon--check')).toBeVisible();
+    await button.click();
+
+    await expect(button).toHaveText(text('copyLink', 'en'));
+    await expect(button.locator('.icon--copy')).toBeVisible();
+    await anna.page.locator('.lang-toggle-btn').click();
+    await expect(button).toHaveText(text('copyLink', 'ru'));
+});
+
+test('a message goes over an open window, as text and once, and Escape closes it alone', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    await createRoom(anna);
+    const { page } = anna;
+    await page.click('#leaveGame');
+    await expect(page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
+
+    await page.evaluate(() => { showMessage('<b>One</b>'); showMessage('<b>One</b>'); showMessage('Two'); });
+
+    await answerMessage(page, '<b>One</b>');
+    await expect(page.locator('.message-window p')).toHaveText('Two');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.message-window')).toHaveCount(0);
+    await expect(page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
+});
+
 test('a reload keeps the player at their place, without a double', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await roomWith(newPlayer, ['Anna', 'Boris', 'Vera']);
 
@@ -46,13 +79,38 @@ test('a reload keeps the player at their place, without a double', async ({ newP
     await waitForPlayers(anna.page, 3);
 });
 
+test('a page that fails to draw as it enters stays in the room, and its error is not called a connection error', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    // The first drawing after the reload finds no answer button, as a page does
+    // whose browser kept an old script next to new markup
+    await boris.page.addInitScript(() => {
+        const getElementById = document.getElementById.bind(document);
+        let missing = true;
+        document.getElementById = id => {
+            if (id === 'saveAndPass' && missing) {
+                missing = false;
+                return null;
+            }
+            return getElementById(id);
+        };
+    });
+    boris.allowConsoleError(/^Drawing the room failed/);
+
+    await boris.page.reload();
+
+    // Still in the room at his question, and his page is in the room again:
+    // his answer goes through
+    await expect(boris.page).toHaveURL(/\/game\/[A-Z0-9]{6}$/);
+    await expect(boris.page.locator('#questionText')).toHaveText(text('question1'));
+    await answerStep([anna, boris], 0);
+});
+
 test("another browser with a player's ID is refused: that player plays in another browser", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna');
     const code = await createRoom(anna);
     const annasId = await anna.page.evaluate(() => localStorage.getItem('playerId'));
     const stranger = await newPlayer('Stranger');
     await seedStorage(stranger, { playerId: annasId });
-    stranger.expectDialog(serverErrorText('This player is playing in another browser'));
     stranger.allowConsoleError(/the server responded with a status of 400/);
 
     await stranger.page.goto(`/?join=${code}`);
@@ -60,7 +118,7 @@ test("another browser with a player's ID is refused: that player plays in anothe
     await stranger.page.fill('#playerName', 'Stranger');
     await stranger.page.click('#joinBtn');
 
-    await expect.poll(() => stranger.expectedDialogs.length).toBe(0);
+    await answerMessage(stranger.page, serverErrorText('This player is playing in another browser'));
     await expect(stranger.page).not.toHaveURL(/\/game\//);
     expect(await listedNames(anna.page)).toEqual(['Anna']);
 });
@@ -101,6 +159,7 @@ test('leaving the lobby goes home with the code filled in, and the others see wh
     await waitForPlayers(anna.page, 1);
     await expect(anna.page.locator('.alert.position-fixed')).toContainText(
         text('playerLeftNotification', 'en', { playerName: 'Boris' }));
+    await expect(anna.page.locator('.alert.position-fixed .icon--left')).toBeVisible();
 });
 
 test('Leave in one tab takes the player out of the room in every tab', async ({ newPlayer }) => {
