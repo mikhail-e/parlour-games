@@ -39,7 +39,7 @@ public/
 ├── 404.html               # Page for an address nothing answers (sent with status 404; links start at /)
 ├── manifest.json          # PWA manifest
 ├── sw.js                  # Service worker: the icons' cache name and list, handed to the kit's logic (icons only; everything else straight to the network)
-├── favicon.ico, icons/    # The app icon (the sheet folded like an accordion): PNG 48–512, apple-touch-icon.png, favicon.ico — taken by `npm run icons`
+├── favicon.ico, icons/    # The app icon (a goose quill writing a line, on the game's color): PNG 48–512, apple-touch-icon.png, favicon.ico — taken by `npm run icons`
 ├── robots.txt             # Nothing disallowed: room pages keep out of search by their noindex
 ├── llms.txt               # The game in plain text, for assistants reading the site
 ├── img/og-image.jpg       # The link preview picture (taken by `npm run og-image`); the service worker does not cache it
@@ -77,7 +77,7 @@ Releases, the license and the security policy are the repository's: root `docs/r
 - **The kit and the game:** what knows nothing of the game is the kit's; the game's part is `worker/room.js` (its moves), `game-logic.js` (its rules and its hooks for the players list), the pages' markup, `style.css` (its own look), `game-room.js` (its field and events) and its brand. When unsure where code goes, it goes into the game's part
 
 ## Rules (important!)
-1. **Bump the icon cache version in `CACHE_NAME`** (public/sw.js, `consequences-game-v1` → `v2`) **when you change the icons** (drawn in `scripts/icon.html`, taken by `npm run icons`). Only icons are cached, so HTML/CSS/JS changes reach players without it. This is not the app version — that one is in package.json
+1. **Bump the icon cache version in `CACHE_NAME`** (public/sw.js, `consequences-game-v2` → `v3`) **when you change the icons** (drawn in `scripts/icon.html`, taken by `npm run icons`). Only icons are cached, so HTML/CSS/JS changes reach players without it. This is not the app version — that one is in package.json
 2. **No code duplication across files** — code every game shares goes to the kit (`packages/room-kit/`)
 3. **Update tests whenever logic changes**: a game rule → Jest with `game-logic.js`; what the player sees or does → a browser test in `tests/e2e/` (the kit's `docs/testing.md`). Run `npm test` before committing
 4. **Localize all UI text** — every user-facing string of the game needs both `en` and `ru` entries in `public/js/translations.js` (the kit's rule and its `data-i18n*` attributes: `packages/room-kit/CLAUDE.md`, Translations); a text the kit already has is the kit's, not repeated. An error the server sent is shown through `serverErrorText()`; `serverErrors` holds the Russian copies of the game's own errors (game-logic.js, worker/), keyed by the English text. `tests/translations.test.js` fails if a key is in one language only, the placeholders differ, a kit's text is repeated, or a text the server sends has no copy (the kit's `translationProblems`). Rewording a server error means rewording its key too, and `LOST_RACES` in game-room.js compares some of them itself

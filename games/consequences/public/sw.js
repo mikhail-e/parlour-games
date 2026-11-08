@@ -6,7 +6,7 @@
 /* global cacheIconsOnly */
 
 // Bump the version when the icons change: the new ones replace the cached
-const CACHE_NAME = 'consequences-game-v1';
+const CACHE_NAME = 'consequences-game-v2';
 
 // The only assets worth caching: they are immutable and identified by name.
 // Do NOT add HTML, CSS or JS here - those must always come from the network.
