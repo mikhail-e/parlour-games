@@ -6,6 +6,7 @@ const {
     test, expect, text, PAGE_STATUS_404, createRoom, roomWith, askToJoin, startedRound, answer, writeToReading,
     showStories, seatRow, waitForLanding,
 } = require('./helpers');
+/* global showMessage -- the kit's notify.js, called in the page */
 
 const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -30,10 +31,8 @@ test('the message window', async ({ newPlayer }) => {
     const { page } = await newPlayer('Anna');
     await page.goto('/');
     await waitForLanding(page);
-    await page.fill('#playerName', '   ');
-    await page.fill('#roomCode', 'ABC123');
-    await page.click('#joinBtn');
-    await expect(page.getByRole('dialog', { name: text('pleaseEnterName') })).toBeVisible();
+    await page.evaluate(() => { showMessage('A message'); });
+    await expect(page.getByRole('dialog', { name: 'A message' })).toBeVisible();
 
     expect(await violations(page, '.message-window')).toEqual([]);
 });

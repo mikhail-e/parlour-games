@@ -262,17 +262,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update Join button state based on room code
     function updateJoinButtonState() {
         if (joinBtn) {
-            const roomCode = roomCodeInput.value.trim();
-            const isValidLength = roomCode.length === 6;
-            joinBtn.disabled = !isValidLength;
-
-            if (isValidLength) {
-                joinBtn.classList.remove('btn-secondary');
-                joinBtn.classList.add('btn-primary');
-            } else {
-                joinBtn.classList.remove('btn-primary');
-                joinBtn.classList.add('btn-secondary');
-            }
+            const hasCode = roomCodeInput.value.trim().length === 6;
+            const hasName = Boolean(playerNameInput.value.trim());
+            joinBtn.disabled = !(hasCode && hasName);
+            joinBtn.classList.toggle('btn-primary', hasCode && hasName);
+            joinBtn.classList.toggle('btn-secondary', !(hasCode && hasName));
+            // Says when the name is what is missing
+            joinBtn.title = hasName ? '' : getText('pleaseEnterName', 'Please enter your name');
         }
 
         // Update Create New Game button state
@@ -294,8 +290,8 @@ document.addEventListener('DOMContentLoaded', function() {
         createNewGameBtn.title = whyOff;
     }
 
-    if (playerNameInput) playerNameInput.addEventListener('input', updateCreateButtonState);
-    document.addEventListener('languagechanged', updateCreateButtonState);
+    if (playerNameInput) playerNameInput.addEventListener('input', updateJoinButtonState);
+    document.addEventListener('languagechanged', updateJoinButtonState);
 
     // Auto-uppercase room code input and manage Join button state
     if (roomCodeInput) {
@@ -344,11 +340,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedAvatar = selectedAvatarInput.value;
             const roomCode = roomCodeInput.value.trim();
             
-            if (!playerName) {
-                showMessage(getText('pleaseEnterName', 'Please enter your name')).then(() => playerNameInput.focus());
-                return;
-            }
-
             // If room code provided, validate it
             if (roomCode && roomCode.length !== 6) {
                 showMessage(getText('roomCodeLength', 'Room code must be exactly 6 characters'));

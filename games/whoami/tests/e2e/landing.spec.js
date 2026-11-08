@@ -1,5 +1,5 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, answerMessage, seedStorage, createRoom, joinRoom, waitForLanding } = require('./helpers');
+const { test, expect, text, seedStorage, createRoom, joinRoom, waitForLanding } = require('./helpers');
 
 const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
@@ -81,6 +81,7 @@ test('a ?join= link fills in the code', async ({ newPlayer }) => {
     await page.goto('/?join=abc123');
 
     await expect(page.locator('#roomCode')).toHaveValue('ABC123');
+    await page.fill('#playerName', 'Alice');
     await expect(page.locator('#joinBtn')).toBeEnabled();
 });
 
@@ -111,6 +112,7 @@ test('why Create is off follows the language', async ({ newPlayer }) => {
     await page.locator('.lang-toggle-btn').click();
 
     await expect(page.locator('#createNewGame')).toHaveAttribute('title', text('pleaseEnterName', 'ru'));
+    await expect(page.locator('#joinBtn')).toHaveAttribute('title', text('pleaseEnterName', 'ru'));
 });
 
 test('a saved name turns Create on as the page opens', async ({ newPlayer }) => {
@@ -124,19 +126,24 @@ test('a saved name turns Create on as the page opens', async ({ newPlayer }) => 
     await expect(alice.page.locator('#createNewGame')).toBeEnabled();
 });
 
-// Spaces pass the field's `required`; an empty field is the browser's own to refuse
-test('Join with a blank name asks for a name and goes back to the field', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    await alice.page.goto('/');
-    await waitForLanding(alice.page);
-    await alice.page.fill('#playerName', '   ');
-    await alice.page.fill('#roomCode', 'ABC123');
+test('Join is off without a name, even with a code, and says why', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Alice');
+    await page.goto('/');
+    await waitForLanding(page);
+    const join = page.locator('#joinBtn');
+    await page.fill('#roomCode', 'ABC123');
 
-    await alice.page.click('#joinBtn');
+    await expect(join).toBeDisabled();
+    await expect(join).toHaveAttribute('title', text('pleaseEnterName'));
+    await page.fill('#playerName', '   ');
+    await expect(join).toBeDisabled();
 
-    await answerMessage(alice.page, text('pleaseEnterName'));
-    await expect(alice.page.locator('#playerName')).toBeFocused();
-    await expect(alice.page).toHaveURL(/\/$/);
+    await page.fill('#playerName', 'Alice');
+    await expect(join).toBeEnabled();
+    await expect(join).toHaveAttribute('title', '');
+
+    await page.fill('#playerName', '');
+    await expect(join).toBeDisabled();
 });
 
 test('a name longer than the limit is cut', async ({ newPlayer }) => {
