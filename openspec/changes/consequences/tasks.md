@@ -78,11 +78,11 @@
 ## 13. Проверка и слияние
 
 - [x] 13.1 Полная локальная проверка: `npm test` в корне; чистый клон, `npm ci`, `npm test`; руками — Consequences в трёх вкладках, полный раунд с одним игроком не в сети и одним вышедшим и чтение; whoami — раунд в двух вкладках; проверка — всё проходит
-- [ ] 13.2 Слить `feature/consequences` в `develop` (`git merge --no-ff`), удалить ветку; скан непушенной истории (`origin/develop..develop`: каждый blob, включая `openspec/`, имена файлов, сообщения коммитов) на рабочие и личные данные — ноль находок; push `develop`; проверка — сборка в Cloudflare не запускалась
+- [x] 13.2 Слить `feature/consequences` в `develop` (`git merge --no-ff`), удалить ветку; скан непушенной истории (`origin/develop..develop`: каждый blob, включая `openspec/`, имена файлов, сообщения коммитов) на рабочие и личные данные — ноль находок; push `develop`; проверка — сборка в Cloudflare не запускалась
 
 ## 14. Выпуск whoami 2.3.0 и consequences 1.0.0
 
-- [ ] 14.1 Ветка `release/consequences-1.0.0` от `develop`: `npm version minor -w games/whoami --no-git-tag-version`, `npm version major -w games/consequences --no-git-tag-version`, `npm test` в корне, коммит «Release whoami 2.3.0, consequences 1.0.0»; проверка — `package.json` обеих игр и корневой lockfile показывают 2.3.0 и 1.0.0
+- [x] 14.1 Ветка `release/consequences-1.0.0` от `develop`: `npm version minor -w games/whoami --no-git-tag-version`, `npm version major -w games/consequences --no-git-tag-version`, `npm test` в корне, коммит «Release whoami 2.3.0, consequences 1.0.0»; проверка — `package.json` обеих игр и корневой lockfile показывают 2.3.0 и 1.0.0
 - [ ] 14.2 До выкладки на проде whoami: сохранить состояние браузера, побывавшего в комнате на 2.2.0 (Playwright `storageState`, во временной папке), и открыть комнату с идущим раундом, вышедшим игроком и ожидающим новичком; проверка — файл сохранён, комната открыта, новичок ждёт
 - [ ] 14.3 Подтверждение владельца на выкладку; слить в `master`, теги `whoami-v2.3.0` и `consequences-v1.0.0`, обратно в `develop`, удалить ветку, `git push origin master develop --tags`; проверка — в Deployments у `whoami-game` успешная сборка этого коммита
 - [ ] 14.4 Проверка прода whoami: `/api/version` — 2.3.0, `npm run test:e2e:prod -w games/whoami` зелёный, внизу `v2.3.0`; комната из 14.2 жива: вышедший возвращается со своим персонажем, новичка можно впустить; браузер из 14.2 — тот же игрок на том же языке; проверка — всё перечисленное
