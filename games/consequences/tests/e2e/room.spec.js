@@ -4,9 +4,10 @@
 // (ghosts, an empty room) are in room-timers.spec.js, entering from the
 // landing page in landing.spec.js
 const {
-    test, expect, text, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
+    test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
     seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow,
 } = require('./helpers');
+/* global showMessage -- the kit's notify.js, called in the page */
 
 // The names of the lobby's cards, in their order, without "(You)"
 const listedNames = page => page.locator('.player-name').evaluateAll(names =>
@@ -52,6 +53,22 @@ test('"Copied!" goes by itself, a second press included, and the button is back 
     await expect(button).toHaveText(text('copyLink', 'ru'));
 });
 
+test('a message goes over an open window, as text and once, and Escape closes it alone', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    await createRoom(anna);
+    const { page } = anna;
+    await page.click('#leaveGame');
+    await expect(page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
+
+    await page.evaluate(() => { showMessage('<b>One</b>'); showMessage('<b>One</b>'); showMessage('Two'); });
+
+    await answerMessage(page, '<b>One</b>');
+    await expect(page.locator('.message-window p')).toHaveText('Two');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.message-window')).toHaveCount(0);
+    await expect(page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
+});
+
 test('a reload keeps the player at their place, without a double', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await roomWith(newPlayer, ['Anna', 'Boris', 'Vera']);
 
@@ -94,7 +111,6 @@ test("another browser with a player's ID is refused: that player plays in anothe
     const annasId = await anna.page.evaluate(() => localStorage.getItem('playerId'));
     const stranger = await newPlayer('Stranger');
     await seedStorage(stranger, { playerId: annasId });
-    stranger.expectDialog(serverErrorText('This player is playing in another browser'));
     stranger.allowConsoleError(/the server responded with a status of 400/);
 
     await stranger.page.goto(`/?join=${code}`);
@@ -102,7 +118,7 @@ test("another browser with a player's ID is refused: that player plays in anothe
     await stranger.page.fill('#playerName', 'Stranger');
     await stranger.page.click('#joinBtn');
 
-    await expect.poll(() => stranger.expectedDialogs.length).toBe(0);
+    await answerMessage(stranger.page, serverErrorText('This player is playing in another browser'));
     await expect(stranger.page).not.toHaveURL(/\/game\//);
     expect(await listedNames(anna.page)).toEqual(['Anna']);
 });

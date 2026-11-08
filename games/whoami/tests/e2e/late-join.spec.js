@@ -2,7 +2,7 @@
 // seeing the room, and any player lets them in or declines (the rules:
 // tests/late-join.test.js)
 const {
-    test, expect, text, serverErrorText, playerCard, startedGame, waitForPlayers, askToJoin, waitForLanding,
+    test, expect, text, answerMessage, serverErrorText, playerCard, startedGame, waitForPlayers, askToJoin, waitForLanding,
     assignCharacter, revealOwnCharacter,
 } = require('./helpers');
 
@@ -350,7 +350,6 @@ test('the waiting newcomer learns that the room is gone', async ({ newPlayer }) 
         await expect(player.page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
     }
     const dasha = await newPlayer('Dasha');
-    dasha.expectDialog(serverErrorText('Game not found'));
     // Joining a room that is gone: the server answers 400, the page logs it
     dasha.allowConsoleError(/status of 400|Join game failed/);
     await askToJoin(dasha, code);
@@ -361,7 +360,10 @@ test('the waiting newcomer learns that the room is gone', async ({ newPlayer }) 
     await waitForPlayers(alice.page, 1);
     await alice.page.click('#confirmLeave');
 
-    await expect.poll(() => dasha.expectedDialogs.length).toBe(0);
+    // The page waits for the player before it goes home
+    await expect(dasha.page.locator('.message-window p')).toHaveText(serverErrorText('Game not found'));
+    await expect(dasha.page).toHaveURL(new RegExp(`/game/${code}$`));
+    await answerMessage(dasha.page, serverErrorText('Game not found'));
     await expect(dasha.page).toHaveURL(/\/$/);
 });
 

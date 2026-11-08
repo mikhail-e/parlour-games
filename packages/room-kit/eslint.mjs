@@ -69,6 +69,8 @@ export default function roomKitEslint({ ignores = [] } = {}) {
                 ...sharedRules,
                 // Debug output goes through debugLog() (the kit's app.js): players' consoles stay quiet
                 "no-console": ["error", { allow: ["warn", "error"] }],
+                // A message to the player is the kit's window: showMessage
+                "no-alert": "error",
             },
         },
 

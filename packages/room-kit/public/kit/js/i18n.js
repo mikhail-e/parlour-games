@@ -60,6 +60,7 @@ const KIT_TEXTS = {
         copyLink: "Copy Link",
         copyRoomLink: "Copy Link",
         share: "Share",
+        messageOk: "OK",
         copiedSuccess: "Copied!",
 
         // Notifications (notify.js) and the update banner (pwa.js)
@@ -119,6 +120,7 @@ const KIT_TEXTS = {
         copyLink: "Скопировать",
         copyRoomLink: "Скопировать ссылку",
         share: "Поделиться",
+        messageOk: "Понятно",
         copiedSuccess: "Скопировано!",
 
         // Notifications (notify.js) and the update banner (pwa.js)

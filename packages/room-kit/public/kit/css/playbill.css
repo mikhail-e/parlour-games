@@ -556,6 +556,38 @@ body.waiting-for-admission .container > .game-card:not(#waitingSheet) {
   text-transform: uppercase;
 }
 
+/* A message that waits for the player (notify.js, showMessage): a browser
+   <dialog>, above every other window, dressed as the game's windows - the
+   .modal inside it only brings their look */
+.message-window {
+  width: min(500px, calc(100vw - 30px));
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: visible;
+}
+
+.message-window::backdrop {
+  background: rgba(0, 0, 0, .5);
+}
+
+.message-window .modal {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  z-index: auto;
+}
+
+.message-window .modal-dialog {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  pointer-events: auto;
+}
+
 /* Icons: Phosphor Bold (vendor/phosphor), painted through a mask in the color
    of the text around them. An element of the classes icon and icon--<name>
    goes before its text, or a script's createIcon(name); a game adds its own

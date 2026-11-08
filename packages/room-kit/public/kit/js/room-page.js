@@ -8,7 +8,7 @@
 // finds its parts by their ids and classes - the list is in the kit's
 // CLAUDE.md (The room page).
 /* exported socket, currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
-/* global debugLog, getText, serverErrorText, showNotification, handleApiError, AppStorage, PLAYER_ID, PLAYER_SECRET,
+/* global debugLog, getText, serverErrorText, showNotification, showMessage, handleApiError, AppStorage, PLAYER_ID, PLAYER_SECRET,
    isCustomAvatar, keepScreenAwake, RoomSocket, setUpInvitation */
 
 // The room's socket (the kit's RoomSocket), the game as the page knows it
@@ -82,8 +82,7 @@ function openRoomPage() {
     const roomCode = window.location.pathname.split('/').pop().toUpperCase();
 
     if (!roomCode || roomCode.length !== 6) {
-        alert(getText('invalidRoomCode', 'Invalid room code'));
-        window.location.href = '/';
+        showMessage(getText('invalidRoomCode', 'Invalid room code')).then(() => { window.location.href = '/'; });
         return;
     }
 
@@ -209,8 +208,7 @@ function connectToRoom(roomCode) {
         // A newcomer's request was refused (the room is full, say): nothing
         // to wait for
         if (isWaitingForAdmission()) {
-            alert(serverErrorText(error));
-            window.location.href = '/';
+            showMessage(serverErrorText(error)).then(() => { window.location.href = '/'; });
             return;
         }
         console.error('Socket error:', error);
@@ -221,7 +219,7 @@ function connectToRoom(roomCode) {
             leaveFallbackTimer = null;
         }
         if (roomGame.afterError) roomGame.afterError();
-        alert(serverErrorText(error));
+        showMessage(serverErrorText(error));
     });
 
     socket.on('disconnect', () => {
@@ -281,7 +279,7 @@ async function joinGameRoom(roomCode) {
         debugLog('Join game result:', result);
     } catch (error) {
         console.error('Error joining game:', error);
-        handleApiError(error, 'joining game room');
+        await handleApiError(error, 'joining game room');
         window.location.href = '/';
         return undefined;
     }
@@ -294,7 +292,7 @@ async function joinGameRoom(roomCode) {
 
     if (!result.success) {
         console.error('Join game failed:', result.error);
-        alert(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
+        await showMessage(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
         window.location.href = '/';
         return undefined;
     }

@@ -4,7 +4,7 @@
 // creating a room and joining one. The page's markup is the game's
 // (index.html); this script finds its parts by their ids and classes - the
 // list is in the kit's CLAUDE.md (The landing page).
-/* global debugLog, MAX_NAME_LENGTH, isCustomAvatar, getText, serverErrorText, showError, showInfo, AppStorage, handleApiError, PLAYER_ID, PLAYER_SECRET, APP_STORAGE_PREFIX */
+/* global debugLog, MAX_NAME_LENGTH, isCustomAvatar, getText, serverErrorText, showError, showMessage, showInfo, AppStorage, handleApiError, PLAYER_ID, PLAYER_SECRET, APP_STORAGE_PREFIX */
 
 // The last name and avatar the player used, remembered in the game's
 // localStorage (the player's saved data: the keys never change)
@@ -319,8 +319,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedAvatar = selectedAvatarInput.value;
             
             if (!playerName) {
-                alert(getText('pleaseEnterName', 'Please enter your name first'));
-                document.getElementById('playerName').focus();
+                showMessage(getText('pleaseEnterName', 'Please enter your name first'))
+                    .then(() => document.getElementById('playerName').focus());
                 return;
             }
 
@@ -353,13 +353,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const roomCode = roomCodeInput.value.trim();
             
             if (!playerName) {
-                alert(getText('pleaseEnterName', 'Please enter your name'));
+                showMessage(getText('pleaseEnterName', 'Please enter your name'));
                 return;
             }
 
             // If room code provided, validate it
             if (roomCode && roomCode.length !== 6) {
-                alert(getText('roomCodeLength', 'Room code must be exactly 6 characters'));
+                showMessage(getText('roomCodeLength', 'Room code must be exactly 6 characters'));
                 return;
             }
 
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = `/game/${result.gameId}`;
             } else {
                 console.error('Create game failed:', result);
-                alert(getText('failedCreateGame', 'Failed to create game. Please try again.'));
+                showMessage(getText('failedCreateGame', 'Failed to create game. Please try again.'));
                 resetCreateButton();
             }
         } catch (error) {
@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 AppStorage.session.set('playerData', playerData);
                 window.location.href = `/game/${playerData.roomCode}`;
             } else {
-                alert(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
+                showMessage(serverErrorText(result.error) || getText('failedJoinGame', 'Failed to join game'));
             }
         } catch (error) {
             handleApiError(error, 'joining game');

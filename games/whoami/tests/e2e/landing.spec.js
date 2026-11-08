@@ -1,5 +1,5 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, seedStorage, createRoom, joinRoom } = require('./helpers');
+const { test, expect, text, answerMessage, seedStorage, createRoom, joinRoom } = require('./helpers');
 
 const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
@@ -86,11 +86,11 @@ test('a ?join= link fills in the code', async ({ newPlayer }) => {
 test('an empty name asks for a name', async ({ newPlayer }) => {
     const alice = await newPlayer('Alice');
     await alice.page.goto('/');
-    alice.expectDialog(text('pleaseEnterName'));
 
     await alice.page.click('#createNewGame');
 
-    await expect.poll(() => alice.expectedDialogs.length).toBe(0);
+    await answerMessage(alice.page, text('pleaseEnterName'));
+    await expect(alice.page.locator('#playerName')).toBeFocused();
     await expect(alice.page).toHaveURL(/\/$/);
 });
 

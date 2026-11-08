@@ -4,7 +4,7 @@
 const { AxeBuilder } = require('@axe-core/playwright');
 const {
     test, expect, text, PAGE_STATUS_404, createRoom, roomWith, askToJoin, startedRound, answer, writeToReading,
-    showStories, seatRow,
+    showStories, seatRow, waitForLanding,
 } = require('./helpers');
 
 const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
@@ -25,6 +25,16 @@ async function violations(page, only) {
     return result.violations.map(violation =>
         `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`);
 }
+
+test('the message window', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Anna');
+    await page.goto('/');
+    await waitForLanding(page);
+    await page.click('#createNewGame');
+    await expect(page.getByRole('dialog', { name: text('pleaseEnterName') })).toBeVisible();
+
+    expect(await violations(page, '.message-window')).toEqual([]);
+});
 
 test('the landing page', async ({ newPlayer }) => {
     const { page } = await newPlayer('Anna');

@@ -2,7 +2,7 @@
 // sign, creating a room, joining by its code or its link, the name and the
 // avatar, a full room. The form is the kit's landing.js on this page's markup
 const crypto = require('crypto');
-const { test, expect, text, serverErrorText, createRoom, joinRoom, roomWith, waitForLanding, waitForPlayers, playerCard, pngFile } = require('./helpers');
+const { test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForLanding, waitForPlayers, playerCard, pngFile } = require('./helpers');
 
 const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 
@@ -134,14 +134,13 @@ test('a thirteenth player finds the room full', async ({ newPlayer, request }) =
     await waitForPlayers(alice.page, 12);
     await carol.page.goto(`/game/${code}`);
     await waitForLanding(carol.page);
-    carol.expectDialog(serverErrorText('Game is full'));
     // The refused join is an HTTP 400, which the browser reports in the console
     carol.allowConsoleError(/the server responded with a status of 400/);
 
     await carol.page.fill('#playerName', 'Carol');
     await carol.page.click('#joinBtn');
 
-    await expect.poll(() => carol.expectedDialogs.length).toBe(0);
+    await answerMessage(carol.page, serverErrorText('Game is full'));
     await expect(carol.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
     await waitForPlayers(alice.page, 12);
 });
