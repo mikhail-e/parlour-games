@@ -3,7 +3,7 @@
 // <script>: a top-level name here is visible to the scripts loaded after it
 // ("exported" lists what they use). The game's config.js comes first and names
 // the game's keys in localStorage (APP_STORAGE_PREFIX).
-/* exported debugLog, AppStorage, PLAYER_ID, PLAYER_SECRET */
+/* exported debugLog, AppStorage, PLAYER_ID, PLAYER_SECRET, createIcon */
 /* global APP_STORAGE_PREFIX */
 
 // Debug output: printed only while debugging is on, so players' consoles stay
@@ -164,3 +164,12 @@ async function showAppVersion() {
 }
 
 document.addEventListener('DOMContentLoaded', showAppVersion);
+
+// An icon for a script to put before a text: the class icon--<name> of a style
+// sheet (the kit's CLAUDE.md, Icons). Decoration, so screen readers skip it
+function createIcon(name) {
+    const icon = document.createElement('span');
+    icon.className = `icon icon--${name}`;
+    icon.setAttribute('aria-hidden', 'true');
+    return icon;
+}

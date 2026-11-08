@@ -48,6 +48,7 @@ test('any player can let a newcomer in', async ({ newPlayer }) => {
     await expect(dasha.page.locator('#waitingSheet')).toBeHidden();
     await expect(playerCard(alice.page, 'Dasha')).toBeVisible();
     await expect(notifications(alice.page)).toContainText(text('playerAdmittedNotification', 'en', { playerName: 'Dasha' }));
+    await expect(notifications(alice.page).locator('.icon--arrived')).toBeVisible();
 });
 
 test('the first answer decides', async ({ newPlayer }) => {

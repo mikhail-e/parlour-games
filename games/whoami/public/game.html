@@ -110,12 +110,12 @@
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
-                        📋 <span data-i18n="copyLink">Copy Link</span>
+                        <span class="icon icon--copy" aria-hidden="true"></span><span data-i18n="copyLink">Copy Link</span>
                     </button>
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="shareButton">
-                        📤 <span data-i18n="share">Share</span>
+                        <span class="icon icon--share" aria-hidden="true"></span><span data-i18n="share">Share</span>
                     </button>
                 </div>
             </div>
@@ -148,16 +148,16 @@
             <div class="row">
                 <div class="col-12 text-center">
                     <button class="btn btn-primary me-2 mb-2 mb-md-0" id="startGame" disabled>
-                        🎮 <span data-i18n="startGame">Start Game</span>
+                        <span class="icon icon--start" aria-hidden="true"></span><span data-i18n="startGame">Start Game</span>
                     </button>
                     <button class="btn btn-outline-danger me-2 mb-2 mb-md-0" id="restartGame">
-                        ⏮️ <span data-i18n="restartGame">Restart Game</span>
+                        <span class="icon icon--restart" aria-hidden="true"></span><span data-i18n="restartGame">Restart Game</span>
                     </button>
                     <button class="btn btn-outline-primary me-2 mb-2 mb-md-0" id="refreshPage">
-                        🔄 <span data-i18n="refresh">Refresh</span>
+                        <span class="icon icon--refresh" aria-hidden="true"></span><span data-i18n="refresh">Refresh</span>
                     </button>
                     <button class="btn btn-outline-secondary me-2 mb-2 mb-md-0" id="leaveGame">
-                        🚪 <span data-i18n="leaveGame">Leave Game</span>
+                        <span class="icon icon--door" aria-hidden="true"></span><span data-i18n="leaveGame">Leave Game</span>
                     </button>
                 </div>
             </div>
@@ -172,12 +172,12 @@
             <div class="row g-2">
                 <div class="col-md-6">
                     <button type="button" class="btn btn-outline-primary w-100" id="gameCopyLink">
-                        📋 <span data-i18n="copyRoomLink">Copy Link</span>
+                        <span class="icon icon--copy" aria-hidden="true"></span><span data-i18n="copyRoomLink">Copy Link</span>
                     </button>
                 </div>
                 <div class="col-md-6">
                     <button type="button" class="btn btn-outline-primary w-100" id="gameShareButton">
-                        📤 <span data-i18n="share">Share</span>
+                        <span class="icon icon--share" aria-hidden="true"></span><span data-i18n="share">Share</span>
                     </button>
                 </div>
             </div>
@@ -187,8 +187,8 @@
         <div class="game-card" id="assignmentInstructions">
             <h6 class="sheet-title" data-i18n="characterAssignment">Character Assignment</h6>
             <p class="small text-muted mb-0">
-                <strong>🎯 <span data-i18n="clickPlus">Press “Assign character”</span></strong> <span data-i18n="assignInstructions">on other players' cards to give them characters.</span> 
-                <strong>✏️ <span data-i18n="clickStickers">Click character tags</span></strong> <span data-i18n="editInstructions">to edit them.</span>
+                <strong><span class="icon icon--target" aria-hidden="true"></span><span data-i18n="clickPlus">Press “Assign character”</span></strong> <span data-i18n="assignInstructions">on other players' cards to give them characters.</span> 
+                <strong><span class="icon icon--edit" aria-hidden="true"></span><span data-i18n="clickStickers">Click character tags</span></strong> <span data-i18n="editInstructions">to edit them.</span>
             </p>
         </div>
 
@@ -214,12 +214,12 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="revealModalLabel" data-i18n="revealModalTitle">🎭 Reveal Your Character</h5>
+                    <h5 class="modal-title" id="revealModalLabel"><span class="icon icon--mask" aria-hidden="true"></span><span data-i18n="revealModalTitle">Reveal Your Character</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p data-i18n="revealConfirmText">Are you sure you want to reveal your character?</p>
-                    <p><strong data-i18n="revealWarning">⚠️ This action cannot be undone!</strong></p>
+                    <p><strong><span class="icon icon--warning" aria-hidden="true"></span><span data-i18n="revealWarning">This action cannot be undone!</span></strong></p>
                     <p class="text-muted small" data-i18n="revealNote">Once revealed, your character will be visible to all players for the rest of the game.</p>
                 </div>
                 <div class="modal-footer mobile-modal-footer">
@@ -235,12 +235,12 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="restartModalLabel" data-i18n="restartModalTitle">⏮️ Restart Game</h5>
+                    <h5 class="modal-title" id="restartModalLabel"><span class="icon icon--restart" aria-hidden="true"></span><span data-i18n="restartModalTitle">Restart Game</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p data-i18n="restartConfirmText">Are you sure you want to restart the game?</p>
-                    <p><strong data-i18n="restartWarning">⚠️ This will:</strong></p>
+                    <p><strong><span class="icon icon--warning" aria-hidden="true"></span><span data-i18n="restartWarning">This will:</span></strong></p>
                     <ul>
                         <li data-i18n="restartAction1">Reset all revealed characters</li>
                         <li data-i18n="restartAction2">Allow players to reassign characters</li>
@@ -262,7 +262,7 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="leaveModalLabel" data-i18n="leaveModalTitle">🚪 Leave Game</h5>
+                    <h5 class="modal-title" id="leaveModalLabel"><span class="icon icon--door" aria-hidden="true"></span><span data-i18n="leaveModalTitle">Leave Game</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -283,7 +283,7 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="joinRequestModalLabel" data-i18n="joinRequestTitle">🚪 Asking to join</h5>
+                    <h5 class="modal-title" id="joinRequestModalLabel"><span class="icon icon--door" aria-hidden="true"></span><span data-i18n="joinRequestTitle">Asking to join</span></h5>
                 </div>
                 <div class="modal-body">
                     <div class="join-request__who">

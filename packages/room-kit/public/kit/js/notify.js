@@ -4,15 +4,16 @@
 // put in as plain text, never as HTML: names a player typed cannot inject
 // markup.
 /* exported showError, showInfo, showNotification, handleApiError */
-/* global getText */
+/* global getText, createIcon */
 
 // A dismissible Bootstrap alert with the message as text
-function createAlertElement(message, className) {
+function createAlertElement(message, className, icon) {
     const alertDiv = document.createElement('div');
     alertDiv.className = className;
 
     const messageSpan = document.createElement('span');
     messageSpan.textContent = message;
+    if (icon) messageSpan.prepend(createIcon(icon));
 
     const closeButton = document.createElement('button');
     closeButton.type = 'button';
@@ -47,11 +48,13 @@ function showInfo(message) {
     insertAlert(createAlertElement(message, 'alert alert-info alert-dismissible fade show'));
 }
 
-// A notification pinned to the screen (.notification), gone after `duration`
-function showNotification(message, type = 'info', duration = 4000) {
+// A notification pinned to the screen (.notification), gone after `duration`,
+// its `icon` (a name, as createIcon takes) before the text
+function showNotification(message, type = 'info', { duration = 4000, icon } = {}) {
     const notification = createAlertElement(
         message,
-        `alert alert-${type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed notification`
+        `alert alert-${type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed notification`,
+        icon
     );
 
     document.body.appendChild(notification);

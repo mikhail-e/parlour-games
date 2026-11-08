@@ -99,12 +99,12 @@
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
-                        📋 <span data-i18n="copyLink">Copy Link</span>
+                        <span class="icon icon--copy" aria-hidden="true"></span><span data-i18n="copyLink">Copy Link</span>
                     </button>
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="shareButton">
-                        📤 <span data-i18n="share">Share</span>
+                        <span class="icon icon--share" aria-hidden="true"></span><span data-i18n="share">Share</span>
                     </button>
                 </div>
             </div>
@@ -159,8 +159,7 @@
                     <!-- The player's own answer back into the field, while the step is on.
                          Not in a .d-grid: its display: grid !important would beat hidden -->
                     <button type="button" class="btn btn-outline-primary w-100 mt-3" id="editAnswer" hidden>
-                        <svg class="pencil" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M2.5 13.5l.9-3.6L10.6 2.7a1.3 1.3 0 0 1 1.8 0l.9.9a1.3 1.3 0 0 1 0 1.8L6.1 12.6z"/><path d="M9.4 3.9l2.7 2.7"/></svg>
-                        <span data-i18n="editAnswer">Change the answer</span>
+                        <span class="icon icon--edit" aria-hidden="true"></span><span data-i18n="editAnswer">Change the answer</span>
                     </button>
                     <button type="button" class="btn btn-outline-primary w-100 mt-3" id="giveSheetBack" data-i18n="giveSheetBack" hidden>Give the sheet back</button>
                 </div>
@@ -191,10 +190,10 @@
         <div class="game-card text-center">
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <button type="button" class="btn btn-outline-danger" id="newRound" hidden>
-                    🔄 <span data-i18n="newRound">New round</span>
+                    <span class="icon icon--refresh" aria-hidden="true"></span><span data-i18n="newRound">New round</span>
                 </button>
                 <button type="button" class="btn btn-outline-secondary" id="leaveGame">
-                    🚪 <span data-i18n="leaveGame">Leave Game</span>
+                    <span class="icon icon--door" aria-hidden="true"></span><span data-i18n="leaveGame">Leave Game</span>
                 </button>
             </div>
         </div>
@@ -208,7 +207,7 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="leaveModalLabel" data-i18n="leaveModalTitle">🚪 Leave Game</h5>
+                    <h5 class="modal-title" id="leaveModalLabel"><span class="icon icon--door" aria-hidden="true"></span><span data-i18n="leaveModalTitle">Leave Game</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -227,7 +226,7 @@
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="newRoundModalLabel">🔄 <span data-i18n="newRound">New round</span></h5>
+                    <h5 class="modal-title" id="newRoundModalLabel"><span class="icon icon--refresh" aria-hidden="true"></span><span data-i18n="newRound">New round</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

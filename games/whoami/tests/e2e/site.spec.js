@@ -1,6 +1,6 @@
 // The site around the game: unknown rooms, the version in the footer, and the
 // guard every browser test runs under
-const { test, expect, text, createRoom } = require('./helpers');
+const { test, expect, text, createRoom, iconsOf } = require('./helpers');
 
 test('a link to a room that does not exist leads home with a message', async ({ newPlayer }) => {
     const alice = await newPlayer('Alice');
@@ -34,6 +34,16 @@ test('the icons the pages name are served, the iPhone one as a PNG', async ({ ne
         expect(answer.status(), rel).toBe(200);
         expect(answer.headers()['content-type'], rel).toMatch(type);
     }
+});
+
+test('the icons of the room page and the language button come from the site', async ({ newPlayer }) => {
+    const alice = await newPlayer('Alice');
+    await createRoom(alice);
+
+    await expect(alice.page.locator('.lang-toggle-btn .icon--language')).toBeVisible();
+    const { count, broken } = await iconsOf(alice.page);
+    expect(count).toBeGreaterThan(4);
+    expect(broken).toEqual([]);
 });
 
 test('the guard fails a test when a page throws', async ({ newPlayer }) => {

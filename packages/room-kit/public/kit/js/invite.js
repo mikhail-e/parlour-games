@@ -3,7 +3,10 @@
 // script finds its parts by their ids - the list is in the kit's CLAUDE.md
 // (The room page).
 /* exported setUpInvitation, copyRoomLink, shareRoomLink */
-/* global getText */
+/* global getText, createIcon */
+
+// The buttons showing "Copied!" right now
+const flashing = new WeakSet();
 
 // The room code in #roomCode, the link in #shareLink, and the buttons of the
 // lobby's invitation (#copyLink, #shareButton) and of a started round's
@@ -38,10 +41,17 @@ async function copyRoomLink(button) {
         document.execCommand('copy');
     }
 
-    const originalText = button.textContent;
-    button.textContent = getText('copiedSuccess', '✅ Copied!');
+    // A second press during the flash must not take "Copied!" for the label.
+    // The button's own elements come back, so its label still follows the language
+    if (flashing.has(button)) return;
+    flashing.add(button);
+    const label = [...button.childNodes];
+    const copied = document.createElement('span');
+    copied.textContent = getText('copiedSuccess', 'Copied!');
+    button.replaceChildren(createIcon('check'), copied);
     setTimeout(() => {
-        button.textContent = originalText;
+        button.replaceChildren(...label);
+        flashing.delete(button);
     }, 2000);
 }
 

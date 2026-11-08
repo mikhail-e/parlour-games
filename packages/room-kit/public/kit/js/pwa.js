@@ -81,7 +81,7 @@ class PWAManager {
         updateBanner.className = 'alert alert-warning alert-dismissible fade show';
 
         // Get localized text (fallback to English if i18n not available)
-        const updateAvailableText = getText('updateAvailable', '🆕 Update Available!');
+        const updateAvailableText = getText('updateAvailable', 'Update Available!');
         const updateDescriptionText = getText('updateDescription', 'A new version of the app is ready. Reload to get the latest features.');
         const updateNowText = getText('updateNow', 'Update Now');
         const closeText = getText('close', 'Close');
@@ -89,7 +89,7 @@ class PWAManager {
         updateBanner.innerHTML = `
             <div class="d-flex align-items-center">
                 <div class="flex-grow-1">
-                    <strong>${updateAvailableText}</strong><br>
+                    <strong><span class="icon icon--update" aria-hidden="true"></span>${updateAvailableText}</strong><br>
                     <small>${updateDescriptionText}</small>
                 </div>
                 <div class="ms-3"></div>

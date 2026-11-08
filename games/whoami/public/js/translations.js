@@ -23,7 +23,6 @@ const translations = {
         playerCount: "Player Count",
         shareRoom: "Share Room",
         shareLink: "Share Link",
-        copied: "✅ Copied!",
         shareText: "Join my \"Who am I?\" game!",
         
         // Game states
@@ -58,7 +57,7 @@ const translations = {
         confirmRestart: "Yes, Restart",
         
         // Notifications
-        gameRestarted: "⏮️ Game restarted! Character assignments cleared.",
+        gameRestarted: "Game restarted! Character assignments cleared.",
         
         // Errors
         invalidRoom: "Invalid room code",
@@ -79,15 +78,15 @@ const translations = {
         step5: "Try to guess who you are!",
         
         // Modal content
-        revealModalTitle: "🎭 Reveal Your Character",
+        revealModalTitle: "Reveal Your Character",
         revealConfirmText: "Are you sure you want to reveal your character?",
-        revealWarning: "⚠️ This action cannot be undone!",
+        revealWarning: "This action cannot be undone!",
         revealNote: "Once revealed, your character will be visible to all players for the rest of the game.",
         revealButton: "Yes, Reveal My Character",
         
-        restartModalTitle: "⏮️ Start New Game",
+        restartModalTitle: "Start New Game",
         restartConfirmText: "Are you sure you want to restart the game?",
-        restartWarning: "⚠️ This will:",
+        restartWarning: "This will:",
         restartAction1: "Reset all revealed characters",
         restartAction2: "Allow players to reassign characters",
         restartAction3: "New players can join without asking",
@@ -98,12 +97,12 @@ const translations = {
         leaveNote: "Your card and character will disappear for everyone. The other players can keep playing.",
         // Joining a started game (game-room.js)
         waitingForAdmission: "Waiting for the players to let you in. They have your request.",
-        joinRequestTitle: "🚪 Asking to join",
+        joinRequestTitle: "Asking to join",
         joinRequestText: "wants to join the game",
         joinRequestQuestion: "Let them into the started game?",
         admitPlayer: "Let in",
         declinePlayer: "Decline",
-        playerAdmittedNotification: "👋 {playerName} is in the game now",
+        playerAdmittedNotification: "{playerName} is in the game now",
         envelopeEmpty: "empty for now",
         noCharacterYet: "No character yet - another player will give you one",
         waitingForCharacter: "Game in progress - waiting for someone to give you a character",
@@ -111,7 +110,7 @@ const translations = {
         waiting: "Waiting for players to join...",
 
         // Reveal notifications
-        playerRevealedNotification: "🎭 {playerName} revealed their character: \"{character}\"",
+        playerRevealedNotification: "{playerName} revealed their character: \"{character}\"",
 
         // UI messages
         noPlayersYet: "No players yet",
@@ -149,7 +148,6 @@ const translations = {
         playerCount: "Количество игроков",
         shareRoom: "Поделиться комнатой",
         shareLink: "Ссылка для друзей",
-        copied: "✅ Скопировано!",
         shareText: "Присоединяйся к моей игре «Кто я?»!",
         
         // Game states
@@ -184,7 +182,7 @@ const translations = {
         confirmRestart: "Да, перезапустить",
         
         // Notifications
-        gameRestarted: "⏮️ Игра перезапущена! Персонажи очищены.",
+        gameRestarted: "Игра перезапущена! Персонажи очищены.",
         
         // Errors
         invalidRoom: "Неверный код комнаты",
@@ -205,15 +203,15 @@ const translations = {
         step5: "Попробуйте угадать, кто вы!",
         
         // Modal content
-        revealModalTitle: "🎭 Раскрыть вашего персонажа",
+        revealModalTitle: "Раскрыть вашего персонажа",
         revealConfirmText: "Вы уверены, что хотите раскрыть своего персонажа?",
-        revealWarning: "⚠️ Это действие нельзя отменить!",
+        revealWarning: "Это действие нельзя отменить!",
         revealNote: "После раскрытия ваш персонаж будет виден вам до конца игры.",
         revealButton: "Да, раскрыть моего персонажа",
         
-        restartModalTitle: "⏮️ Перезапустить игру",
+        restartModalTitle: "Перезапустить игру",
         restartConfirmText: "Вы уверены, что хотите перезапустить игру?",
-        restartWarning: "⚠️ После перезапуска:",
+        restartWarning: "После перезапуска:",
         restartAction1: "Все персонажи будут удалены",
         restartAction2: "Игроки снова смогут назначать персонажей",
         restartAction3: "Новые игроки смогут входить без спроса",
@@ -224,12 +222,12 @@ const translations = {
         leaveNote: "Ваша карточка и персонаж исчезнут у всех игроков. Остальные смогут продолжить игру.",
         // Joining a started game (game-room.js)
         waitingForAdmission: "Ждём, пока игроки вас впустят. Им уже пришёл ваш запрос.",
-        joinRequestTitle: "🚪 Просится в игру",
+        joinRequestTitle: "Просится в игру",
         joinRequestText: "хочет войти в игру",
         joinRequestQuestion: "Впустить в начатую игру?",
         admitPlayer: "Впустить",
         declinePlayer: "Отказать",
-        playerAdmittedNotification: "👋 {playerName} теперь в игре",
+        playerAdmittedNotification: "{playerName} теперь в игре",
         envelopeEmpty: "пока пусто",
         noCharacterYet: "Персонажа пока нет — его даст другой игрок",
         waitingForCharacter: "Игра идёт — ждём, пока вам дадут персонажа",
@@ -237,7 +235,7 @@ const translations = {
         waiting: "Ожидание присоединения игроков...",
 
         // Reveal notifications
-        playerRevealedNotification: "🎭 {playerName} раскрыл своего персонажа: \"{character}\"",
+        playerRevealedNotification: "{playerName} раскрыл своего персонажа: \"{character}\"",
 
         // UI messages
         noPlayersYet: "Игроков пока нет",

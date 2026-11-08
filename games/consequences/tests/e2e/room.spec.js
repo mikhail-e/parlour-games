@@ -36,6 +36,22 @@ test('Copy Link puts the room link on the clipboard', async ({ newPlayer }) => {
     expect(await anna.page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/game/${code}$`));
 });
 
+test('"Copied!" goes by itself, a second press included, and the button is back with its icon and a label that follows the language', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna', { locale: 'en-GB' });
+    await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await createRoom(anna);
+    const button = anna.page.locator('#copyLink');
+
+    await button.click();
+    await expect(button.locator('.icon--check')).toBeVisible();
+    await button.click();
+
+    await expect(button).toHaveText(text('copyLink', 'en'));
+    await expect(button.locator('.icon--copy')).toBeVisible();
+    await anna.page.locator('.lang-toggle-btn').click();
+    await expect(button).toHaveText(text('copyLink', 'ru'));
+});
+
 test('a reload keeps the player at their place, without a double', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await roomWith(newPlayer, ['Anna', 'Boris', 'Vera']);
 
@@ -127,6 +143,7 @@ test('leaving the lobby goes home with the code filled in, and the others see wh
     await waitForPlayers(anna.page, 1);
     await expect(anna.page.locator('.alert.position-fixed')).toContainText(
         text('playerLeftNotification', 'en', { playerName: 'Boris' }));
+    await expect(anna.page.locator('.alert.position-fixed .icon--left')).toBeVisible();
 });
 
 test('Leave in one tab takes the player out of the room in every tab', async ({ newPlayer }) => {

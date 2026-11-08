@@ -194,8 +194,9 @@ function connectToRoom(roomCode) {
         roomGame.render();
 
         showNotification(
-            getText('playerLeftNotification', `👋 ${data.playerName} left the game`, { playerName: data.playerName }),
-            'info'
+            getText('playerLeftNotification', `${data.playerName} left the game`, { playerName: data.playerName }),
+            'info',
+            { icon: 'left' }
         );
     });
 

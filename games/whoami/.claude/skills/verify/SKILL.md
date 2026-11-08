@@ -27,6 +27,5 @@ wrangler first copies the kit's files into `public/kit/` and `public/_headers` (
 
 - Playwright MCP saves screenshots and snapshots only inside the repository (`.playwright-mcp/` is gitignored) — delete `.playwright-mcp/` before finishing.
 - `navigator.share` exists in Playwright's Chromium; a real click on the Share button opens the macOS share sheet, which blocks automation. Stub it via evaluate (`Object.defineProperty(navigator, 'share', {configurable: true, writable: true, value: ...})`) and drive the button with `btn.click()` inside evaluate.
-- Button-feedback flashes («✅ Скопировано!») revert after a short delay — read `textContent` in the same evaluate call as the click, not in a separate round trip.
-- After any button flash, `textContent = originalText` flattens the `data-i18n` span, so language switching stops updating that button until reload. Reload before testing i18n labels.
+- Button-feedback flashes («Скопировано!») revert after a short delay — read `textContent` in the same evaluate call as the click, not in a separate round trip.
 - A room lives in its Durable Object's storage: it survives restarting `npm start`, and goes 2 hours after its last player's page closed (or at once when its last player leaves). `npx wrangler tail whoami-game` shows the deployed version's log.

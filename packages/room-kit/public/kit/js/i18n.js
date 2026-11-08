@@ -48,11 +48,11 @@ const KIT_TEXTS = {
         invalidRoomCode: "Invalid room code",
         gameAlreadyOn: "The game is already on",
         leaveGame: "Leave Game",
-        leaveModalTitle: "🚪 Leave Game",
+        leaveModalTitle: "Leave Game",
         leaveConfirmText: "Are you sure you want to leave this game?",
         confirmLeave: "Yes, Leave Game",
         cancel: "Cancel",
-        playerLeftNotification: "👋 {playerName} left the game",
+        playerLeftNotification: "{playerName} left the game",
 
         // The invitation (invite.js)
         inviteFriends: "Invite Friends",
@@ -60,12 +60,12 @@ const KIT_TEXTS = {
         copyLink: "Copy Link",
         copyRoomLink: "Copy Link",
         share: "Share",
-        copiedSuccess: "✅ Copied!",
+        copiedSuccess: "Copied!",
 
         // Notifications (notify.js) and the update banner (pwa.js)
         connectionError: "Connection error. Please try again.",
         close: "Close",
-        updateAvailable: "🆕 Update Available!",
+        updateAvailable: "Update Available!",
         updateDescription: "A new version of the app is ready. Reload to get the latest features.",
         updateNow: "Update Now",
 
@@ -107,11 +107,11 @@ const KIT_TEXTS = {
         invalidRoomCode: "Неверный код комнаты",
         gameAlreadyOn: "Игра уже идёт",
         leaveGame: "Покинуть игру",
-        leaveModalTitle: "🚪 Покинуть игру",
+        leaveModalTitle: "Покинуть игру",
         leaveConfirmText: "Вы уверены, что хотите покинуть игру?",
         confirmLeave: "Да, покинуть игру",
         cancel: "Отмена",
-        playerLeftNotification: "👋 {playerName} покинул(а) игру",
+        playerLeftNotification: "{playerName} покинул(а) игру",
 
         // The invitation (invite.js)
         inviteFriends: "Пригласить друзей",
@@ -119,12 +119,12 @@ const KIT_TEXTS = {
         copyLink: "Скопировать",
         copyRoomLink: "Скопировать ссылку",
         share: "Поделиться",
-        copiedSuccess: "✅ Скопировано!",
+        copiedSuccess: "Скопировано!",
 
         // Notifications (notify.js) and the update banner (pwa.js)
         connectionError: "Ошибка соединения. Попробуйте ещё раз.",
         close: "Закрыть",
-        updateAvailable: "🆕 Доступно обновление!",
+        updateAvailable: "Доступно обновление!",
         updateDescription: "Новая версия приложения готова. Перезагрузите, чтобы получить последние функции.",
         updateNow: "Обновить сейчас",
 
@@ -281,7 +281,7 @@ class Localization {
         const switcherHTML = `
             <div class="language-switcher mt-3 text-center">
                 <button class="btn btn-sm lang-toggle-btn">
-                    <span class="lang-toggle-text"></span>
+                    <span class="icon icon--language" aria-hidden="true"></span><span class="lang-toggle-text"></span>
                 </button>
             </div>
         `;
@@ -306,15 +306,13 @@ class Localization {
     }
     
     updateLanguageSwitcher() {
-        // Update toggle button text to show opposite language with flag
+        // The toggle button names the other language
         const toggleText = document.querySelector('.lang-toggle-text');
         if (toggleText) {
-            // If current language is English, show "🇷🇺 Русский" button
-            // If current language is Russian, show "🇬🇧 English" button
             if (this.currentLanguage === 'en') {
-                toggleText.textContent = '🇷🇺 Русский';
+                toggleText.textContent = 'Русский';
             } else {
-                toggleText.textContent = '🇬🇧 English';
+                toggleText.textContent = 'English';
             }
         }
     }

@@ -1,6 +1,6 @@
 // The site around the game: its own rules (only its own code, the security
 // headers), the version in the footer, the icons, the update banner
-const { test, expect, text, createRoom, waitForLanding } = require('./helpers');
+const { test, expect, text, createRoom, waitForLanding, iconsOf } = require('./helpers');
 
 test('the pages load nothing from other sites', async ({ newPlayer, baseURL }) => {
     const anna = await newPlayer('Anna');
@@ -86,6 +86,16 @@ test('the icons the pages name are served, the iPhone one as a PNG', async ({ ne
 });
 
 // The page registers the game's service worker (the kit's pwa.js)
+test('the icons of the room page and the language button come from the site', async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    await createRoom(anna);
+
+    await expect(anna.page.locator('.lang-toggle-btn .icon--language')).toBeVisible();
+    const { count, broken } = await iconsOf(anna.page);
+    expect(count).toBeGreaterThan(4);
+    expect(broken).toEqual([]);
+});
+
 test('the page registers the service worker', async ({ newPlayer }) => {
     const { page } = await newPlayer('Anna');
     await page.goto('/');
@@ -107,6 +117,7 @@ test('Update now on the update banner reloads the page', async ({ newPlayer }) =
     // does when a new service worker is ready (a stand-in, like stubShare)
     await page.evaluate(() => { window.beforeReload = true; window.pwaManager.showUpdateAvailable(); });
 
+    await expect(page.locator('.alert .icon--update')).toBeVisible();
     await page.getByRole('button', { name: text('updateNow') }).click();
 
     await expect.poll(() => page.evaluate(() => window.beforeReload)).toBeUndefined();
