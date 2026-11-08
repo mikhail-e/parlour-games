@@ -63,6 +63,32 @@ test("each player sees the question in their page's language", async ({ newPlaye
     await expect(anna.page.locator('#writingCard')).not.toContainText('Boris 3');
 });
 
+test('the sheet is whole until the first pleat; the pleats zigzag, and the last one always ends level with the open part', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const { page } = players[0];
+    const widths = () => page.evaluate(() => ({
+        sheet: document.querySelector('#writingCard .sheet').getBoundingClientRect().width,
+        open: document.querySelector('#writingCard .sheet__open').getBoundingClientRect().width,
+    }));
+    const pleats = page.locator('#folds .fold');
+    const edgeOf = index => pleats.nth(index).evaluate(pleat => getComputedStyle(pleat).clipPath);
+
+    const whole = await widths();
+    expect(whole.open).toBe(whole.sheet);
+
+    await answerStep(players, 0);
+    await expect(pleats).toHaveCount(1);
+    const stepped = await widths();
+    expect(stepped.open).toBeLessThan(stepped.sheet);
+    const lastEdge = await edgeOf(0);
+    expect(lastEdge).toContain('polygon');
+
+    await answerStep(players, 1);
+    await expect(pleats).toHaveCount(2);
+    expect(await edgeOf(1)).toBe(lastEdge);
+    expect(await edgeOf(0)).not.toBe(lastEdge);
+});
+
 test('after sending an answer the field closes, and the player sees who is still writing', async ({ newPlayer }) => {
     const { players: [anna, boris, vera] } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
 

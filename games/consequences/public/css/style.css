@@ -53,6 +53,8 @@
   --sheet-paper: #fbf5e6;
   --fold-light: #f3e8cd;
   --fold-dark: #dccaa1;
+  /* How far a pleat's edge breaks, to the side, at each crease */
+  --fold-shift: 7px;
 }
 
 /* The step: "Step 4 of 8" and eight marks, the one being answered in the
@@ -107,6 +109,26 @@
 
 .sheet__open {
   padding: 18px 20px 20px;
+}
+
+/* The sheet with pleats: their edges are cut (clip-path), and a cut would
+   show the sheet's own rectangle behind them, so the paper is the open
+   part's, and the shadow follows the cut (a box-shadow would not). The
+   pleats' zigzag leaves the open part a step narrower; with no pleats yet
+   it takes the whole width */
+.sheet--pleated {
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 5px 8px rgba(42, 29, 23, .32));
+}
+
+.sheet--pleated .sheet__open {
+  margin-right: var(--fold-shift);
+  background: var(--sheet-paper);
+}
+
+#folds:empty + .sheet__open {
+  margin-right: 0;
 }
 
 .sheet__number {
@@ -298,7 +320,6 @@
   min-height: 30px;
   padding: 4px 20px;
   border-bottom: 1px solid rgba(42, 29, 23, .25);
-  background: linear-gradient(to bottom, var(--fold-light) 0%, var(--fold-light) 55%, var(--fold-dark) 100%);
   color: rgba(42, 29, 23, .7);
   font-size: .8rem;
   font-weight: 600;
@@ -306,8 +327,16 @@
   text-transform: uppercase;
 }
 
-.fold:nth-child(even) {
-  background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 45%, var(--fold-light) 100%);
+/* Both edges break the same way, as paper folded back and forth. Counted
+   from the last pleat, so that it always ends level with the open part */
+.fold:nth-last-child(odd) {
+  clip-path: polygon(var(--fold-shift) 0, 100% 0, calc(100% - var(--fold-shift)) 100%, 0 100%);
+  background: linear-gradient(to bottom, var(--fold-dark) 0%, var(--fold-light) 65%);
+}
+
+.fold:nth-last-child(even) {
+  clip-path: polygon(0 0, calc(100% - var(--fold-shift)) 0, 100% 100%, var(--fold-shift) 100%);
+  background: linear-gradient(to bottom, var(--fold-light) 35%, var(--fold-dark) 100%);
 }
 
 /* A title that takes two lines splits them evenly, so a star never stays
@@ -419,20 +448,27 @@
   position: relative;
   display: block;
   height: 150px;
+  filter: drop-shadow(0 3px 4px rgba(42, 29, 23, .3));
 }
 
 .packet span {
   position: absolute;
-  left: 12%;
-  right: 12%;
-  height: 26px;
-  border: 1px solid rgba(42, 29, 23, .25);
-  background: linear-gradient(to bottom, var(--fold-light), var(--fold-dark));
-  box-shadow: 0 2px 3px rgba(42, 29, 23, .2);
+  left: 10%;
+  right: 10%;
+  height: 27px;
+  border-bottom: 1px solid rgba(42, 29, 23, .25);
 }
 
-.packet span:nth-child(odd) { transform: skewX(-8deg); }
-.packet span:nth-child(even) { transform: skewX(8deg); }
+.packet span:nth-child(odd) {
+  clip-path: polygon(0 0, calc(100% - var(--fold-shift)) 0, 100% 100%, var(--fold-shift) 100%);
+  background: linear-gradient(to bottom, var(--fold-light) 35%, var(--fold-dark));
+}
+
+.packet span:nth-child(even) {
+  clip-path: polygon(var(--fold-shift) 0, 100% 0, calc(100% - var(--fold-shift)) 100%, 0 100%);
+  background: linear-gradient(to bottom, var(--fold-dark), var(--fold-light) 65%);
+}
+
 .packet span:nth-child(1) { top: 10px; }
 .packet span:nth-child(2) { top: 36px; }
 .packet span:nth-child(3) { top: 62px; }
