@@ -28,6 +28,19 @@ function wranglerDev({ port, inspectorPort, state, vars = {} }) {
     };
 }
 
+// A device of the tests whose every request says it is a test: the user agent
+// ends with " EscapistCheck", as in all of the owner's projects, and
+// Cloudflare's analytics drop the checks with "Source user agent does not
+// contain EscapistCheck". Only the end changes: a phone stays a phone. Set
+// twice: `userAgent` marks the pages, the files they load, their sockets and
+// `request`; the launch flag marks what the browser fetches itself - a game's
+// service worker script (/sw.js and every update check), which otherwise goes
+// out as HeadlessChrome. e2e-check-tag.js holds the tag
+function markedDevice(name) {
+    const userAgent = `${devices[name].userAgent} EscapistCheck`;
+    return { ...devices[name], userAgent, launchOptions: { args: [`--user-agent=${userAgent}`] } };
+}
+
 // port: the server the tests open by default; servers: every wrangler dev to start
 /**
  * @param {{ port: number, servers: Array<{ port: number, inspectorPort: number, state: string, vars?: Record<string, string | number> }> }} options
@@ -66,8 +79,8 @@ function roomKitPlaywright({ port, servers }) {
 
         // The games are played on phones first
         projects: [
-            { name: 'mobile', use: { ...devices['Pixel 7'] } },
-            { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+            { name: 'mobile', use: markedDevice('Pixel 7') },
+            { name: 'desktop', use: markedDevice('Desktop Chrome') },
         ],
 
         ...(!BASE_URL && { webServer: servers.map(wranglerDev) }),

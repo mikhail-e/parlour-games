@@ -108,11 +108,13 @@ Push в `master` собирает каждую игру, чьи файлы он 
 1. Дождаться в панели Cloudflare, что сборка закончилась: Workers & Pages → Worker игры → Deployments, у коммита из `master` — успех. Упала — её журнал там же («Build» в строке сборки). Строки с коммитом нет — сборка пропущена: проверить build watch paths.
 2. Новая версия на проде (адрес игры — в таблице вверху):
    ```bash
-   curl -s https://whoami.escapist.club/api/version
+   curl -s -A "curl EscapistCheck" https://whoami.escapist.club/api/version
    ```
 3. `npm run test:e2e:prod -w games/<игра>` — все браузерные тесты игры против прода (у whoami: партии нескольких игроков на телефоне и компьютере, языки, доступность — `games/whoami/docs/testing.md`).
 4. Открыть сайт: внизу страницы — новая версия.
 5. В выпуске поменялись превью ссылки или его картинка — проверить карточку в мессенджере (у whoami — `games/whoami/docs/publishing.md`).
+
+Запросы проверок помечены: user agent заканчивается на ` EscapistCheck` (у curl — `-A "curl EscapistCheck"`), и в аналитике Cloudflare их убирает фильтр «Source user agent does not contain EscapistCheck». Метку держит `check-tag.spec.js` каждой игры (`packages/room-kit/docs/testing.md`, Против прода).
 
 ## Выкладка и идущие партии
 
