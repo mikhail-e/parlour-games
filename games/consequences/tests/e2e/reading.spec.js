@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, confirmAnotherRound, seatRow, stubShare,
+    showStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -235,15 +235,41 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
     }
 });
 
+test('two stories side by side: the strip to share each is at the bottom of its sheet, the short one too', async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, 'a phone shows the stories in one column');
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    // Seat i holds sheet (i - step) mod 2: sheet 1 gets the long answers, sheet 2 the short ones
+    const long = (player, step) => `${player.name} ${step + 1} ${'and then a long while after that '.repeat(5)}`;
+    await writeToReading(players, (player, step) => (players.indexOf(player) + step) % 2 === 0 ? long(player, step) : `${player.name} ${step + 1}`);
+    for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
+    const [anna] = players;
+    await showStories(anna);
+
+    const sheets = anna.page.locator('#storyList .sheet');
+    const [tall, short] = [await sheets.nth(0).boundingBox(), await sheets.nth(1).boundingBox()];
+    expect(short.y).toBeCloseTo(tall.y, 0);
+    expect(short.height).toBeCloseTo(tall.height, 0);
+    for (const sheet of [sheets.nth(0), sheets.nth(1)]) {
+        const [paper, strip] = [await sheet.boundingBox(), await sheet.locator('.story-send').boundingBox()];
+        expect(strip.y + strip.height).toBeCloseTo(paper.y + paper.height, 0);
+    }
+    // The short story really is shorter: its strip is not right under it
+    const story = await sheets.nth(1).locator('.story').boundingBox();
+    const strip = await sheets.nth(1).locator('.story-send').boundingBox();
+    expect(strip.y - (story.y + story.height)).toBeGreaterThan(50);
+});
+
 // Everyone opens their sheet; the player goes on to every story with the
-// share sheet stubbed (the stand-in comes with the next page load)
-async function storiesToShare(newPlayer, behaviour) {
+// share sheet stubbed (the stand-in comes with the next page load), and with
+// whatever else `prepare` sets up for that load
+async function storiesToShare(newPlayer, behaviour, prepare = async () => {}) {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     const [anna] = players;
     await expect(anna.page.locator('#showStories')).toBeEnabled();
     await stubShare(anna.page, behaviour);
+    await prepare(anna);
     await anna.page.reload();
     await expect(anna.page.locator('#showStories')).toBeEnabled();
     await showStories(anna);
@@ -252,11 +278,11 @@ async function storiesToShare(newPlayer, behaviour) {
 
 test('a story is shared with its text and an invitation that names the game and its site, and nothing else', async ({ newPlayer }) => {
     const { anna, story } = await storiesToShare(newPlayer, 'record');
-    await expect(anna.page.locator('.story-share')).toHaveCount(2);
-    await expect(story.locator('.story-share')).toHaveText(text('shareStory'));
-    await expect(story.locator('.story-share .icon--share')).toBeVisible();
+    await expect(anna.page.locator('.story-send')).toHaveCount(2);
+    await expect(story.locator('.story-send')).toHaveText(text('shareStory'));
+    await expect(story.locator('.story-send .icon--export')).toBeVisible();
 
-    await story.locator('.story-share').click();
+    await story.locator('.story-send').click();
 
     await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(1);
     const answers = await answersOf(story).allTextContents();
@@ -271,6 +297,15 @@ test('a story is shared with its text and an invitation that names the game and 
     });
 });
 
+test("an ad blocker's list of social widgets hides no story's Share, nor its icon", async ({ newPlayer }) => {
+    const { anna } = await storiesToShare(newPlayer, 'record', hideSocialWidgets);
+    expect(await socialWidgetsHidden(anna.page)).toBe(true);
+
+    const buttons = anna.page.getByRole('button', { name: text('shareStory') });
+    await expect(buttons).toHaveCount(2);
+    for (const button of await buttons.all()) await expect(button.locator('.icon')).toBeVisible();
+});
+
 test('closing the share sheet of a story is silent', async ({ newPlayer }) => {
     const { anna, story } = await storiesToShare(newPlayer, 'abort');
     await anna.page.evaluate(() => {
@@ -278,7 +313,7 @@ test('closing the share sheet of a story is silent', async ({ newPlayer }) => {
         navigator.clipboard.writeText = async copied => { window.copiedTexts.push(copied); };
     });
 
-    await story.locator('.story-share').click();
+    await story.locator('.story-send').click();
 
     await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(1);
     // The sheet's refusal is handled by then: nothing went to be copied
@@ -289,9 +324,9 @@ test('without a share sheet the story is copied, and the button says so', async 
     const { anna, story } = await storiesToShare(newPlayer, 'unsupported');
     await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-    await story.locator('.story-share').click();
+    await story.locator('.story-send').click();
 
-    await expect(story.locator('.story-share')).toHaveText(text('copiedSuccess'));
+    await expect(story.locator('.story-send')).toHaveText(text('copiedSuccess'));
     const answers = await answersOf(story).allTextContents();
     const copied = await anna.page.evaluate(() => navigator.clipboard.readText());
     expect(copied.startsWith(answers.join('\n'))).toBe(true);

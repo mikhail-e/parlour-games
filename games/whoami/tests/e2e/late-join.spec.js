@@ -31,7 +31,7 @@ test('a newcomer waits without seeing the room', async ({ newPlayer }) => {
     await expect(dasha.page.locator('#gameStatus')).toBeHidden();
     await expect(dasha.page.locator('#leaveGame')).toBeHidden();
     await expect(dasha.page.locator('.room-ticket')).toBeHidden();
-    await expect(dasha.page.locator('#shareCard')).toBeHidden();
+    await expect(dasha.page.locator('#inviteCard')).toBeHidden();
     await expect(dasha.page.locator('#gameInviteCard')).toBeHidden();
 });
 

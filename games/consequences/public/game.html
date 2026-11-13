@@ -91,11 +91,11 @@
              game-room.js for its part of the game: the lobby (the invitation,
              the players, Start), the writing (the sheet in front of the player,
              the table), the reading (the sheets, the table), every story -->
-        <div class="game-card mb-3" id="shareCard" hidden>
+        <div class="game-card mb-3" id="inviteCard" hidden>
             <h6 class="sheet-title" data-i18n="inviteFriends">Invite Friends</h6>
             <div class="row g-2 align-items-center">
                 <div class="col-md-6">
-                    <input type="text" class="form-control" id="shareLink" readonly data-i18n-aria-label="shareLinkLabel" aria-label="Room link">
+                    <input type="text" class="form-control" id="roomLink" readonly data-i18n-aria-label="shareLinkLabel" aria-label="Room link">
                 </div>
                 <div class="col-md-3">
                     <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
@@ -103,8 +103,8 @@
                     </button>
                 </div>
                 <div class="col-md-3">
-                    <button type="button" class="btn btn-outline-primary w-100" id="shareButton">
-                        <span class="icon icon--share" aria-hidden="true"></span><span data-i18n="share">Share</span>
+                    <button type="button" class="btn btn-outline-primary w-100" id="inviteButton">
+                        <span class="icon icon--export" aria-hidden="true"></span><span data-i18n="share">Share</span>
                     </button>
                 </div>
             </div>

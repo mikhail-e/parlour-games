@@ -11,10 +11,11 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { inlineCodeProblems } = require('@parlour-games/room-kit/checks');
+const { inlineCodeProblems, blockedNameProblems } = require('@parlour-games/room-kit/checks');
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const JS_DIR = path.join(PUBLIC_DIR, 'js');
+const CSS_DIR = path.join(PUBLIC_DIR, 'css');
 
 test('the pages and their scripts are found', () => {
     expect(fs.readdirSync(PUBLIC_DIR)).toEqual(expect.arrayContaining(['index.html', 'game.html']));
@@ -24,4 +25,10 @@ test('the pages and their scripts are found', () => {
 // The kit's check (checks.js): every page and every script of public/js/
 test('no inline event handler or style attributes in the pages or in HTML built by public/js/', () => {
     expect(inlineCodeProblems([PUBLIC_DIR, JS_DIR])).toEqual([]);
+});
+
+// The kit's check (checks.js): an ad blocker's list of social widgets hides
+// what is named "share" or "social" on every site, buttons included
+test('no class or id of the pages says "share" or "social"', () => {
+    expect(blockedNameProblems([PUBLIC_DIR, CSS_DIR])).toEqual([]);
 });

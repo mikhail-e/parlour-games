@@ -37,7 +37,7 @@ let storiesAsked = false;
 // before the stories
 let sentAnswer = AppStorage.session.get('sentAnswer');
 // The step whose answer the player asked to take back: the field opening on
-// it gets the focus
+// it gets the answer back
 let takingBack = null;
 
 let newRoundModal = null;
@@ -146,7 +146,7 @@ function renderRoom() {
     const reading = Boolean(round) && round.step >= round.questionCount;
     const stories = round && storiesAsked ? round.stories : null;
 
-    showCard('shareCard', !round);
+    showCard('inviteCard', !round);
     showCard('playersCard', !round);
     showCard('writingCard', Boolean(round) && !reading);
     showCard('readingCard', reading && !stories);
@@ -224,8 +224,10 @@ function renderWriting(round) {
         const takenBack = !held && target && takingBack === step;
         field.value = (takenBack && sentAnswerAt(step)) || '';
         answerSending = false;
-        if (takenBack) {
-            takingBack = null;
+        if (takenBack) takingBack = null;
+        // A sheet that comes to the player opens with the focus in its field,
+        // after the end of its text: the form is shown further down
+        if (target) {
             setTimeout(() => {
                 field.focus();
                 field.setSelectionRange(field.value.length, field.value.length);
@@ -406,9 +408,9 @@ function renderStories(round) {
         const head = element('div', 'story-head');
         head.append(element('span', '', say(`storyTitle${story.sheet + 1}`)),
             element('small', '', say('storyReadBy', { name: nameOf(round, story.readBy) })));
-        const share = element('button', 'story-share');
+        const share = element('button', 'story-send');
         share.type = 'button';
-        share.append(createIcon('share'), element('span', '', say('shareStory')));
+        share.append(createIcon('export'), element('span', '', say('shareStory')));
         share.addEventListener('click', () => shareStory(share, story.answers));
         sheet.append(head, storyList(story.answers), share);
         return sheet;

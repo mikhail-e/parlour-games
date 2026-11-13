@@ -8,20 +8,20 @@
 // The buttons showing "Copied!" right now
 const flashing = new WeakSet();
 
-// The room code in #roomCode, the link in #shareLink, and the buttons of the
-// lobby's invitation (#copyLink, #shareButton) and of a started round's
-// (#gameCopyLink, #gameShareButton), whichever the page has
+// The room code in #roomCode, the link in #roomLink, and the buttons of the
+// lobby's invitation (#copyLink, #inviteButton) and of a started round's
+// (#gameCopyLink, #gameInviteButton), whichever the page has
 function setUpInvitation(roomCode) {
     const codeElement = document.getElementById('roomCode');
     if (codeElement) codeElement.textContent = roomCode;
-    const shareLink = document.getElementById('shareLink');
-    if (shareLink) shareLink.value = `${window.location.origin}/game/${roomCode}`;
+    const roomLink = document.getElementById('roomLink');
+    if (roomLink) roomLink.value = `${window.location.origin}/game/${roomCode}`;
 
     for (const id of ['copyLink', 'gameCopyLink']) {
         const button = document.getElementById(id);
         if (button) button.addEventListener('click', () => copyRoomLink(button));
     }
-    for (const id of ['shareButton', 'gameShareButton']) {
+    for (const id of ['inviteButton', 'gameInviteButton']) {
         const button = document.getElementById(id);
         if (button) button.addEventListener('click', () => shareRoomLink(button));
     }
@@ -58,7 +58,7 @@ async function copyAndSay(button, text) {
 }
 
 function copyRoomLink(button) {
-    return copyAndSay(button, document.getElementById('shareLink').value);
+    return copyAndSay(button, document.getElementById('roomLink').value);
 }
 
 // Open the system's share sheet with this data; a browser without one, or a
@@ -80,6 +80,6 @@ async function shareOrCopy(button, data, copied) {
 // The room link to the share sheet. The sheet's title and text are the
 // game's (its texts `title` and `shareText`)
 function shareRoomLink(button) {
-    const url = document.getElementById('shareLink').value;
+    const url = document.getElementById('roomLink').value;
     return shareOrCopy(button, { title: getText('title', document.title), text: getText('shareText', ''), url }, url);
 }
