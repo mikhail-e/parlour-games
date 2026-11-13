@@ -260,7 +260,7 @@ test('a lower-case link in a tab that is already in the room keeps the player th
 
     await expect(bob.page.locator('#roomCode')).toHaveText(code);
     await waitForPlayers(bob.page, 2);
-    await expect(bob.page.locator('#shareLink')).toHaveValue(new RegExp(`/game/${code}$`));
+    await expect(bob.page.locator('#roomLink')).toHaveValue(new RegExp(`/game/${code}$`));
 });
 
 test('a player who joins during an edit appears once the edit ends', async ({ newPlayer }) => {

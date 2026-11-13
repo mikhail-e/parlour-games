@@ -190,7 +190,7 @@ function updateGameDisplay() {
     if (playerCountEl) playerCountEl.textContent = currentGame.players.length;
     
     // Show/hide elements based on game state
-    const shareCard = document.getElementById('shareCard');
+    const inviteCard = document.getElementById('inviteCard');
     const gameInviteCard = document.getElementById('gameInviteCard');
     const assignmentInstructions = document.getElementById('assignmentInstructions');
     const statusEl = document.getElementById('gameStatus');
@@ -205,7 +205,7 @@ function updateGameDisplay() {
 
     // The lobby invites at the top, with the link field; a started game below
     // the controls, shorter (a latecomer asks to join then)
-    if (shareCard) shareCard.hidden = gameState === 'started';
+    if (inviteCard) inviteCard.hidden = gameState === 'started';
     if (gameInviteCard) gameInviteCard.hidden = gameState !== 'started';
 
     if (gameState === 'started') {
