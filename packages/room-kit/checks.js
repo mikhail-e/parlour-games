@@ -176,7 +176,24 @@ function iconProblems(folders) {
     ];
 }
 
+// Ad blockers hide on every site what their lists of social widgets name, by
+// the name alone: Fanboy's Social (uBlock Origin's "EasyList – Social
+// Widgets", AdBlock's "Antisocial") hid Consequences' story button and the
+// invitation's link and Share (.story-share, .icon--share, #shareButton,
+// #shareLink), and holds thousands of names like them. So no class or id of
+// the pages says "share" or "social": the markup and the style sheets of the
+// game and the kit (a class a script gives has its style). "file: name" per name
+function blockedNameProblems(folders) {
+    return pageFiles([...folders, KIT_STYLES], ['.html', '.css']).flatMap(([, file, text]) => {
+        const names = file.endsWith('.html')
+            ? [...text.matchAll(/\s(?:class|id)="([^"]*)"/g)].flatMap(match => match[1].split(/\s+/))
+            : [...text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/url\([^)]*\)/g, '').matchAll(/[.#](-?[A-Za-z_][\w-]*)/g)]
+                .map(match => match[1]);
+        return [...new Set(names)].filter(name => /share|social/i.test(name)).map(name => `${file}: ${name}`);
+    });
+}
+
 module.exports = {
-    KIT_SCRIPTS, KIT_SERVER_FILES, emojiProblems, iconProblems, sharedNameProblems, inlineCodeProblems, serverErrorTexts, brandSignProblems,
-    loadPageScript, translationProblems,
+    KIT_SCRIPTS, KIT_SERVER_FILES, emojiProblems, iconProblems, blockedNameProblems, sharedNameProblems, inlineCodeProblems, serverErrorTexts,
+    brandSignProblems, loadPageScript, translationProblems,
 };

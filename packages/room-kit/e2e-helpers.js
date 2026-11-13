@@ -160,6 +160,33 @@ async function stubShare(page, behaviour) {
     }, behaviour);
 }
 
+// What an ad blocker's list of social widgets hides on every site by the name
+// alone (Fanboy's Social: uBlock Origin's "EasyList – Social Widgets",
+// AdBlock's "Antisocial"): its rules that once hid Consequences' story button
+// and the invitation's link and Share, and the two words such rules are about.
+// The custom property tells the test the rules are on the page
+const SOCIAL_WIDGET_RULES = `
+.story-share, .icon--share, #shareButton, #shareLink,
+[class*="share" i], [id*="share" i], [class*="social" i], [id*="social" i] { display: none !important; }
+:root { --social-widgets: hidden; }
+`;
+
+// The player's browser hides what that list hides: its rules come after the
+// kit's style sheet, as a blocker's own sheet comes on top of a page's (the
+// page's Content Security Policy stops neither). Call before the page loads;
+// socialWidgetsHidden(page) says the rules are on it
+async function hideSocialWidgets(player) {
+    await player.context.route('**/kit/css/playbill.css', async route => {
+        const response = await route.fetch();
+        await route.fulfill({ response, body: (await response.text()) + SOCIAL_WIDGET_RULES });
+    });
+}
+
+async function socialWidgetsHidden(page) {
+    const value = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--social-widgets'));
+    return value.trim() === 'hidden';
+}
+
 // A slow connection: the room page draws the room from its HTTP join, but its
 // socket asks to join the room (join-room) only after releaseRoomJoin(page).
 // Every other message goes out at once. Call before the page loads
@@ -265,6 +292,8 @@ module.exports = {
     askToJoin,
     leaveGame,
     stubShare,
+    hideSocialWidgets,
+    socialWidgetsHidden,
     holdRoomJoin,
     releaseRoomJoin,
     countSentEvents,

@@ -36,7 +36,7 @@ test('Start gives every player the first question, "Who?"', async ({ newPlayer }
         await expect(player.page.locator('#stepLabel')).toHaveText(text('stepOf', 'en', { step: 1, count: 8 }));
         // No lobby in a round: the invitation and the list give way to the sheet and the table
         await expect(player.page.locator('#playersCard')).toBeHidden();
-        await expect(player.page.locator('#shareCard')).toBeHidden();
+        await expect(player.page.locator('#inviteCard')).toBeHidden();
         await expect(player.page.locator('#seatsCard')).toBeVisible();
     }
 });
@@ -87,6 +87,25 @@ test('the sheet is whole until the first pleat; the pleats zigzag, and the last 
     await expect(pleats).toHaveCount(2);
     expect(await edgeOf(1)).toBe(lastEdge);
     expect(await edgeOf(0)).not.toBe(lastEdge);
+});
+
+test('a question opens with the focus in the answer field: at the start, at the next step, after a reload, on a sheet taken for an absent player', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    const [katya, masha, petya] = players;
+    const field = player => player.page.locator('#answerText');
+    for (const player of players) await expect(field(player)).toBeFocused();
+
+    await answerStep(players, 0);
+    for (const player of players) await expect(field(player)).toBeFocused();
+
+    await masha.page.reload();
+    await expect(field(masha)).toBeFocused();
+
+    await petya.page.close();
+    await answer(katya, 'Katya 2');
+    await answerFor(katya.page, 'Petya').click();
+    await expect(katya.page.locator('#writingTitle')).toBeVisible();
+    await expect(field(katya)).toBeFocused();
 });
 
 test('after sending an answer the field closes, and the player sees who is still writing', async ({ newPlayer }) => {
@@ -336,6 +355,26 @@ test('the answer stops at 200 characters, counted as a person counts them', asyn
     await field.fill(`${'a'.repeat(199)}🦜`);
     await anna.page.click('#saveAndPass');
     await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
+});
+
+test("the answer field's paper is the beige of the kit's fields, before the focus and with it", async ({ newPlayer }) => {
+    const { players: [anna] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const field = anna.page.locator('#answerText');
+    const paperOf = locator => locator.evaluate(element => getComputedStyle(element).backgroundColor);
+    // The kit's --paper-light, as the browser paints it
+    const beige = await anna.page.evaluate(() => {
+        const probe = document.body.appendChild(document.createElement('div'));
+        probe.style.backgroundColor = 'var(--paper-light)';
+        const color = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return color;
+    });
+
+    await field.blur();
+    expect(await paperOf(field)).toBe(beige);
+    await field.click();
+    await expect(field).toBeFocused();
+    expect(await paperOf(field)).toBe(beige);
 });
 
 test('the answer field grows with its text', async ({ newPlayer }) => {

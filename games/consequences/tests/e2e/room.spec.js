@@ -5,7 +5,7 @@
 // landing page in landing.spec.js
 const {
     test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
-    seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow,
+    seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow, hideSocialWidgets, socialWidgetsHidden,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
 
@@ -21,9 +21,22 @@ test('the lobby lists the players in the order they came, the same on every scre
 
     for (const player of players) {
         expect(await listedNames(player.page)).toEqual(['Anna', 'Boris', 'Vera']);
-        await expect(player.page.locator('#shareCard')).toBeVisible();
+        await expect(player.page.locator('#inviteCard')).toBeVisible();
         await expect(player.page.locator('#playerCount')).toHaveText('3');
     }
+});
+
+test("an ad blocker's list of social widgets hides nothing of the invitation: the link, Copy Link, Share and its icon", async ({ newPlayer }) => {
+    const anna = await newPlayer('Anna');
+    await hideSocialWidgets(anna);
+    await createRoom(anna);
+    expect(await socialWidgetsHidden(anna.page)).toBe(true);
+
+    await expect(anna.page.getByRole('textbox', { name: text('shareLinkLabel') })).toBeVisible();
+    await expect(anna.page.getByRole('button', { name: text('copyLink') })).toBeVisible();
+    const share = anna.page.getByRole('button', { name: text('share') });
+    await expect(share).toBeVisible();
+    await expect(share.locator('.icon')).toBeVisible();
 });
 
 test('Copy Link puts the room link on the clipboard', async ({ newPlayer }) => {

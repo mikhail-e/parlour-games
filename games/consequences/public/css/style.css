@@ -147,14 +147,14 @@
   line-height: 1.1;
 }
 
-/* The answer's field grows with its text (game-room.js sets its height) */
+/* The answer's field grows with its text (game-room.js sets its height). Its
+   paper is the kit's field's, the same with the focus as without */
 .sheet textarea {
   min-height: 96px;
   resize: none;
   overflow: hidden;
   border: 1px solid var(--ink-soft);
   border-radius: 4px;
-  background: #fffdf6;
   padding: 10px 12px;
   color: var(--ink);
   font-size: 1.15rem;
@@ -525,7 +525,11 @@
   }
 }
 
+/* A sheet is as tall as the tallest of its row: a column, so the strip to
+   share it stays at the bottom of the paper, not right under a short story */
 .stories .sheet {
+  display: flex;
+  flex-direction: column;
   max-width: none;
   margin: 0;
 }
@@ -556,9 +560,10 @@
 
 /* Sharing a story: a strip across the bottom of its sheet (the owner's pick
    from a page of variants) */
-.story-share {
+.story-send {
   display: block;
   width: 100%;
+  margin-top: auto;
   padding: 12px 10px;
   border: 0;
   border-top: 1px solid rgba(42, 29, 23, .25);
@@ -571,7 +576,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .story-share:hover {
+  .story-send:hover {
     background: var(--accent-tint);
   }
 }

@@ -2,9 +2,9 @@
 // where there is none) and Copy Link, in the lobby and in a started game. The
 // real share sheet never opens in a test: it would stop the browser, so
 // stubShare() stands in for it
-const { test, expect, text, createRoom, stubShare, startedGame } = require('./helpers');
+const { test, expect, text, createRoom, stubShare, startedGame, hideSocialWidgets, socialWidgetsHidden } = require('./helpers');
 
-const shareButton = page => page.getByRole('button', { name: text('share') });
+const inviteButton = page => page.getByRole('button', { name: text('share') });
 
 // The page may write to the clipboard as a player's click lets it, and the
 // test reads it back
@@ -21,8 +21,8 @@ test('Share opens the share sheet with the room link', async ({ newPlayer }) => 
     await stubShare(alice.page, 'record');
     const code = await createRoom(alice);
 
-    await expect(shareButton(alice.page)).toHaveAttribute('type', 'button');
-    await shareButton(alice.page).click();
+    await expect(inviteButton(alice.page)).toHaveAttribute('type', 'button');
+    await inviteButton(alice.page).click();
 
     await expect.poll(() => alice.page.evaluate(() => window.shareCalls.length)).toBe(1);
     const [shared] = await alice.page.evaluate(() => window.shareCalls);
@@ -39,7 +39,7 @@ test('closing the share sheet is silent', async ({ newPlayer }) => {
         navigator.clipboard.writeText = async copied => { window.copiedTexts.push(copied); };
     });
 
-    await shareButton(alice.page).click();
+    await inviteButton(alice.page).click();
 
     await expect.poll(() => alice.page.evaluate(() => window.shareCalls.length)).toBe(1);
     // The sheet's refusal is handled by then: no copy fallback, no message
@@ -52,10 +52,10 @@ test('without Web Share the link is copied', async ({ newPlayer }) => {
     await stubShare(alice.page, 'unsupported');
     const code = await createRoom(alice);
 
-    await alice.page.locator('#shareButton').click();
+    await alice.page.locator('#inviteButton').click();
 
-    await expect(alice.page.locator('#shareButton')).toHaveText(text('copiedSuccess'));
-    await expect(alice.page.locator('#shareLink')).toHaveValue(new RegExp(`/game/${code}$`));
+    await expect(alice.page.locator('#inviteButton')).toHaveText(text('copiedSuccess'));
+    await expect(alice.page.locator('#roomLink')).toHaveValue(new RegExp(`/game/${code}$`));
 });
 
 test('Copy Link puts the room link on the clipboard and confirms the copy', async ({ newPlayer }) => {
@@ -94,8 +94,8 @@ test('a started game invites below the game controls, without the link field', a
     await expect(invitation).toBeVisible();
     await expect(invitation).toContainText(text('inviteDuringGame'));
     await expect(page.locator('#gameCopyLink')).toContainText(text('copyRoomLink'));
-    await expect(page.locator('#shareCard')).toBeHidden();
-    await expect(page.locator('#shareLink')).toBeHidden();
+    await expect(page.locator('#inviteCard')).toBeHidden();
+    await expect(page.locator('#roomLink')).toBeHidden();
     const top = (await invitation.boundingBox()).y;
     expect(top).toBeGreaterThan((await page.locator('#playerList').boundingBox()).y);
     expect(top).toBeGreaterThan((await page.locator('#restartGame').boundingBox()).y);
@@ -120,7 +120,7 @@ test('Share in a started game opens the share sheet with the room link', async (
     };
     const { code, players: { Alice: alice } } = await startedGame(withShareSheet, ['Alice', 'Bob']);
 
-    await shareButton(alice.page).click();
+    await inviteButton(alice.page).click();
 
     await expect.poll(() => alice.page.evaluate(() => window.shareCalls.length)).toBe(1);
     const [shared] = await alice.page.evaluate(() => window.shareCalls);
@@ -136,6 +136,34 @@ test('a restart brings the lobby invitation back', async ({ newPlayer }) => {
     await page.click('#confirmRestart');
 
     await expect(page.locator('#startGame')).toBeVisible();
-    await expect(page.locator('#shareLink')).toBeVisible();
+    await expect(page.locator('#roomLink')).toBeVisible();
     await expect(page.locator('#gameInviteCard')).toBeHidden();
+});
+
+// An ad blocker's list of social widgets hides on every site what is named
+// after sharing: the invitation's names say nothing of it
+test("an ad blocker's list of social widgets hides nothing of the lobby's invitation: the link, Copy Link, Share and its icon", async ({ newPlayer }) => {
+    const alice = await newPlayer('Alice');
+    await hideSocialWidgets(alice);
+    await createRoom(alice);
+    expect(await socialWidgetsHidden(alice.page)).toBe(true);
+
+    await expect(alice.page.getByRole('textbox', { name: text('shareLinkLabel') })).toBeVisible();
+    await expect(alice.page.getByRole('button', { name: text('copyLink') })).toBeVisible();
+    await expect(inviteButton(alice.page)).toBeVisible();
+    await expect(inviteButton(alice.page).locator('.icon')).toBeVisible();
+});
+
+test("an ad blocker's list of social widgets hides nothing of a started game's invitation", async ({ newPlayer }) => {
+    const withBlocker = async name => {
+        const player = await newPlayer(name);
+        await hideSocialWidgets(player);
+        return player;
+    };
+    const { players: { Alice: alice } } = await startedGame(withBlocker, ['Alice', 'Bob']);
+    expect(await socialWidgetsHidden(alice.page)).toBe(true);
+
+    await expect(alice.page.getByRole('button', { name: text('copyRoomLink') })).toBeVisible();
+    await expect(inviteButton(alice.page)).toBeVisible();
+    await expect(inviteButton(alice.page).locator('.icon')).toBeVisible();
 });
