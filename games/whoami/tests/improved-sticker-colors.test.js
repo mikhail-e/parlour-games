@@ -56,8 +56,8 @@ describe('Improved Sticker Colors System', () => {
                 { stickerColor: 'indigo' }
             ];
             const color = assignUniqueColor(players);
-            // Should cycle back when all colors are used
-            expect(['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo']).toContain(color);
+            // All seven taken: the eighth player starts the palette again
+            expect(color).toBe('red');
         });
 
         test('should handle players without stickerColor (fallback)', () => {
@@ -71,13 +71,12 @@ describe('Improved Sticker Colors System', () => {
         });
 
         test('should cycle correctly with more than 7 players', () => {
-            const players = [];
-            for (let i = 0; i < 10; i++) {
-                players.push({ stickerColor: `color${i}` }); // Mock colors
-            }
+            // Ten players: the whole palette, then red, blue and purple again
+            const players = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo', 'red', 'blue', 'purple']
+                .map(stickerColor => ({ stickerColor }));
             const color = assignUniqueColor(players);
-            // Should use modulo logic for 10 players
-            expect(['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo']).toContain(color);
+            // The eleventh player goes on round the palette
+            expect(color).toBe('orange');
         });
     });
 
@@ -149,15 +148,9 @@ describe('Improved Sticker Colors System', () => {
                 assignedColors.push(result.player.stickerColor);
             }
 
-            // Should have exactly 7 unique colors (some will repeat)
-            const uniqueColors = new Set(assignedColors);
-            expect(uniqueColors.size).toBe(7);
-
-            // All assigned colors should be from the valid palette
-            const validColors = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo'];
-            assignedColors.forEach(color => {
-                expect(validColors).toContain(color);
-            });
+            // The whole palette, then round it again in the same order
+            const palette = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo'];
+            expect(assignedColors).toEqual([...palette, ...palette.slice(0, 5)]);
         });
 
         test('should maintain color uniqueness when players leave and rejoin', () => {

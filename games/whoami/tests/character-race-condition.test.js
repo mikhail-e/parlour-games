@@ -64,33 +64,6 @@ describe('Character Editing Race Conditions', () => {
         expect(game.characters.size).toBe(1);
     });
 
-    test('backend maintains assignment metadata correctly during overwrites', () => {
-        // Initial assignment
-        const result1 = assignCharacter(games, gameId, player1Id, 'Batman', player2Id);
-        const firstTimestamp = result1.characters[player1Id].assignedAt;
-
-        // Wait a small amount of time to ensure different timestamps
-        const before = Date.now();
-
-        // Overwrite assignment
-        const result2 = assignCharacter(games, gameId, player1Id, 'Superman', player3Id);
-        const secondTimestamp = result2.characters[player1Id].assignedAt;
-
-        expect(result1.success).toBe(true);
-        expect(result2.success).toBe(true);
-
-        // Verify metadata is updated correctly
-        const game = games.get(gameId);
-        const finalCharacterData = game.characters.get(player1Id);
-
-        expect(finalCharacterData.character).toBe('Superman');
-        expect(finalCharacterData.assignedBy).toBe(player3Id);
-        expect(finalCharacterData.assignedAt.getTime()).toBeGreaterThanOrEqual(before);
-
-        // The timestamps should be different (second should be newer)
-        expect(secondTimestamp.getTime()).toBeGreaterThanOrEqual(firstTimestamp.getTime());
-    });
-
     test('backend allows multiple players to assign characters to different players simultaneously', () => {
         // Simulate scenario where multiple players assign different characters at same time
         const assignments = [

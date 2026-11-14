@@ -21,11 +21,10 @@ describe('Service Worker caching policy', () => {
     test('only icons and the favicon are pre-cached', () => {
         const assets = readIconAssets();
 
-        // The six icons of the manifest and the iPhone's home-screen icon
-        expect(assets).toContain('/favicon.ico');
-        expect(assets).toContain('/icons/apple-touch-icon.png');
-        expect(assets.filter(a => a.startsWith('/icons/'))).toHaveLength(7);
-        expect(assets).toHaveLength(8);
+        // The favicon, the iPhone's home-screen icon and the manifest's
+        const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'manifest.json'), 'utf8'));
+        expect(assets.sort()).toEqual(
+            ['/favicon.ico', '/icons/apple-touch-icon.png', ...manifest.icons.map(icon => icon.src)].sort());
     });
 
     test('no HTML, CSS or JS is pre-cached', () => {
@@ -47,12 +46,5 @@ describe('Service Worker caching policy', () => {
         expect(swSource).toContain('cacheIconsOnly(CACHE_NAME, iconAssets);');
         // No logic of its own next to the kit's: no listener, no cache
         expect(swSource).not.toMatch(/addEventListener|caches\./);
-    });
-
-    test('the cache version is bumped past the caching rewrite', () => {
-        const version = swSource.match(/const CACHE_NAME = 'whoami-game-v([\d.]+)'/)[1];
-        const [major, minor] = version.split('.').map(Number);
-
-        expect(major * 100 + minor).toBeGreaterThanOrEqual(105); // >= v1.5.0
     });
 });

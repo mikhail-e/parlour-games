@@ -59,6 +59,14 @@ describe('Duplicate Names Handling', () => {
         // Game should still have only 2 players
         const game = games.get(gameId);
         expect(game.players).toHaveLength(2);
+
+        // An ID that is neither Alice's is a new player, not one of the two
+        const strangerId = crypto.randomUUID();
+        const strangerResult = gameLogic.addPlayerToGame(games, gameId, 'Alice', '🎃', strangerId);
+        expect(strangerResult.success).toBe(true);
+        expect(strangerResult.isNewPlayer).toBe(true);
+        expect(strangerResult.player.id).toBe(strangerId);
+        expect(game.players.map(p => p.avatar)).toEqual(['🤖', '😎', '🎃']);
     });
 
     test('player reconnection does not match by name alone', () => {
