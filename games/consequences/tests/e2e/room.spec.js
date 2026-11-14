@@ -6,6 +6,7 @@
 const {
     test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
     seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow, hideSocialWidgets, socialWidgetsHidden,
+    stubShare, expectCopyButtonsOnOneLine,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
 
@@ -48,6 +49,18 @@ test('Copy Link puts the room link on the clipboard', async ({ newPlayer }) => {
 
     await expect(anna.page.locator('#copyLink')).toHaveText(text('copiedSuccess'));
     expect(await anna.page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/game/${code}$`));
+});
+
+// Russian has the longer words. A computer's window from 768 px up (Bootstrap's
+// md) sets the buttons side by side, and 768 leaves them the least room
+test('the invitation\'s buttons keep their labels on one line in Russian, "Copied!" included, the narrowest window too', async ({ newPlayer, isMobile }) => {
+    const anna = await newPlayer('Anna', { locale: 'ru-RU' });
+    await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await stubShare(anna.page, 'unsupported');
+    await createRoom(anna);
+    const { page } = anna;
+
+    await expectCopyButtonsOnOneLine(page, [page.locator('#copyLink'), page.locator('#inviteButton')], isMobile ? [] : [768]);
 });
 
 test('"Copied!" goes by itself, a second press included, and the button is back with its icon and a label that follows the language', async ({ newPlayer }) => {

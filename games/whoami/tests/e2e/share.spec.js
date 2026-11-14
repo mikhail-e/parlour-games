@@ -2,7 +2,9 @@
 // where there is none) and Copy Link, in the lobby and in a started game. The
 // real share sheet never opens in a test: it would stop the browser, so
 // stubShare() stands in for it
-const { test, expect, text, createRoom, stubShare, startedGame, hideSocialWidgets, socialWidgetsHidden } = require('./helpers');
+const {
+    test, expect, text, createRoom, stubShare, startedGame, hideSocialWidgets, socialWidgetsHidden, expectCopyButtonsOnOneLine,
+} = require('./helpers');
 
 const inviteButton = page => page.getByRole('button', { name: text('share') });
 
@@ -81,6 +83,33 @@ test('Copy Link copies where the clipboard is closed to the page', async ({ newP
 
     await expect(alice.page.locator('#copyLink')).toHaveText(text('copiedSuccess'));
     expect(await clipboardText(alice.page)).toMatch(new RegExp(`/game/${code}$`));
+});
+
+// Russian has the longer words. A computer's window from 768 px up (Bootstrap's
+// md) sets the buttons side by side, and 768 leaves them the least room
+const narrowestRow = isMobile => (isMobile ? [] : [768]);
+
+// A player in Russian whose page may copy and has no Web Share: Share copies
+async function russianWithoutWebShare(newPlayer, name) {
+    const player = await newPlayer(name, { locale: 'ru-RU' });
+    await player.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await stubShare(player.page, 'unsupported');
+    return player;
+}
+
+test('the lobby\'s invitation keeps its buttons\' labels on one line in Russian, "Copied!" included, the narrowest window too', async ({ newPlayer, isMobile }) => {
+    const alice = await russianWithoutWebShare(newPlayer, 'Alice');
+    await createRoom(alice);
+    const { page } = alice;
+
+    await expectCopyButtonsOnOneLine(page, [page.locator('#copyLink'), page.locator('#inviteButton')], narrowestRow(isMobile));
+});
+
+test('a started game\'s invitation keeps its buttons\' labels on one line in Russian, "Copied!" included, the narrowest window too', async ({ newPlayer, isMobile }) => {
+    const { players: { Alice: alice } } = await startedGame(name => russianWithoutWebShare(newPlayer, name), ['Alice', 'Bob']);
+    const { page } = alice;
+
+    await expectCopyButtonsOnOneLine(page, [page.locator('#gameCopyLink'), page.locator('#gameInviteButton')], narrowestRow(isMobile));
 });
 
 // A started game keeps inviting: a latecomer asks to join, and any player lets
