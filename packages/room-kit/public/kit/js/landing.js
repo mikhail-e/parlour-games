@@ -31,7 +31,7 @@ function selectRandomAvatars() {
 // JPEG data URL so it fits in player.avatar the same way an emoji does.
 // 192px = 2x the 96px card display size, so photos stay sharp on retina screens
 const CUSTOM_AVATAR_SIZE = 192;                  // output is 192x192 pixels
-const CUSTOM_AVATAR_QUALITIES = [0.8, 0.6, 0.4]; // JPEG quality fallbacks
+const CUSTOM_AVATAR_QUALITIES = [0.8, 0.6, 0.4]; // JPEG and WebP quality fallbacks
 
 // Wrap the classic Image-element decode in a promise. Decoding through an
 // <img> means the browser applies EXIF rotation for us (phone photos).
@@ -53,7 +53,8 @@ function loadImageFromFile(file) {
     });
 }
 
-// File -> small square JPEG data URL that passes isCustomAvatar().
+// File -> small square data URL that passes isCustomAvatar(): a JPEG, or for
+// a picture with see-through parts a WebP or PNG that keeps them.
 // Throws Error with .code set to a translation key:
 //   'avatarNotImage'   - the file is not an image
 //   'avatarReadFailed' - the browser could not decode it
@@ -76,17 +77,25 @@ async function processAvatarFile(file) {
     const canvas = document.createElement('canvas');
     canvas.width = CUSTOM_AVATAR_SIZE;
     canvas.height = CUSTOM_AVATAR_SIZE;
-    const ctx = canvas.getContext('2d');
-
-    // JPEG has no transparency - without this, transparent PNG areas turn black
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, CUSTOM_AVATAR_SIZE, CUSTOM_AVATAR_SIZE);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     // Center-crop the largest square out of the photo, then shrink it
     const side = Math.min(image.naturalWidth, image.naturalHeight);
     const sx = (image.naturalWidth - side) / 2;
     const sy = (image.naturalHeight - side) / 2;
     ctx.drawImage(image, sx, sy, side, side, 0, 0, CUSTOM_AVATAR_SIZE, CUSTOM_AVATAR_SIZE);
+
+    if (hasSeeThroughParts(ctx)) {
+        const kept = seeThroughAvatar(canvas);
+        if (kept) return kept;
+    }
+
+    // JPEG has no transparency - without this, transparent areas turn black:
+    // white goes under the picture
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, CUSTOM_AVATAR_SIZE, CUSTOM_AVATAR_SIZE);
+    ctx.globalCompositeOperation = 'source-over';
 
     for (const quality of CUSTOM_AVATAR_QUALITIES) {
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -96,6 +105,36 @@ async function processAvatarFile(file) {
     const error = new Error('Image is too large even after compression');
     error.code = 'avatarTooLarge';
     throw error;
+}
+
+// True if any pixel of the shrunk picture is not fully opaque. A browser that
+// will not let the page read the pixels (a privacy setting) gets the white
+// background, as every picture did before
+function hasSeeThroughParts(ctx) {
+    let data;
+    try {
+        ({ data } = ctx.getImageData(0, 0, CUSTOM_AVATAR_SIZE, CUSTOM_AVATAR_SIZE));
+    } catch {
+        return false;
+    }
+    for (let alpha = 3; alpha < data.length; alpha += 4) {
+        if (data[alpha] < 255) return true;
+    }
+    return false;
+}
+
+// A picture with see-through parts that keeps them: a WebP, lower qualities
+// until it fits, or a PNG; null if neither fits. A browser that cannot make a
+// WebP (Safari may not) hands back a PNG when asked for one - the URL's own
+// type says which came back, never the browser's name
+function seeThroughAvatar(canvas) {
+    for (const quality of CUSTOM_AVATAR_QUALITIES) {
+        const dataUrl = canvas.toDataURL('image/webp', quality);
+        if (!dataUrl.startsWith('data:image/webp;')) break;
+        if (isCustomAvatar(dataUrl)) return dataUrl;
+    }
+    const png = canvas.toDataURL('image/png');
+    return isCustomAvatar(png) ? png : null;
 }
 
 // Function to populate avatar selector
