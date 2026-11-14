@@ -1,6 +1,6 @@
 # room-kit
 
-The shared kit of the parlour games with rooms in this repository: what every game needs and none of them owns. A game on the kit is still its own app — its own Cloudflare Worker, address, rooms and deploy; the kit is code it takes from one place instead of copying.
+The shared kit of the parlour games with rooms in this repository: what every game needs and none of them owns. A game on the kit is still its own app, with its own Cloudflare Worker, address, rooms and deploy; the kit is code it takes from one place instead of copying.
 
 The kit knows no game: no event names, no texts of a game, no rules. A game builds on it and adds its own.
 

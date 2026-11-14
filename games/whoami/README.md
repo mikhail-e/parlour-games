@@ -2,7 +2,7 @@
 
 ![The sign and the game room: player cards with their characters pinned on as tags, your own a sealed envelope](public/img/og-image-2.jpg)
 
-The classic guessing party game, played remotely. Every player gets a secret character chosen by the others and asks yes/no questions to find out who they are. Create a room, send the link to friends and family, play — no accounts, nothing to install.
+The classic guessing party game, played remotely. Every player gets a secret character chosen by the others and asks yes/no questions to find out who they are. Create a room, send the link to friends and family and play: no accounts, nothing to install.
 
 **Play:** https://whoami.escapist.club/
 
@@ -35,17 +35,17 @@ npm run lint       # ESLint only
 npm run test:e2e   # browser tests only: a phone and a desktop, several players per room
 ```
 
-- [`CLAUDE.md`](CLAUDE.md) — architecture and rules (the repository's layout and git flow: the [root CLAUDE.md](../../CLAUDE.md))
-- [`docs/testing.md`](docs/testing.md) — how the tests are organized and written
-- [`docs/release.md`](../../docs/release.md) (the repository's) — releases, hotfixes and the check of production
-- [`docs/publishing.md`](docs/publishing.md) — link previews, robots, where the site's address is written
+- [`CLAUDE.md`](CLAUDE.md): architecture and rules (the repository's layout and git flow: the [root CLAUDE.md](../../CLAUDE.md))
+- [`docs/testing.md`](docs/testing.md): how the tests are organized and written
+- [`docs/release.md`](../../docs/release.md) (the repository's): releases, hotfixes and the check of production
+- [`docs/publishing.md`](docs/publishing.md): link previews, robots, where the site's address is written
 
 The documents in `docs/` are written in Russian.
 
 ## Technologies
 
 - Server: Cloudflare Workers and Durable Objects (one per room), WebSocket
-- Browser: plain JavaScript and Bootstrap 5 — no framework, no bundler; the shared kit ([`packages/room-kit/`](../../packages/room-kit/README.md)) is copied into `public/` before the game is served
+- Browser: plain JavaScript and Bootstrap 5, no framework, no bundler; the shared kit ([`packages/room-kit/`](../../packages/room-kit/README.md)) is copied into `public/` before the game is served
 - Checks: ESLint, Jest, Playwright and axe-core
 - Hosting: Cloudflare (Workers Builds deploys every push to master that changes the game)
 
@@ -53,11 +53,11 @@ The documents in `docs/` are written in Russian.
 
 This is a personal project, open to read and to learn from. Bug reports and ideas are welcome as [issues](https://github.com/mikhail-e/parlour-games/issues); I don't plan to accept pull requests.
 
-To report a security problem, see [SECURITY.md](../../SECURITY.md) — please don't open a public issue for it.
+To report a security problem, see [SECURITY.md](../../SECURITY.md), and please don't open a public issue for it.
 
 ## License
 
-The code is released under the [MIT License](../../LICENSE). The license does not cover the game's brand — the sign, the wax-seal app icon and the link preview picture — and third-party files keep their own licenses: see [License](../../README.md#license) in the repository's README.
+The code is released under the [MIT License](../../LICENSE). The license does not cover the game's brand (the sign, the wax-seal app icon and the link preview picture), and third-party files keep their own licenses: see [License](../../README.md#license) in the repository's README.
 
 ## Credits
 
