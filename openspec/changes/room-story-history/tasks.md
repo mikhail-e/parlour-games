@@ -118,6 +118,6 @@
 ## Workflow follow-up
 
 - Слияние `feature/room-story-history` в `develop` (`--no-ff`) после зелёного `npm test`, ветка удаляется.
-- Выпуск Consequences с минорной версией и whoami с патчем (правка kit), по `docs/release.md`. На `master` только после подтверждения владельца.
+- Выпуск Consequences и whoami (правка kit) одной веткой, у обеих минорная версия: выпуск из `develop`, патч только у срочной правки (`docs/release.md`). На `master` только после подтверждения владельца.
 - Проверка прода по `docs/release.md`: `/api/version` обеих игр, `test:e2e:prod`.
 - `/opsx:archive` после выпуска.
