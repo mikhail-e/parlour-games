@@ -427,11 +427,12 @@ test('the question of Another round stays open through what happens in the room'
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
 });
 
-test('Another round, said yes to, takes everyone back to the lobby, and the next round draws another set', async ({ newPlayer }) => {
+test('Another round asked in the window of every story: Cancel goes back to the stories, yes closes that window on the lobby while another reader\'s stays open, and the next round draws another set', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     const last = await setOf(players[0].page);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
+    await showStories(players[0]);
     await showStories(players[1]);
     const { page } = players[1];
 
@@ -450,7 +451,16 @@ test('Another round, said yes to, takes everyone back to the lobby, and the next
     await expect(page.locator('#windowAnotherRound')).toBeFocused();
     expect(await roundStep(page)).toBe(8);
 
-    await confirmAnotherRound(players[1]);
+    // Yes: Boris's window closes by itself on the lobby, as the reading
+    // sheet's question does; Anna, reading in hers, keeps it on the round
+    await page.click('#windowAnotherRound');
+    await page.click('#confirmWindowNewRound');
+    await expect(page.locator('#storiesModal')).toBeHidden();
+    await expect(page.locator('#playersCard')).toBeVisible();
+    await expect.poll(() => roundStep(players[0].page)).toBeNull();
+    await expect(players[0].page.locator('#storiesModal')).toBeVisible();
+    await expect(players[0].page.locator('#storyList .sheet')).toHaveCount(2);
+    await closeStories(players[0]);
 
     for (const player of players) {
         await expect(player.page.locator('#playersCard')).toBeVisible();

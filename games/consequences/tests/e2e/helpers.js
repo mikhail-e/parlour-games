@@ -114,16 +114,14 @@ async function closeStories(player) {
 }
 
 // Another round, and back in the lobby. With the window of every story open,
-// from under its last story, the question inside the window - and then the
-// window is closed, as it stays open on its round when the round ends; else
-// from the reading sheet, the question in its own window
+// from under its last story, the question inside the window, whose yes closes
+// it; else from the reading sheet, the question in its own window
 async function confirmAnotherRound(player) {
     const { page } = player;
     if (await page.locator('#storiesModal').isVisible()) {
         await page.click('#windowAnotherRound');
         await page.click('#confirmWindowNewRound');
-        await expect.poll(() => roundStep(page)).toBeNull();
-        await closeStories(player);
+        await expect(page.locator('#storiesModal')).toBeHidden();
         return;
     }
     await page.click('#anotherRound');
