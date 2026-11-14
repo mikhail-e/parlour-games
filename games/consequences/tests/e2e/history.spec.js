@@ -10,6 +10,11 @@ const {
     listeningPlayer, messagesOf, latestMessage: latest, sendRoomMove: move,
 } = require('./helpers');
 
+// Three rounds of eight steps: against production every step ends with its
+// real pause (game-logic.js's STEP_PAUSE_MS), and the pauses alone fill the
+// usual time of a test
+const ROUNDS_TAKE_TIME = 'three rounds, each step with its pause';
+
 // Every player answers every question, "<tag>-<name>-<step>": the round is at the reading
 async function writeByMoves(players, tag) {
     for (let step = 0; step < 8; step++) {
@@ -83,6 +88,7 @@ async function expectWindowRound(page, set, number, count, lang = 'en') {
 }
 
 test('the room keeps every round that reached the reading, and a page gets the one it asks for', async ({ newPlayer }, testInfo) => {
+    test.slow(true, ROUNDS_TAKE_TIME);
     test.skip(testInfo.project.name !== 'desktop', 'what the room sends: the device adds nothing');
     const anna = await listeningPlayer(newPlayer, 'Anna');
     const boris = await listeningPlayer(newPlayer, 'Boris');
@@ -144,6 +150,7 @@ test('the room keeps every round that reached the reading, and a page gets the o
 });
 
 test('the window of every story opens on the round being read and pages back through the rounds of the room, each from its first story', async ({ newPlayer }, testInfo) => {
+    test.slow(true, ROUNDS_TAKE_TIME);
     const { players } = await listeningRoom(newPlayer, ['Anna', 'Boris']);
     const [anna, boris] = players;
     const sets = [];
@@ -268,6 +275,7 @@ test('the window stays on its round when another player ends it, and says so whe
 });
 
 test("the lobby lists the rounds played, each opening the window on its round, a newcomer's too; the writing hides it", async ({ newPlayer }) => {
+    test.slow(true, ROUNDS_TAKE_TIME);
     const { players, code } = await listeningRoom(newPlayer, ['Anna', 'Boris']);
     const [anna] = players;
     const rows = page => page.locator('#roundsList .rounds-list__row');

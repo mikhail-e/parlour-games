@@ -275,15 +275,27 @@ function pngChunk(type, data) {
 }
 
 // A small solid-colour PNG photo for the upload control, built in code so the
-// repository holds no binary test files
-function pngFile(width = 64, height = 64) {
+// repository holds no binary test files. `transparent`: grey on the top half,
+// see-through on the bottom half; `noisy` makes the pixels random, so the
+// picture does not shrink well (a fixed sequence: the same file every run)
+function pngFile(width = 64, height = 64, { transparent = false, noisy = false } = {}) {
     const header = Buffer.alloc(13);
     header.writeUInt32BE(width, 0);
     header.writeUInt32BE(height, 4);
     header[8] = 8; // bits per channel
-    header[9] = 2; // RGB
-    const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, 0x7f)]); // filter byte + grey pixels
-    const pixels = zlib.deflateSync(Buffer.concat(Array(height).fill(row)));
+    header[9] = transparent ? 6 : 2; // RGBA or RGB
+    let seed = 1;
+    const grey = () => {
+        if (!noisy) return 0x7f;
+        seed = (seed * 1103515245 + 12345) % 2147483648;
+        return seed % 256;
+    };
+    const rows = Array.from({ length: height }, (unused, y) => {
+        const seen = !transparent || y < height / 2;
+        const pixel = () => (transparent ? [grey(), grey(), grey(), seen ? 0xff : 0] : [grey(), grey(), grey()]);
+        return Buffer.from([0, ...Array.from({ length: width }, pixel).flat()]); // filter byte + pixels
+    });
+    const pixels = zlib.deflateSync(Buffer.concat(rows));
     const buffer = Buffer.concat([
         Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
         pngChunk('IHDR', header),
