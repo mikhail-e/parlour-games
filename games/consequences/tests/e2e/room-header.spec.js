@@ -39,8 +39,25 @@ function headerLayout(page) {
 async function expectValance(page, code, lang = 'en') {
     await expect(sign(page)).toBeHidden();
     await expect(name(page)).toBeVisible();
-    // As the eye sees it: capitals by the style, English in both languages
-    await expect.poll(() => name(page).evaluate(element => element.innerText)).toBe('CONSEQUENCES');
+    // One picture named as the sign is, English in both languages, drawn as
+    // the sign draws its name: the same text, face, size and squeeze
+    await expect(name(page)).toHaveAttribute('role', 'img');
+    await expect(name(page)).toHaveAttribute('aria-label', 'Consequences');
+    const [valanceName, signName] = await page.evaluate(() => ['.brand-name text', '.brand-sign .brand-sign__name']
+        .map(selector => {
+            const text = document.querySelector(`.room-head ${selector}`);
+            const style = getComputedStyle(text);
+            return {
+                text: text.textContent,
+                ...Object.fromEntries(['font-size', 'textLength', 'lengthAdjust', 'text-anchor'].map(name => [name, text.getAttribute(name)])),
+                fontFamily: style.fontFamily,
+                fontWeight: style.fontWeight,
+                letterSpacing: style.letterSpacing,
+                textTransform: style.textTransform,
+            };
+        }));
+    expect(valanceName).toEqual(signName);
+    expect(valanceName.text).toBe('CONSEQUENCES');
     await expect(ticket(page)).toHaveText(`${text('roomCode', lang)} ${code}`);
 
     const { head, name: title, ticket: line, width, scrollWidth } = await headerLayout(page);
