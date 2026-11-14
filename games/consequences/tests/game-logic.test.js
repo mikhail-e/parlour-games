@@ -642,7 +642,7 @@ describe('a new round', () => {
         gameLogic.removePlayerFromGame(games, CODE, ids[1]);
         expect(game.recentlyLeft.size).toBe(1);
 
-        expect(gameLogic.newRound(games, CODE, ids[0])).toEqual({ success: true, endedJoinRequests: [] });
+        expect(gameLogic.newRound(games, CODE, ids[0])).toMatchObject({ success: true, endedJoinRequests: [] });
         expect(game.state).toBe('waiting');
         expect(game.round).toBeNull();
         expect(game.players.map(player => player.id)).toEqual([ids[0], ids[2]]);
@@ -664,7 +664,7 @@ describe('a new round', () => {
         const newcomer = idOf(5);
         expect(requestToJoin(games, CODE, 'Dina', '🐶', newcomer, secretOf(5)).success).toBe(true);
 
-        expect(gameLogic.newRound(games, CODE, ids[0])).toEqual({ success: true, endedJoinRequests: [newcomer] });
+        expect(gameLogic.newRound(games, CODE, ids[0])).toEqual({ success: true, endedJoinRequests: [newcomer], history: null });
         expect(game.joinRequests.size).toBe(0);
         expect(gameLogic.addPlayerToGame(games, CODE, 'Dina', '🐶', newcomer, secretOf(5)).success).toBe(true);
     });
@@ -675,6 +675,92 @@ describe('a new round', () => {
         const { games, ids } = roundOf(2);
         expect(gameLogic.newRound(games, CODE, idOf(11))).toEqual({ success: false, error: 'Player not found in game' });
         expect(gameLogic.newRound(new Map(), CODE, ids[0])).toEqual({ success: false, error: 'Game not found' });
+    });
+});
+
+describe('the room\'s history', () => {
+    // Every sheet's answers, in the order of the sheets
+    const answersOf = game => game.round.sheets.map(sheet => sheet.map(answer => answer.text));
+
+    test('"Another round" after every story keeps the round: every story whole, with the name of who read it', () => {
+        const { games, game, ids } = readingOf(3);
+        for (const id of ids) gameLogic.openSheet(games, CODE, id);
+        const answers = answersOf(game);
+        const readers = game.round.sheets.map((sheet, number) => NAMES[ids.indexOf(game.round.openedBy[number])]);
+        const { questionSet } = game.round;
+
+        const result = gameLogic.newRound(games, CODE, ids[1]);
+        expect(result.history).toEqual({
+            number: 1,
+            round: { questionSet, stories: answers.map((each, number) => ({ answers: each, readBy: readers[number] })) },
+        });
+        expect(game.historySets).toEqual([questionSet]);
+    });
+
+    test('"New round" in the middle of the reading keeps every story, those nobody opened without a reader', () => {
+        const { games, game, ids } = readingOf(3);
+        const opened = gameLogic.openSheet(games, CODE, ids[0]);
+        const answers = answersOf(game);
+
+        const { history } = gameLogic.newRound(games, CODE, ids[0]);
+        expect(history.round.stories.map(story => story.answers)).toEqual(answers);
+        expect(history.round.stories.map(story => story.readBy))
+            .toEqual(answers.map((each, number) => (number === opened.sheet ? 'Anna' : null)));
+    });
+
+    test('"New round" while writing keeps nothing', () => {
+        const { games, game, ids } = roundOf(3);
+        answerStep(games, ids, 0);
+        expect(gameLogic.newRound(games, CODE, ids[0]).history).toBeNull();
+        expect(game.historySets).toEqual([]);
+    });
+
+    test('a reader who has left is kept by name', () => {
+        const { games, game, ids } = readingOf(3);
+        for (const id of ids) gameLogic.openSheet(games, CODE, id);
+        const veraRead = Number(Object.keys(game.round.openedBy).find(number => game.round.openedBy[number] === ids[2]));
+        gameLogic.removePlayerFromGame(games, CODE, ids[2]);
+
+        const { history } = gameLogic.newRound(games, CODE, ids[0]);
+        expect(history.round.stories[veraRead].readBy).toBe('Vera');
+    });
+
+    test('the rounds go in order, each under the next number, and the pages see their sets', () => {
+        const { games, game, ids } = lobbyOf(2);
+        const sets = [];
+        for (let round = 1; round <= 3; round++) {
+            gameLogic.startRound(games, CODE, ids[0]);
+            sets.push(game.round.questionSet);
+            for (let step = 0; step < gameLogic.QUESTION_COUNT; step++) answerStep(games, ids, step);
+            expect(gameLogic.newRound(games, CODE, ids[0]).history.number).toBe(round);
+        }
+        expect(game.historySets).toEqual(sets);
+        expect(gameLogic.serializeGame(game).historySets).toEqual(sets);
+        expect(gameLogic.playersView(game).historySets).toEqual(sets);
+    });
+
+    test('a page asks for a round of the history by its number, 1 to the last', () => {
+        const { games, game, ids } = readingOf(2);
+        expect(gameLogic.historyNumberError(game, 1)).toBe('No such round');
+        gameLogic.newRound(games, CODE, ids[0]);
+        expect(gameLogic.historyNumberError(game, 1)).toBeNull();
+        for (const wrong of [0, 2, -1, 1.5, '1', null, undefined]) {
+            expect(gameLogic.historyNumberError(game, wrong)).toBe('No such round');
+        }
+    });
+
+    test('a game an earlier version saved, without a history, starts one with its next round', () => {
+        const { games, game, ids } = readingOf(2);
+        // As the room's storage holds a game of the version before the history
+        const stored = JSON.parse(JSON.stringify(gameToStorage(game)));
+        delete stored.historySets;
+        const loaded = gameFromStorage(stored);
+        expect(gameLogic.serializeGame(loaded).historySets).toEqual([]);
+
+        const reloaded = new Map([[CODE, loaded]]);
+        expect(gameLogic.newRound(reloaded, CODE, ids[0]).history.number).toBe(1);
+        expect(loaded.historySets).toEqual([game.round.questionSet]);
+        expect(games.get(CODE)).toBe(game);
     });
 });
 
@@ -761,7 +847,7 @@ describe('the round as the pages see it', () => {
     test('the lobby has no round, and the players list carries the round with it', () => {
         const lobby = lobbyOf(2);
         expect(gameLogic.roundView(lobby.game)).toBeNull();
-        expect(gameLogic.playersView(lobby.game)).toEqual({ players: lobby.game.players, round: null });
+        expect(gameLogic.playersView(lobby.game)).toEqual({ players: lobby.game.players, round: null, historySets: [] });
 
         const { game } = roundOf(2);
         expect(gameLogic.playersView(game).round).toEqual(gameLogic.roundView(game));
