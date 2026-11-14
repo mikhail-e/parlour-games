@@ -160,6 +160,36 @@ async function stubShare(page, behaviour) {
     }, behaviour);
 }
 
+// How many lines an element's content takes: an icon beside its label is one;
+// a label under its icon, or broken in two, is more
+function linesOf(locator) {
+    return locator.evaluate(element => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const middles = [...range.getClientRects()].map(rect => rect.top + rect.height / 2).sort((a, b) => a - b);
+        const halfLine = parseFloat(getComputedStyle(element).lineHeight) / 2;
+        return middles.filter((middle, index) => index === 0 || middle - middles[index - 1] > halfLine).length;
+    });
+}
+
+// Every one of these buttons keeps its label on one line, and its "Copied!"
+// after a press (invite.js puts it in the label's place): at the window's width
+// and then at each of `widths`. The page may write to the clipboard and has no
+// Web Share (stubShare 'unsupported'), so a Share button copies too; a button
+// has its label back before the next is pressed
+async function expectCopyButtonsOnOneLine(page, buttons, widths = []) {
+    for (const width of [page.viewportSize().width, ...widths]) {
+        await page.setViewportSize({ width, height: page.viewportSize().height });
+        for (const button of buttons) {
+            expect(await linesOf(button), `the label at ${width} px`).toBe(1);
+            await button.click();
+            await expect(button.locator('.icon--check')).toBeVisible();
+            expect(await linesOf(button), `"Copied!" at ${width} px`).toBe(1);
+            await expect(button.locator('.icon--check')).toHaveCount(0);
+        }
+    }
+}
+
 // What an ad blocker's list of social widgets hides on every site by the name
 // alone (Fanboy's Social: uBlock Origin's "EasyList – Social Widgets",
 // AdBlock's "Antisocial"): its rules that once hid Consequences' story button
@@ -292,6 +322,7 @@ module.exports = {
     askToJoin,
     leaveGame,
     stubShare,
+    expectCopyButtonsOnOneLine,
     hideSocialWidgets,
     socialWidgetsHidden,
     holdRoomJoin,

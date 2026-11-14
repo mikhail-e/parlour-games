@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden,
+    showStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -91,7 +91,7 @@ test("a tapped sheet opens: eight answers in order, read as one text without the
 
     await expect(answersOf(ownSheet(anna.page))).toHaveText([/ 1$/, / 2$/, / 3$/, / 4$/, / 5$/, / 6$/, / 7$/, / 8$/]);
     for (const number of [1, 2, 3, 4, 5, 6, 7, 8]) {
-        await expect(ownSheet(anna.page).locator('.story')).not.toContainText(text(`question${number}`, 'ru'));
+        await expect(ownSheet(anna.page).locator('.story')).not.toContainText(await questionOf(anna.page, number, 'ru'));
     }
     const lineUnder = item => item.evaluate(element => getComputedStyle(element).borderBottomStyle);
     const lines = ownSheet(anna.page).locator('.story li');
@@ -226,10 +226,10 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
         const stories = player.page.locator('#storyList .sheet');
         await expect(stories).toHaveCount(3);
         // Sheet 1 began with Anna, its last answer is Boris's, and the seat after his read it
-        await expect(stories.nth(0).locator('.story-head')).toContainText(text('storyTitle1', 'en'));
+        await expect(stories.nth(0).locator('.story-head')).toContainText(await setText(player.page, 'StoryTitle1'));
         await expect(stories.nth(0).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Vera' }));
         await expect(stories.nth(0).locator('.story__answer').first()).toHaveText('Anna 1');
-        await expect(stories.nth(1).locator('.story-head')).toContainText(text('storyTitle2', 'en'));
+        await expect(stories.nth(1).locator('.story-head')).toContainText(await setText(player.page, 'StoryTitle2'));
         await expect(stories.nth(1).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Anna' }));
         await expect(stories.nth(2).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Boris' }));
     }
@@ -276,7 +276,13 @@ async function storiesToShare(newPlayer, behaviour, prepare = async () => {}) {
     return { anna, story: storyReadBy(anna.page, 'Anna') };
 }
 
-test('a story is shared with its text and an invitation that names the game and its site, and nothing else', async ({ newPlayer }) => {
+// The first line of a shared story: the round's set in capitals between two
+// stars, in the page's language
+async function sharedTitle(page, lang = 'en') {
+    return `★ ${(await setText(page, 'Name', lang)).toUpperCase()} ★`;
+}
+
+test('a story is shared under the name of the round\'s set, with its text and an invitation that names the game and its site, and nothing else', async ({ newPlayer }) => {
     const { anna, story } = await storiesToShare(newPlayer, 'record');
     await expect(anna.page.locator('.story-send')).toHaveCount(2);
     await expect(story.locator('.story-send')).toHaveText(text('shareStory'));
@@ -293,8 +299,16 @@ test('a story is shared with its text and an invitation that names the game and 
     expect(invitation).toContain(site);
     expect((await anna.page.evaluate(() => window.shareCalls))[0]).toEqual({
         title: text('title'),
-        text: `${answers.join('\n')}\n\n${invitation}`,
+        text: `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${invitation}`,
     });
+
+    // In Russian the title is the set's Russian name
+    await anna.page.locator('.lang-toggle-btn').click();
+    await expect(anna.page.locator('.story-send').first()).toHaveText(text('shareStory', 'ru'));
+    await anna.page.locator('.story-send').first().click();
+    await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(2);
+    const [, inRussian] = await anna.page.evaluate(() => window.shareCalls);
+    expect(inRussian.text.startsWith(`${await sharedTitle(anna.page, 'ru')}\n\n`)).toBe(true);
 });
 
 test("an ad blocker's list of social widgets hides no story's Share, nor its icon", async ({ newPlayer }) => {
@@ -320,7 +334,7 @@ test('closing the share sheet of a story is silent', async ({ newPlayer }) => {
     expect(await anna.page.evaluate(() => window.copiedTexts)).toEqual([]);
 });
 
-test('without a share sheet the story is copied, and the button says so', async ({ newPlayer }) => {
+test('without a share sheet the story is copied, under the name of the round\'s set, and the button says so', async ({ newPlayer }) => {
     const { anna, story } = await storiesToShare(newPlayer, 'unsupported');
     await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
@@ -329,7 +343,7 @@ test('without a share sheet the story is copied, and the button says so', async 
     await expect(story.locator('.story-send')).toHaveText(text('copiedSuccess'));
     const answers = await answersOf(story).allTextContents();
     const copied = await anna.page.evaluate(() => navigator.clipboard.readText());
-    expect(copied.startsWith(answers.join('\n'))).toBe(true);
+    expect(copied.startsWith(`${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n`)).toBe(true);
     expect(copied.endsWith(text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host }))).toBe(true);
 });
 
@@ -365,8 +379,9 @@ test('the question of Another round stays open through what happens in the room'
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
 });
 
-test('Another round, said yes to, takes everyone back to the lobby', async ({ newPlayer }) => {
+test('Another round, said yes to, takes everyone back to the lobby, and the next round draws another set', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const last = await setOf(players[0].page);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     await showStories(players[1]);
@@ -380,5 +395,26 @@ test('Another round, said yes to, takes everyone back to the lobby', async ({ ne
     }
     await expect(players[1].page.locator('#newRoundModal')).toBeHidden();
     await startRound(players);
-    await expect(players[0].page.locator('#questionText')).toHaveText(text('question1'));
+    await expect(players[0].page.locator('#questionText')).toHaveText(await questionOf(players[0].page, 1));
+    expect(await setOf(players[0].page)).not.toBe(last);
+});
+
+// The set names the reading's stories («The tales are ready», «Every tale»,
+// «Tale one»): the set, read off the sheet while writing, has no title of its own here
+test("the reading and every story are titled by the round's set's stories, with no second title for its name", async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const set = await setOf(anna.page);
+    await writeToReading([anna, boris]);
+
+    await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText([text(`${set}StoriesReady`)]);
+    await expect(anna.page.locator('#showStories')).toHaveText(text(`${set}AllStories`));
+    await ownSheet(anna.page).locator('.closed-sheet').click();
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+    await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText([text(`${set}StoriesReady`)]);
+
+    await ownSheet(boris.page).locator('.closed-sheet').click();
+    await showStories(anna);
+    await expect(anna.page.locator('#storiesCard .sheet-title')).toHaveText([text(`${set}AllStories`)]);
+    await expect(anna.page.locator('#storyList .story-head').nth(0)).toContainText(text(`${set}StoryTitle1`));
+    await expect(anna.page.locator('#storyList .story-head').nth(1)).toContainText(text(`${set}StoryTitle2`));
 });

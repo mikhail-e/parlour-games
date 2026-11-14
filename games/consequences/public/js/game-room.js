@@ -61,6 +61,13 @@ function say(key, placeholders = {}) {
     return getText(key, key, placeholders);
 }
 
+// A text of the round's set of questions (translations.js): its name, a
+// question, a heading in its words. A round an earlier version started has no
+// set and goes on with the classic one, as the room says too (game-logic.js)
+function sayOfSet(round, key, placeholders = {}) {
+    return say(`${(round && round.questionSet) || 'classic'}${key}`, placeholders);
+}
+
 function isMe(playerId) {
     return Boolean(currentPlayer) && playerId === currentPlayer.id;
 }
@@ -235,12 +242,15 @@ function renderWriting(round) {
         }
     }
 
-    const title = document.getElementById('writingTitle');
-    title.hidden = !held;
-    title.textContent = held ? say('sheetOfPlayer', { name: held.name }) : '';
+    // The sheet's title is the round's set; an absent player's sheet the player
+    // took says whose it is under it, never as a second title
+    document.getElementById('setTitle').textContent = sayOfSet(round, 'Name');
+    const owner = document.getElementById('writingTitle');
+    owner.hidden = !held;
+    owner.textContent = held ? say('sheetOfPlayer', { name: held.name }) : '';
     document.getElementById('giveSheetBack').hidden = !held;
 
-    renderFolds(target ? step : step + 1);
+    renderFolds(round, target ? step : step + 1);
     document.getElementById('answerForm').hidden = !target;
     const hint = document.getElementById('sheetHint');
     hint.hidden = Boolean(target);
@@ -255,7 +265,7 @@ function renderWriting(round) {
     edit.disabled = takingBack === step;
     if (target) {
         document.getElementById('questionNumber').textContent = say('questionOf', { number: step + 1, count: questionCount });
-        document.getElementById('questionText').textContent = say(`question${step + 1}`);
+        document.getElementById('questionText').textContent = sayOfSet(round, `Question${step + 1}`);
         updateAnswerField();
     }
 }
@@ -267,9 +277,9 @@ function sentAnswerAt(step) {
 }
 
 // The answered questions of the sheet, a pleat each: the question, never the answer
-function renderFolds(count) {
+function renderFolds(round, count) {
     document.getElementById('folds').replaceChildren(...Array.from({ length: count },
-        (_, index) => element('div', 'fold', `${index + 1}. ${say(`question${index + 1}`)}`)));
+        (_, index) => element('div', 'fold', `${index + 1}. ${sayOfSet(round, `Question${index + 1}`)}`)));
 }
 
 // Under the sent answer: who answers (or answered) for this player at this
@@ -321,7 +331,7 @@ function sendAnswer(event) {
 // The reading: the player's sheet, closed until they tap it, the absent
 // players' sheets they read, and how many sheets are open
 function renderReading(round) {
-    const parts = [element('h6', 'sheet-title', say('storiesReady'))];
+    const parts = [element('h6', 'sheet-title', sayOfSet(round, 'StoriesReady'))];
     const mine = seatOf(round, currentPlayer.id);
     if (mine) parts.push(ownSheet(round, mine));
     for (const seat of round.seats) {
@@ -336,7 +346,7 @@ function renderReading(round) {
 
 // «Every story»: there from the start of the reading, off until the last sheet is open
 function storiesButton(round) {
-    const show = button('btn btn-primary btn-lg', say('allStories'), () => {
+    const show = button('btn btn-primary btn-lg', sayOfSet(round, 'AllStories'), () => {
         storiesAsked = true;
         renderRoom();
         document.getElementById('storiesCard').scrollIntoView({ block: 'start', behavior: 'instant' });
@@ -402,26 +412,30 @@ function storyList(answers) {
 
 // Every story, once the last sheet is open: each sheet whole, with who read it
 function renderStories(round) {
+    document.getElementById('storiesTitle').textContent = sayOfSet(round, 'AllStories');
     document.getElementById('storyList').replaceChildren(...round.stories.map((story) => {
         const sheet = element('div', 'sheet');
         sheet.dataset.sheet = story.sheet;
         const head = element('div', 'story-head');
-        head.append(element('span', '', say(`storyTitle${story.sheet + 1}`)),
+        head.append(element('span', '', sayOfSet(round, `StoryTitle${story.sheet + 1}`)),
             element('small', '', say('storyReadBy', { name: nameOf(round, story.readBy) })));
         const share = element('button', 'story-send');
         share.type = 'button';
         share.append(createIcon('export'), element('span', '', say('shareStory')));
-        share.addEventListener('click', () => shareStory(share, story.answers));
+        share.addEventListener('click', () => shareStory(share, round, story.answers));
         sheet.append(head, storyList(story.answers), share);
         return sheet;
     }));
 }
 
-// A story for friends: its text, then an invitation with the game's name and
-// its site. The address is inside the text, not in the share sheet's `url`:
-// some apps keep only one of the two
-function shareStory(button, answers) {
-    const text = `${answers.join('\n')}\n\n${say('shareStoryInvitation', { site: window.location.host })}`;
+// A story for friends: the round's set as its title - capitals between two
+// stars, like the sheets' titles: a shared text is plain, and bold is every
+// messenger's own markup -, its text, then an invitation with the game's name
+// and its site. The address is inside the text, not in the share sheet's
+// `url`: some apps keep only one of the two
+function shareStory(button, round, answers) {
+    const title = `★ ${sayOfSet(round, 'Name').toUpperCase()} ★`;
+    const text = `${title}\n\n${answers.join('\n')}\n\n${say('shareStoryInvitation', { site: window.location.host })}`;
     shareOrCopy(button, { title: say('title'), text }, text);
 }
 
@@ -429,7 +443,7 @@ function shareStory(button, answers) {
 // reads for it - with "Answer for" / "Read for" an absent seat's sheet for a
 // player free to take it, and the newcomers waiting for the next round
 function renderSeats(round, reading) {
-    document.getElementById('seatsTitle').textContent = say(reading ? 'sheets' : 'tellingTheStory');
+    document.getElementById('seatsTitle').textContent = reading ? say('sheets') : sayOfSet(round, 'TellingTheStory');
     const mine = seatOf(round, currentPlayer.id);
     const free = Boolean(mine) && !heldSeat(round) && (reading || mine.answered);
     document.getElementById('seatList').replaceChildren(...round.seats.map(seat => seatRow(round, seat, reading, free)));

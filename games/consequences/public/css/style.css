@@ -413,10 +413,19 @@
   border-top: 1px dashed rgba(42, 29, 23, .35);
 }
 
-.reading-sheet__title {
+.reading-sheet__title,
+.sheet-owner {
   margin: 0 0 6px;
   font-size: 1.35rem;
   font-weight: 700;
+}
+
+/* Whose sheet the player writes on, an absent player's they took: a line
+   under the sheet's title, as "Your sheet" is in the reading - never a
+   second title */
+.sheet-owner {
+  margin-bottom: 14px;
+  text-align: center;
 }
 
 .lead-on-sheet {

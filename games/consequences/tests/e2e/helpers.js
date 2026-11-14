@@ -5,16 +5,54 @@
 // are the helpers that act through the kit's pages - the landing form,
 // entering and leaving a room, the invitation, the socket
 // (packages/room-kit/e2e-helpers.js). The game's own act on the round: start
-// it, answer a step, write to the reading, come back to a round.
+// it, answer a step, write to the reading, come back to a round; and they read
+// the round's set of questions off the screen, as a player does.
 const path = require('path');
 const { test, expect } = require('@parlour-games/room-kit/e2e');
 const { pageTexts, ...kitHelpers } = require('@parlour-games/room-kit/e2e-helpers');
+// The sets a round draws from: their texts are the pages' (translations.js)
+const { QUESTION_SETS } = require('../../game-logic');
 /* global currentGame -- the room page's picture of the game (the kit's room-page.js), inside page.evaluate() */
 
 const { roomWith, waitForLanding } = kitHelpers;
 
 // The texts of the game's pages, the kit's under them
 const { text, serverErrorText } = pageTexts(path.join(__dirname, '..', '..', 'public', 'js', 'translations.js'));
+
+// The round's set of questions, as a player sees it - by the title on the
+// screen: the sheet's while writing (the set's name, «Fairy Tale»), the
+// reading's («The tales are ready»), every story's («Every tale»). A test
+// cannot choose the set (the same tests run against production), so it reads
+// it as a player does, in the page's language
+const SET_TITLES = [['#setTitle', 'Name'], ['#readingCard > .sheet-title', 'StoriesReady'], ['#storiesTitle', 'AllStories']];
+
+async function setOf(page, lang = 'en') {
+    let seen = null;
+    await expect.poll(async () => {
+        for (const [selector, key] of SET_TITLES) {
+            const title = page.locator(selector);
+            if (await title.isVisible()) {
+                seen = [key, (await title.textContent()).trim()];
+                return true;
+            }
+        }
+        return false;
+    }, { message: 'a title of the round on the screen' }).toBe(true);
+    const [key, title] = seen;
+    const set = QUESTION_SETS.find(each => text(`${each}${key}`, lang) === title);
+    if (!set) throw new Error(`The title "${title}" is no set's (${key}, ${lang}): a text of the sets changed?`);
+    return set;
+}
+
+// A text of the round's set: setText(page, 'AllStories'), setText(page, 'StoryTitle1', 'ru')
+async function setText(page, key, lang = 'en', placeholders = {}) {
+    return text(`${await setOf(page, lang)}${key}`, lang, placeholders);
+}
+
+// The round's question with this number (1-8), as the page shows it
+function questionOf(page, number, lang = 'en') {
+    return setText(page, `Question${number}`, lang);
+}
 
 // The round's step as the page knows it: 0-7 a question, 8 the reading,
 // null in the lobby. Read from the page, so a check holds in any language
@@ -102,6 +140,9 @@ module.exports = {
     text,
     serverErrorText,
     ...kitHelpers,
+    setOf,
+    setText,
+    questionOf,
     roundStep,
     waitForStep,
     startRound,

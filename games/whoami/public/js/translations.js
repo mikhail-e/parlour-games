@@ -154,7 +154,7 @@ const translations = {
         needPlayers: "Нужно минимум 2 игрока для начала",
         assignCharacters: "Назначьте персонажей всем игрокам перед началом!",
         readyToPlay: "Готово к игре!",
-        gameInProgress: "Игра идёт — нажмите на свой конверт, чтобы раскрыть персонажа!",
+        gameInProgress: "Игра идёт: нажмите на свой конверт, чтобы раскрыть персонажа!",
         
         // Buttons
         gameControls: "Управление игрой",
@@ -229,8 +229,8 @@ const translations = {
         declinePlayer: "Отказать",
         playerAdmittedNotification: "{playerName} теперь в игре",
         envelopeEmpty: "пока пусто",
-        noCharacterYet: "Персонажа пока нет — его даст другой игрок",
-        waitingForCharacter: "Игра идёт — ждём, пока вам дадут персонажа",
+        noCharacterYet: "Персонажа пока нет: его даст другой игрок",
+        waitingForCharacter: "Игра идёт. Ждём, пока вам дадут персонажа",
 
         waiting: "Ожидание присоединения игроков...",
 

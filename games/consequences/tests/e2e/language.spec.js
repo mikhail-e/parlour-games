@@ -5,6 +5,7 @@
 // the kit's (landing.spec.js checks the game's title and subtitle)
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startRound, answer, answerStep, writeToReading, showStories, seatRow,
+    setOf, questionOf,
 } = require('./helpers');
 
 // Anna plays in Russian, Boris in English
@@ -22,15 +23,18 @@ test('the switch draws the writing again in the other language, and the answer b
     await answerStep([anna, boris], 0);
     await answer(boris, 'Boris 2');
     await anna.page.fill('#answerText', 'Полответа');
-    await expect(anna.page.locator('#questionText')).toHaveText(text('question2', 'ru'));
+    await expect(anna.page.locator('#questionText')).toHaveText(await questionOf(anna.page, 2, 'ru'));
+    // The round's set, read in Russian: the English below is the same set's
+    const set = await setOf(anna.page, 'ru');
 
     await anna.page.locator('.lang-toggle-btn').click();
 
+    await expect(anna.page.locator('#setTitle')).toHaveText(text(`${set}Name`, 'en'));
     await expect(anna.page.locator('#stepLabel')).toHaveText(text('stepOf', 'en', { step: 2, count: 8 }));
     await expect(anna.page.locator('#questionNumber')).toHaveText(text('questionOf', 'en', { number: 2, count: 8 }));
-    await expect(anna.page.locator('#questionText')).toHaveText(text('question2', 'en'));
-    await expect(anna.page.locator('#folds .fold')).toContainText(`1. ${text('question1', 'en')}`);
-    await expect(anna.page.locator('#seatsTitle')).toHaveText(text('tellingTheStory', 'en'));
+    await expect(anna.page.locator('#questionText')).toHaveText(text(`${set}Question2`, 'en'));
+    await expect(anna.page.locator('#folds .fold')).toContainText(`1. ${text(`${set}Question1`, 'en')}`);
+    await expect(anna.page.locator('#seatsTitle')).toHaveText(text(`${set}TellingTheStory`, 'en'));
     await expect(seatRow(anna.page, 'Anna')).toContainText(`Anna (${text('you', 'en')})`);
     await expect(seatRow(anna.page, 'Anna')).toContainText(text('statusWriting', 'en'));
     await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusDone', 'en'));
@@ -39,7 +43,7 @@ test('the switch draws the writing again in the other language, and the answer b
 
     // The choice is remembered
     await anna.page.reload();
-    await expect(anna.page.locator('#questionText')).toHaveText(text('question2', 'en'));
+    await expect(anna.page.locator('#questionText')).toHaveText(text(`${set}Question2`, 'en'));
 });
 
 test('the switch draws the reading and every story again in the other language', async ({ newPlayer }) => {
@@ -47,10 +51,11 @@ test('the switch draws the reading and every story again in the other language',
     await startRound([anna, boris]);
     await writeToReading([anna, boris]);
     await expect(anna.page.locator('#readingCard')).toContainText(text('tapToOpen', 'ru'));
+    const set = await setOf(anna.page, 'ru');
 
     await anna.page.locator('.lang-toggle-btn').click();
 
-    await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText(text('storiesReady', 'en'));
+    await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText(text(`${set}StoriesReady`, 'en'));
     await expect(anna.page.locator('#readingCard .closed-sheet')).toContainText(text('tapToOpen', 'en'));
     await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 0, count: 2 }));
     await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusClosed', 'en'));
@@ -60,7 +65,8 @@ test('the switch draws the reading and every story again in the other language',
     await boris.page.locator('#readingCard .closed-sheet').click();
     await showStories(anna);
     await anna.page.locator('.lang-toggle-btn').click();
-    await expect(anna.page.locator('#storyList .story-head').first()).toContainText(text('storyTitle1', 'ru'));
-    await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'ru'));
-    await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text('question1', 'en'));
+    await expect(anna.page.locator('#storiesTitle')).toHaveText(text(`${set}AllStories`, 'ru'));
+    await expect(anna.page.locator('#storyList .story-head').first()).toContainText(text(`${set}StoryTitle1`, 'ru'));
+    await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text(`${set}Question1`, 'ru'));
+    await expect(anna.page.locator('#storyList .story').first()).not.toContainText(text(`${set}Question1`, 'en'));
 });

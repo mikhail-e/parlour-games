@@ -15,7 +15,7 @@ Key facts:
 - No account or payment required
 
 Note: the site's HTML is a form to join or create a room; it does not explain
-the game — this file is the canonical plain-text description of the site.
+the game; this file is the canonical plain-text description of the site.
 
 ## Links
 

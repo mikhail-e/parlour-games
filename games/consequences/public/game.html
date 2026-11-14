@@ -93,16 +93,18 @@
              the table), the reading (the sheets, the table), every story -->
         <div class="game-card mb-3" id="inviteCard" hidden>
             <h6 class="sheet-title" data-i18n="inviteFriends">Invite Friends</h6>
-            <div class="row g-2 align-items-center">
-                <div class="col-md-6">
+            <!-- The link has a line of its own, the buttons share the next: a
+                 quarter of the sheet is too narrow for "Скопировано!" and its icon -->
+            <div class="row g-2">
+                <div class="col-12">
                     <input type="text" class="form-control" id="roomLink" readonly data-i18n-aria-label="shareLinkLabel" aria-label="Room link">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <button type="button" class="btn btn-outline-primary w-100" id="copyLink">
                         <span class="icon icon--copy" aria-hidden="true"></span><span data-i18n="copyLink">Copy Link</span>
                     </button>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <button type="button" class="btn btn-outline-primary w-100" id="inviteButton">
                         <span class="icon icon--export" aria-hidden="true"></span><span data-i18n="share">Share</span>
                     </button>
@@ -123,11 +125,14 @@
              absent player's they took. The form stays in the page while the
              table changes around it, so an answer being typed is never lost -->
         <div class="game-card" id="writingCard" hidden>
+            <!-- The sheet's title is the round's set of questions; an absent
+                 player's sheet the player took says whose it is under it -->
+            <h6 class="sheet-title" id="setTitle"></h6>
+            <h3 class="sheet-owner" id="writingTitle" hidden></h3>
             <div class="step-line">
                 <span id="stepLabel"></span>
                 <span class="step-marks" id="stepMarks" aria-hidden="true"></span>
             </div>
-            <h6 class="sheet-title" id="writingTitle" hidden></h6>
             <div class="sheet sheet--pleated">
                 <div id="folds"></div>
                 <div class="sheet__open">
@@ -172,7 +177,7 @@
 
         <!-- Every story, once the last sheet is open -->
         <div class="game-card" id="storiesCard" hidden>
-            <h6 class="sheet-title" data-i18n="allStories">Every story</h6>
+            <h6 class="sheet-title" id="storiesTitle"></h6>
             <div class="stories" id="storyList"></div>
             <div class="d-grid mt-4">
                 <button type="button" class="btn btn-primary btn-lg" id="anotherRound" data-i18n="anotherRound">Another round</button>
