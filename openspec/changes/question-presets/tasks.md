@@ -60,7 +60,7 @@
   - `translations.test.js` зелёный;
   - `landing.spec.js` зелёный;
   - `link-preview.spec.js` зелёный (карточка превью не меняется).
-- [ ] 5.2 Черновик `games/consequences/docs/question-presets.md` удалён: его таблицы — в спеке, тексты — в `translations.js`. Проверка — файла нет, ни один документ на него не ссылается (`grep -r question-presets.md`)
+- [x] 5.2 Черновик `games/consequences/docs/question-presets.md` удалён: его таблицы — в спеке, тексты — в `translations.js`. Проверка — файла нет, ни один документ на него не ссылается (`grep -r question-presets.md`)
 
 ## 6. Проверка целиком
 
