@@ -93,11 +93,11 @@
 - **THEN** на пятом шаге все отвечают на «Кто их застал?», на восьмом — на «Что из этого получилось?»
 
 ### Requirement: Набор «Он и она»
-Набор «Он и она» (He and She) SHALL состоять из вопросов: Он — какой и кто? / Она — какая и кто? / Где они встретились? / Во что он был одет? / Что он ей сказал? / Что она ему ответила? / Что из этого вышло? / Что сказал свет? — по-английски: He: what sort, and who? / She: what sort, and who? / Where did they meet? / What was he wearing? / What did he say to her? / What did she say to him? / And the consequence was? / And what did the world say?
+Набор «Он и она» (He and She) SHALL состоять из вопросов: Он: какой и кто? / Она: какая и кто? / Где они встретились? / Во что он был одет? / Что он ей сказал? / Что она ему ответила? / Что из этого вышло? / Что сказал свет? — по-английски: He: what sort, and who? / She: what sort, and who? / Where did they meet? / What was he wearing? / What did he say to her? / What did she say to him? / And the consequence was? / And what did the world say?
 
 #### Scenario: Вопросы «Он и она»
 - **WHEN** раунду выпал набор «Он и она»
-- **THEN** на первом шаге все отвечают на «Он — какой и кто?», на восьмом — на «Что сказал свет?»
+- **THEN** на первом шаге все отвечают на «Он: какой и кто?», на восьмом — на «Что сказал свет?»
 
 ### Requirement: Набор «Сказка»
 Набор «Сказка» (Fairy Tale) SHALL состоять из вопросов: Жили-были… кто? / Где они жили? / Чего им не хватало? / Кто им мешал? / Что они сделали? / Кто им помог? / Чем всё кончилось? / Какой в этой сказке намёк? — по-английски: Once upon a time there lived… who? / Where did they live? / What were they missing? / Who stood in their way? / What did they do? / Who came to help? / How did it all end? / What is the lesson of the tale?
