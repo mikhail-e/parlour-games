@@ -133,7 +133,7 @@ const KIT_TEXTS = {
         // The 404 page: the frame answers every address nothing else does with
         // a game's 404.html (worker/http.js)
         notFoundTitle: "Страница не найдена",
-        notFoundText: "По этому адресу ничего нет. Игра — на главной странице.",
+        notFoundText: "По этому адресу ничего нет. Игра на главной странице.",
         openGame: "Открыть игру"
     }
 };
