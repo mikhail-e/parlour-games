@@ -4,15 +4,16 @@
 // (ghosts, an empty room) are in room-timers.spec.js, entering from the
 // landing page in landing.spec.js
 const {
-    test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
-    seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow, hideSocialWidgets, socialWidgetsHidden,
-    stubShare, expectCopyButtonsOnOneLine, questionOf,
+    test, expect, text, answerMessage, serverErrorText, createRoom, roomWith, waitForPlayers, waitForLanding, seedStorage,
+    startedRound, answer, answerStep, waitForStep, returnToRound, seatRow, hideSocialWidgets, socialWidgetsHidden,
+    stubShare, expectCopyButtonsOnOneLine, questionOf, listedNames,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
 
-// The names of the lobby's cards, in their order, without "(You)"
-const listedNames = page => page.locator('.player-name').evaluateAll(names =>
-    names.map(name => name.firstChild.textContent));
+// Leaving the lobby, in every tab, the last one out, and Copy Link: the kit's
+// tests (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').roomPageTests({ text });
+
 // The names of the round's table, in their order
 const seatedNames = page => page.locator('#seatList .seat-name').evaluateAll(names =>
     names.map(name => name.firstChild.textContent));
@@ -38,17 +39,6 @@ test("an ad blocker's list of social widgets hides nothing of the invitation: th
     const share = anna.page.getByRole('button', { name: text('share') });
     await expect(share).toBeVisible();
     await expect(share.locator('.icon')).toBeVisible();
-});
-
-test('Copy Link puts the room link on the clipboard', async ({ newPlayer }) => {
-    const anna = await newPlayer('Anna');
-    await anna.context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    const code = await createRoom(anna);
-
-    await anna.page.locator('#copyLink').click();
-
-    await expect(anna.page.locator('#copyLink')).toHaveText(text('copiedSuccess'));
-    expect(await anna.page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/game/${code}$`));
 });
 
 // Russian has the longer words. A computer's window from 768 px up (Bootstrap's
@@ -175,38 +165,3 @@ test('a player whose page goes is offline for the others, and comes back to thei
     await answerStep([anna, boris, back], 1);
 });
 
-test('leaving the lobby goes home with the code filled in, and the others see who left', async ({ newPlayer }) => {
-    const { players: [anna, boris], code } = await roomWith(newPlayer, ['Anna', 'Boris']);
-
-    await leaveGame(boris);
-
-    await expect(boris.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await expect(boris.page.locator('#roomCode')).toHaveValue(code);
-    await waitForPlayers(anna.page, 1);
-    await expect(anna.page.locator('.alert.position-fixed')).toContainText(
-        text('playerLeftNotification', 'en', { playerName: 'Boris' }));
-    await expect(anna.page.locator('.alert.position-fixed .icon--left')).toBeVisible();
-});
-
-test('Leave in one tab takes the player out of the room in every tab', async ({ newPlayer }) => {
-    const { players: [anna, boris], code } = await roomWith(newPlayer, ['Anna', 'Boris']);
-    const secondTab = { name: 'Anna', page: await anna.context.newPage() };
-    await joinRoom(secondTab, code);
-
-    await leaveGame(anna);
-
-    await expect(secondTab.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await waitForPlayers(boris.page, 1);
-});
-
-test('the last player to leave deletes the room', async ({ newPlayer }) => {
-    const { players: [anna, boris], code } = await roomWith(newPlayer, ['Anna', 'Boris']);
-
-    await leaveGame(boris);
-    await waitForPlayers(anna.page, 1);
-    await leaveGame(anna);
-
-    await expect(anna.page).toHaveURL(/\/$/);
-    await anna.page.goto(`/game/${code}`);
-    await expect(anna.page).toHaveURL(/\/\?error=room-not-found$/);
-});

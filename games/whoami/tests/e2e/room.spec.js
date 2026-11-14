@@ -2,24 +2,14 @@
 // the Start Game button
 const {
     test, expect, text, createRoom, joinRoom, playerCard, waitForPlayers, assignCharacter, countSentEvents, roomWith,
-    startGame, revealOwnCharacter, leaveGame, waitForLanding,
+    startGame, revealOwnCharacter, leaveGame, waitForLanding, listedNames,
 } = require('./helpers');
-
-// The names in the list, without the "(You)" label of the viewer's own card
-const listedNames = page => page.locator('.player-name').evaluateAll(names =>
-    names.map(name => name.firstChild.textContent));
 
 test('both players see both cards in join order', async ({ newPlayer }) => {
     const { players: [alice, bob] } = await roomWith(newPlayer, ['Alice', 'Bob']);
 
     expect(await listedNames(alice.page)).toEqual(['Alice', 'Bob']);
     expect(await listedNames(bob.page)).toEqual(['Alice', 'Bob']);
-});
-
-test('two players may have the same name', async ({ newPlayer }) => {
-    const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Sam', 'Sam']);
-
-    await expect(playerCard(alice.page, 'Sam')).toHaveCount(2);
 });
 
 test('no + on your own card', async ({ newPlayer }) => {

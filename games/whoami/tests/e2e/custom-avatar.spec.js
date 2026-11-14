@@ -1,7 +1,6 @@
 // A player's own photo as the avatar: upload, the grid, the card in the room
-const { test, expect, text, seedStorage, createRoom, joinRoom, playerCard, pngFile } = require('./helpers');
+const { test, expect, text, seedStorage, createRoom, joinRoom, playerCard, pngFile, avatarTiles } = require('./helpers');
 
-const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 const savedAvatar = page => page.evaluate(() => localStorage.getItem('whoami-player-avatar'));
 
 async function uploadPhoto(page, file = pngFile()) {
@@ -155,20 +154,6 @@ test('a saved photo comes back first on the next visit', async ({ newPlayer }) =
 
     await expect(avatarTiles(alice.page).first().locator('img')).toHaveAttribute('src', photo);
     await expect(avatarTiles(alice.page).first()).toHaveClass(/selected/);
-});
-
-test('both players see the photo on the card', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    await alice.page.goto('/');
-    await uploadPhoto(alice.page);
-
-    const code = await createRoom(alice);
-    await joinRoom(bob, code);
-
-    for (const page of [alice.page, bob.page]) {
-        await expect(playerCard(page, 'Alice').locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
-    }
 });
 
 test('a saved "photo" with HTML or javascript: is never rendered', async ({ newPlayer }) => {

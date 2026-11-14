@@ -60,17 +60,6 @@ test('without Web Share the link is copied', async ({ newPlayer }) => {
     await expect(alice.page.locator('#roomLink')).toHaveValue(new RegExp(`/game/${code}$`));
 });
 
-test('Copy Link puts the room link on the clipboard and confirms the copy', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    await allowClipboard(alice);
-    const code = await createRoom(alice);
-
-    await alice.page.locator('#copyLink').click();
-
-    await expect(alice.page.locator('#copyLink')).toHaveText(text('copiedSuccess'));
-    expect(await clipboardText(alice.page)).toMatch(new RegExp(`/game/${code}$`));
-});
-
 // A page the clipboard is closed to (one opened over plain http, as a phone on
 // the home network) copies the old way, by selecting the link field. Only
 // reading is allowed here, so the test can check what was copied

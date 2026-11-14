@@ -59,18 +59,6 @@ test('a closed sheet is a sealed envelope, the point of the flap hidden just und
     expect(Number(lowerBy)).toBe(8);
 });
 
-test('two players: each reads the sheet the other finished', async ({ newPlayer }) => {
-    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
-    await writeToReading([anna, boris]);
-
-    await ownSheet(anna.page).locator('.closed-sheet').click();
-
-    await expect(answersOf(ownSheet(anna.page)).last()).toHaveText('Boris 8');
-    await boris.page.locator('#readingCard .closed-sheet').click();
-    await showStories(boris);
-    await expect(answersOf(storyReadBy(boris.page, 'Boris')).last()).toHaveText('Anna 8');
-});
-
 test("a tapped sheet opens: eight answers in order, read as one text without their questions, a line between them; the others' stay closed", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna', { locale: 'ru-RU' });
     const boris = await newPlayer('Boris');

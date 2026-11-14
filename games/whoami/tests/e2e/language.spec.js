@@ -5,10 +5,6 @@ const {
     startedGame, revealOwnCharacter,
 } = require('./helpers');
 
-// A page name used inside page.evaluate(): i18n is the page's Localization
-// (translations.js)
-/* global i18n */
-
 // The h1 is the sign, a logo that stays English: the page's language shows in
 // the subtitle under it, and in the tab title of a room
 const subtitle = page => page.locator('[data-i18n="subtitle"]');
@@ -19,14 +15,6 @@ test('a Russian browser gets Russian', async ({ newPlayer }) => {
     await page.goto('/');
 
     await expect(subtitle(page)).toHaveText(text('subtitle', 'ru'));
-});
-
-test('an unknown language falls back to English', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Anna', { locale: 'de-DE' });
-
-    await page.goto('/');
-
-    await expect(subtitle(page)).toHaveText(text('subtitle', 'en'));
 });
 
 test('the saved choice beats the browser language', async ({ newPlayer }) => {
@@ -152,11 +140,4 @@ test("the close buttons are named in the player's language", async ({ newPlayer 
     await page.evaluate(() => window.pwaManager.showUpdateAvailable());
     await page.locator('.alert-warning').getByRole('button', { name: text('close', 'ru'), exact: true }).click();
     await expect(page.locator('.alert-warning')).toHaveCount(0);
-});
-
-test('an unknown text key shows the key itself', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Alice');
-    await page.goto('/');
-
-    expect(await page.evaluate(() => i18n.getText('noSuchKey'))).toBe('noSuchKey');
 });

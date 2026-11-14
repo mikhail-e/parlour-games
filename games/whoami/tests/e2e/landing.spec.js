@@ -1,7 +1,10 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, seedStorage, createRoom, joinRoom, waitForLanding } = require('./helpers');
+const { test, expect, text, seedStorage, waitForLanding, avatarTiles } = require('./helpers');
 
-const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
+// A room that is gone, the name and the avatar remembered, players of one
+// name, a photo: the kit's tests (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text });
+
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
 
 test('twelve avatars, the first one selected', async ({ newPlayer }) => {
@@ -153,37 +156,6 @@ test('a name longer than the limit is cut', async ({ newPlayer }) => {
     await page.locator('#playerName').pressSequentially('a'.repeat(200));
 
     await expect(page.locator('#playerName')).toHaveValue('a'.repeat(128));
-});
-
-test('the name and the avatar are remembered after creating a room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    await alice.page.goto('/');
-    const chosen = await avatarTiles(alice.page).nth(4).getAttribute('data-avatar');
-    await avatarTiles(alice.page).nth(4).click();
-
-    await createRoom(alice);
-    await alice.page.goto('/');
-
-    await expect(alice.page.locator('#playerName')).toHaveValue('Alice');
-    await expect(avatarTiles(alice.page).first()).toHaveAttribute('data-avatar', chosen);
-    await expect(avatarTiles(alice.page).first()).toHaveClass(/selected/);
-});
-
-test('the name and the avatar are remembered after joining a room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-    await bob.page.goto(`/game/${code}`);
-    await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    const chosen = await avatarTiles(bob.page).nth(7).getAttribute('data-avatar');
-    await avatarTiles(bob.page).nth(7).click();
-
-    await joinRoom(bob, code);
-    await bob.page.goto('/');
-
-    await expect(bob.page.locator('#playerName')).toHaveValue('Bob');
-    await expect(avatarTiles(bob.page).first()).toHaveAttribute('data-avatar', chosen);
-    await expect(avatarTiles(bob.page).first()).toHaveClass(/selected/);
 });
 
 test('a tampered saved avatar is ignored', async ({ newPlayer }) => {

@@ -8,6 +8,7 @@
 // passes them on with its own, and the texts of its pages (pageTexts).
 const path = require('path');
 const zlib = require('zlib');
+const { AxeBuilder } = require('@axe-core/playwright');
 const { expect } = require('./e2e');
 // translations.js and the kit's i18n.js run apart from a page
 const { loadPageScript } = require('./checks');
@@ -72,6 +73,12 @@ async function waitForPlayers(page, count, options = {}) {
     await expect(page.locator('.player-card')).toHaveCount(count, options);
 }
 
+// The names on the player cards, in their order, without the "(You)" of
+// one's own card: the first text of each .player-name
+function listedNames(page) {
+    return page.locator('.player-name').evaluateAll(names => names.map(name => name.firstChild.textContent));
+}
+
 // A room of these players, every one of them on the room page and seeing all
 async function roomWith(newPlayer, names) {
     const players = await Promise.all(names.map(name => newPlayer(name)));
@@ -86,7 +93,12 @@ async function roomWith(newPlayer, names) {
 // way and reloads the page. The avatar grid is filled by the same setup, so 12
 // tiles mean the buttons are ready - the moment a person would see the page
 async function waitForLanding(page) {
-    await expect(page.locator('#avatarSelector .avatar-option')).toHaveCount(12);
+    await expect(avatarTiles(page)).toHaveCount(12);
+}
+
+// The avatar tiles of the landing page's form, the chosen one .selected
+function avatarTiles(page) {
+    return page.locator('#avatarSelector .avatar-option');
 }
 
 // Create a room from the landing page and return its code. A player already on
@@ -318,6 +330,35 @@ async function iconsOf(page) {
     return { count: masks.length, broken: masks.filter(mask => !mask.startsWith('url("data:image/svg+xml')) };
 }
 
+const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+// What axe finds against WCAG 2.1 AA on the page, or inside the part `only`
+// names: "rule: element, element" for each violation, a readable diff when a
+// test fails. The colors are measured as they end up, not half-way through a
+// CSS transition (a confirm button under the finger that opened its window
+// turns red, and some buttons animate that even with reduced motion): the
+// transitions are switched off for the scan by a rule put into the game's
+// style.css, which a page on the kit loads last. An added <style> tag would be
+// inline code the Content Security Policy blocks. axe cannot measure contrast
+// on a gradient (it reports such text as "incomplete", not as a violation)
+async function axeViolations(page, only) {
+    await page.evaluate(() => {
+        const sheet = [...document.styleSheets].find(each => each.href && each.href.endsWith('/css/style.css'));
+        sheet.insertRule('*, *::before, *::after { transition: none !important; }', sheet.cssRules.length);
+    });
+    let builder = new AxeBuilder({ page }).withTags(WCAG_21_AA);
+    if (only) builder = builder.include(only);
+    const result = await builder.analyze();
+    return result.violations.map(violation =>
+        `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`);
+}
+
+// A pause, for the tests of the room's timers only: time is what they test.
+// Every other test waits for a condition (docs/testing.md, rule 3)
+function sleep(ms) {
+    return new Promise(resolve => { setTimeout(resolve, ms); });
+}
+
 module.exports = {
     pageTexts,
     iconsOf,
@@ -327,8 +368,10 @@ module.exports = {
     seedStorage,
     playerCard,
     waitForPlayers,
+    listedNames,
     roomWith,
     waitForLanding,
+    avatarTiles,
     createRoom,
     joinRoom,
     askToJoin,
@@ -340,4 +383,6 @@ module.exports = {
     holdRoomJoin,
     releaseRoomJoin,
     countSentEvents,
+    axeViolations,
+    sleep,
 };
