@@ -493,6 +493,7 @@ const serverErrors = {
         'The stories are not ready yet': "Истории ещё не готовы",
         'Another player is reading your sheet': "Ваш лист читает другой игрок",
         'This sheet is already open': "Этот лист уже открыт",
+        'No such round': "Такого раунда нет",
     }
 };
 

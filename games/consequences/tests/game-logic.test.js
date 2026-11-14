@@ -741,11 +741,11 @@ describe('the room\'s history', () => {
 
     test('a page asks for a round of the history by its number, 1 to the last', () => {
         const { games, game, ids } = readingOf(2);
-        expect(gameLogic.historyNumberError(game, 1)).toBe('No such round');
+        expect(gameLogic.isHistoryNumber(game, 1)).toBe(false);
         gameLogic.newRound(games, CODE, ids[0]);
-        expect(gameLogic.historyNumberError(game, 1)).toBeNull();
+        expect(gameLogic.isHistoryNumber(game, 1)).toBe(true);
         for (const wrong of [0, 2, -1, 1.5, '1', null, undefined]) {
-            expect(gameLogic.historyNumberError(game, wrong)).toBe('No such round');
+            expect(gameLogic.isHistoryNumber(game, wrong)).toBe(false);
         }
     });
 

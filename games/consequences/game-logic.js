@@ -355,10 +355,9 @@ function historyRoundOf(game) {
     };
 }
 
-// What a page may ask of the history: a round's number, 1 to the last.
-// Returns the error to answer with, or null
-function historyNumberError(game, number) {
-    return Number.isInteger(number) && number >= 1 && number <= historySetsOf(game).length ? null : 'No such round';
+// What a page may ask of the history: a round's number, 1 to the last
+function isHistoryNumber(game, number) {
+    return Number.isInteger(number) && number >= 1 && number <= historySetsOf(game).length;
 }
 
 // "New round" in the middle of one, or "Another round" after every story:
@@ -461,7 +460,7 @@ module.exports = {
     allStories,
     newRound,
     historySetsOf,
-    historyNumberError,
+    isHistoryNumber,
     roundView,
     sheetAt,
     checkAnswer,

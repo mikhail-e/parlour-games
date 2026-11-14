@@ -12,7 +12,7 @@ const { test, expect } = require('@parlour-games/room-kit/e2e');
 const { pageTexts, ...kitHelpers } = require('@parlour-games/room-kit/e2e-helpers');
 // The sets a round draws from: their texts are the pages' (translations.js)
 const { QUESTION_SETS } = require('../../game-logic');
-/* global currentGame -- the room page's picture of the game (the kit's room-page.js), inside page.evaluate() */
+/* global currentGame, sendMove -- the room page's picture of the game and its move (the kit's room-page.js), inside page.evaluate() */
 
 const { roomWith, waitForLanding } = kitHelpers;
 
@@ -134,6 +134,33 @@ function seatRow(page, name) {
     });
 }
 
+// What the room sends: a player whose page keeps every message its room
+// sockets receive (secret.spec.js, history.spec.js read them)
+async function listeningPlayer(newPlayer, name) {
+    const player = await newPlayer(name);
+    player.received = [];
+    player.page.on('websocket', socket => socket.on('framereceived', frame => {
+        if (typeof frame.payload === 'string') player.received.push(frame.payload);
+    }));
+    return player;
+}
+
+// Every message of this event a listening player's page received, as data
+function messagesOf(player, event) {
+    // A page's ping on a long run is answered with a bare "pong"
+    return player.received.filter(payload => payload !== 'pong').map(payload => JSON.parse(payload))
+        .filter(message => message.event === event).map(message => message.data);
+}
+
+// The latest message of this event, or null
+function latestMessage(player, event) {
+    const messages = messagesOf(player, event);
+    return messages.length ? messages[messages.length - 1] : null;
+}
+
+// A move sent the way the room page sends it (the kit's sendMove), without a button
+const sendRoomMove = (player, event, data) => player.page.evaluate(([name, payload]) => sendMove(name, payload), [event, data]);
+
 module.exports = {
     test,
     expect,
@@ -155,4 +182,8 @@ module.exports = {
     confirmAnotherRound,
     returnToRound,
     seatRow,
+    listeningPlayer,
+    messagesOf,
+    latestMessage,
+    sendRoomMove,
 };
