@@ -7,7 +7,7 @@
 
 ## 2. Талон на листе чтения
 
-- [x] 2.1 Тексты `intermission` и `coffeeAsk` на двух языках по таблице design.md («Тексты»), без длинного тире. Проверка: `npx jest tests/translations.test.js` в папке игры зелёный
+- [x] 2.1 Тексты `intermission`, `coffeeAskWhy` и `coffeeAskHow` на двух языках по таблице design.md («Тексты»), без длинного тире; фраза просьбы своей строкой, длинная фраза делится на ровные строки (владелец увидел на компьютере одно слово на второй строке). Проверка: `npx jest tests/translations.test.js` в папке игры зелёный
 - [x] 2.2 Талон уходит из окна «Все истории» (design, «Талон рисует `renderReading`»):
   - `#coffeeCoupon` и его комментарий уходят из `#storiesEnd` в `game.html`;
   - `storiesWindow.coffee`, решение в `openStoriesWindow`, строка в `renderStoriesWindow` и обработчик `#coffeeLink` в `setUpRoomGame` уходят из `game-room.js`;

@@ -64,7 +64,7 @@ test('once every sheet is open, the reading sheet holds the coupon under Another
         const { page } = player;
         await expect(coupon(page)).toBeVisible();
         await expect(coupon(page).locator('.coffee-coupon__title')).toHaveText(text('intermission', lang));
-        await expect(coupon(page).locator('.coffee-coupon__text')).toHaveText(text('coffeeAsk', lang));
+        await expect(coupon(page).locator('.coffee-coupon__text')).toHaveText(`${text('coffeeAskWhy', lang)} ${text('coffeeAskHow', lang)}`);
         await expect(coffeeLink(page)).toHaveAttribute('href', COFFEE_PAGE);
         await expect(coffeeLink(page)).toHaveAttribute('target', '_blank');
         await expect(coffeeLink(page)).toHaveAttribute('rel', /\bnoopener\b/);

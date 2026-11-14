@@ -481,7 +481,11 @@ function coffeeCoupon() {
     main.append(cup, 'Buy me a coffee');
     link.append(main);
     link.addEventListener('click', () => AppStorage.set(COFFEE_ROOM_KEY, currentGame.id));
-    coupon.append(element('p', 'coffee-coupon__title', say('intermission')), element('p', 'coffee-coupon__text', say('coffeeAsk')), link);
+    // The ask in two phrases, a line each: a line never breaks in the middle
+    // of a phrase while the whole phrase fits on it
+    const ask = element('p', 'coffee-coupon__text');
+    ask.append(element('span', 'coffee-coupon__line', say('coffeeAskWhy')), ' ', element('span', 'coffee-coupon__line', say('coffeeAskHow')));
+    coupon.append(element('p', 'coffee-coupon__title', say('intermission')), ask, link);
     return coupon;
 }
 

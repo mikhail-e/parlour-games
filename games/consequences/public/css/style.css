@@ -703,6 +703,14 @@
   line-height: 1.35;
 }
 
+/* A phrase of the ask on a line of its own; a phrase too long for one line
+   (a phone) breaks into lines of a length, so no word hangs alone on the last
+   (a browser without text-wrap breaks it as before) */
+.coffee-coupon__line {
+  display: block;
+  text-wrap: balance;
+}
+
 /* The kit's plate on one line: the coupon's title stands for its
    «Intermission», so only its main line, smaller and with a thinner frame */
 .coffee-coupon .bmc-button {
