@@ -198,6 +198,10 @@ function renderRoom() {
     // Every sheet open: «Another round» on the reading sheet takes the place of «New round»
     const allRead = reading && Boolean(round.stories);
 
+    // The header: the sign in the lobby, the valance with the name and the
+    // code while a round is on (style.css). A newcomer waiting for the next
+    // round is never drawn here, so they keep the sign
+    document.body.classList.toggle('in-round', Boolean(round));
     showCard('inviteCard', !round);
     showCard('playersCard', !round);
     showCard('roundsCard', !round && historySets().length > 0);

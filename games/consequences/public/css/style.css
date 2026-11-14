@@ -45,6 +45,127 @@
   font-weight: 600;
 }
 
+/* ===== The valance ===== */
+
+/* While a round is on (body.in-round, game-room.js) the sign and the ticket
+   give their place to the sheet: a valance across the top of the screen, the
+   stage's upper drape, with the name and the room code under it (the owner's
+   pick from a page of variants, the code under the name on every screen).
+   The name is the h1's text (.brand-name), the code the kit's ticket
+   repainted, so the page has one #roomCode, filled by the kit */
+:root {
+  --valance-top: #0d281c;     /* velvet darker than the curtain */
+  --valance-bottom: #12392a;
+  --valance-gold: #e5c56f;    /* the name */
+  --valance-cord: #c9a24a;    /* the braid along the scalloped hem */
+}
+
+/* The name as text is the valance's only: in the lobby the sign is the h1 */
+.brand-name {
+  display: none;
+}
+
+body.in-round .brand-sign {
+  display: none;
+}
+
+/* The ribbon runs from edge to edge of the window, out of the .container and
+   over the body's padding at the top. 100vw counts a scrollbar that takes
+   room (Windows, a Mac set to show them): the body's overflow, which the
+   browser gives the window, cuts that much off instead of scrolling sideways */
+body.in-round {
+  overflow-x: hidden;
+}
+
+body.in-round .room-head {
+  position: relative;
+  width: 100vw;
+  margin-top: -20px;
+  margin-left: calc(50% - 50vw);
+  padding: 12px 16px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .28) 0, rgba(0, 0, 0, 0) 22px, rgba(255, 255, 255, .06) 34px, rgba(0, 0, 0, 0) 46px, rgba(0, 0, 0, .28) 68px),
+    linear-gradient(180deg, var(--valance-top), var(--valance-bottom));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .45);
+}
+
+/* The scalloped hem: half circles of the velvet in a gold ring, under the
+   ribbon's lower edge */
+body.in-round .room-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -11px;
+  height: 12px;
+  background: radial-gradient(circle at 17px -6px, var(--valance-bottom) 0 15px, var(--valance-cord) 15px 17px, transparent 17.5px) 0 0 / 34px 12px repeat-x;
+}
+
+body.in-round .brand {
+  margin: 0;
+}
+
+/* Capitals by the style: a screen reader reads a word, not its letters */
+body.in-round .brand-name {
+  display: block;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--valance-gold);
+  white-space: nowrap;
+}
+
+/* The ticket as a line under the name: no paper, no dashed edge */
+body.in-round .room-ticket {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: .4em;
+  margin: 4px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  color: var(--on-page-soft);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  white-space: nowrap;
+}
+
+body.in-round .room-ticket #roomCode {
+  color: var(--on-page);
+  font-size: .95rem;
+  letter-spacing: .18em;
+}
+
+/* On a phone the kit's .container has padding at the top too */
+@media (max-width: 768px) {
+  body.in-round .room-head {
+    margin-top: -30px;
+  }
+}
+
+@media (min-width: 768px) {
+  body.in-round .room-head {
+    padding: 14px 16px;
+  }
+
+  body.in-round .brand-name {
+    font-size: 32px;
+  }
+
+  body.in-round .room-ticket {
+    font-size: .8rem;
+  }
+
+  body.in-round .room-ticket #roomCode {
+    font-size: 1.1rem;
+  }
+}
+
 /* ===== The round ===== */
 
 /* The sheet's paper and its pleats: lighter than the kit's cards, so the
