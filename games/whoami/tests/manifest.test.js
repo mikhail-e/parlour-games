@@ -47,9 +47,13 @@ describe('PWA manifest', () => {
     });
 
     // The app's color (the top of the curtain) is written in four places: the
-    // three pages' theme-color and the manifest
-    test('the pages and the manifest name the same app color', () => {
-        expect(manifest.theme_color).toBe('#7e1a13');
+    // three pages' theme-color and the manifest. whoami keeps the kit's red
+    // curtain: its style.css sets no --curtain-top of its own
+    test('the pages and the manifest name the same app color, the curtain\'s top', () => {
+        const style = fs.readFileSync(path.join(__dirname, '..', 'public', 'css', 'style.css'), 'utf8');
+        const playbill = fs.readFileSync(require.resolve('@parlour-games/room-kit/public/kit/css/playbill.css'), 'utf8');
+        expect(style).not.toContain('--curtain-top');
+        expect(manifest.theme_color).toBe(playbill.match(/--curtain-top:\s*(#[0-9a-f]{6})/)[1]);
         expect(manifest.background_color).toBe(manifest.theme_color);
         for (const page of ['index.html', 'game.html', '404.html']) {
             const html = fs.readFileSync(path.join(__dirname, '..', 'public', page), 'utf8');
