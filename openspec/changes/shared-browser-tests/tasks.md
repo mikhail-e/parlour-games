@@ -6,9 +6,9 @@
 
 ## 2. Общие помощники в `e2e-helpers.js`
 
-- [ ] 2.1 `packages/room-kit/e2e-helpers.js` (design, решение 6): `listedNames(page)`, `avatarTiles(page)`, `axeViolations(page, only)`, `sleep(ms)`, с комментариями, для чего каждый; `tests/e2e/helpers.js` обеих игр передаёт их дальше. Проверка: `npm run lint` в корне зелёный
-- [ ] 2.2 Игры берут помощники ядра вместо своих копий: `listedNames` (whoami `room.spec.js`, `leave-and-return.spec.js`; Consequences `room.spec.js`), `avatarTiles` (whoami `landing.spec.js`, `custom-avatar.spec.js`; Consequences `landing.spec.js`), `violations` → `axeViolations` (`accessibility.spec.js` обеих игр), `sleep` (`room-timers.spec.js` обеих игр). Проверка: `grep` по `tests/e2e/` игр не находит своих определений; эти файлы зелёные в обоих проектах (`npx playwright test <файлы>` в папке каждой игры)
-- [ ] 2.3 `packages/room-kit/docs/testing.md`, таблица «Помощники ядра»: четыре строки; у `sleep` — только тестам таймеров комнаты. Проверка: сверка с кодом `e2e-helpers.js`
+- [x] 2.1 `packages/room-kit/e2e-helpers.js` (design, решение 6): `listedNames(page)`, `avatarTiles(page)`, `axeViolations(page, only)`, `sleep(ms)`, с комментариями, для чего каждый; `tests/e2e/helpers.js` обеих игр передаёт их дальше. Проверка: `npm run lint` в корне зелёный
+- [x] 2.2 Игры берут помощники ядра вместо своих копий: `listedNames` (whoami `room.spec.js`, `leave-and-return.spec.js`; Consequences `room.spec.js`), `avatarTiles` (whoami `landing.spec.js`, `custom-avatar.spec.js`; Consequences `landing.spec.js`), `violations` → `axeViolations` (`accessibility.spec.js` обеих игр), `sleep` (`room-timers.spec.js` обеих игр). Проверка: `grep` по `tests/e2e/` игр не находит своих определений; эти файлы зелёные в обоих проектах (`npx playwright test <файлы>` в папке каждой игры)
+- [x] 2.3 `packages/room-kit/docs/testing.md`, таблица «Помощники ядра»: четыре строки; у `sleep` — только тестам таймеров комнаты. Проверка: сверка с кодом `e2e-helpers.js`
 
 ## 3. Общие тесты ядра
 

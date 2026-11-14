@@ -2,13 +2,11 @@
 // one player
 const {
     test, expect, text, seedStorage, createRoom, joinRoom, playerCard, waitForPlayers, startedGame, leaveGame,
-    holdRoomJoin, releaseRoomJoin, roomWith,
+    holdRoomJoin, releaseRoomJoin, roomWith, listedNames,
 } = require('./helpers');
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const storedPlayerId = page => page.evaluate(() => localStorage.getItem('playerId'));
-const listedNames = page => page.locator('.player-name').evaluateAll(names =>
-    names.map(name => name.firstChild.textContent));
 
 test('leaving goes home with the code and the name filled in', async ({ newPlayer }) => {
     const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);

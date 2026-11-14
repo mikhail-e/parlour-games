@@ -1,7 +1,6 @@
 // A player's own photo as the avatar: upload, the grid, the card in the room
-const { test, expect, text, seedStorage, createRoom, joinRoom, playerCard, pngFile } = require('./helpers');
+const { test, expect, text, seedStorage, createRoom, joinRoom, playerCard, pngFile, avatarTiles } = require('./helpers');
 
-const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 const savedAvatar = page => page.evaluate(() => localStorage.getItem('whoami-player-avatar'));
 
 async function uploadPhoto(page, file = pngFile()) {

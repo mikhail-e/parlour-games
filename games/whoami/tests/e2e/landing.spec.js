@@ -1,7 +1,6 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, seedStorage, createRoom, joinRoom, waitForLanding } = require('./helpers');
+const { test, expect, text, seedStorage, createRoom, joinRoom, waitForLanding, avatarTiles } = require('./helpers');
 
-const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
 
 test('twelve avatars, the first one selected', async ({ newPlayer }) => {

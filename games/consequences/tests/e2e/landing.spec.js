@@ -2,9 +2,7 @@
 // sign, creating a room, joining by its code or its link, the name and the
 // avatar, a full room. The form is the kit's landing.js on this page's markup
 const crypto = require('crypto');
-const { test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForLanding, waitForPlayers, playerCard, pngFile } = require('./helpers');
-
-const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
+const { test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForLanding, waitForPlayers, playerCard, pngFile, avatarTiles } = require('./helpers');
 
 test('the sign is one picture named Consequences, English on a Russian page too', async ({ newPlayer }) => {
     const { page } = await newPlayer('Аня', { locale: 'ru-RU' });

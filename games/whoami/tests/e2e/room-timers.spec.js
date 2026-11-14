@@ -2,13 +2,12 @@
 // empty-room time (two hours); a player whose page is gone leaves after the
 // ghost time (an hour) - but only while somebody plays. These run on the local
 // server whose times are seconds (playwright.config.js)
-const { test, expect, createRoom, joinRoom, waitForPlayers, roomWith } = require('./helpers');
+const { test, expect, createRoom, joinRoom, waitForPlayers, roomWith, sleep } = require('./helpers');
 
 test.skip(!!process.env.BASE_URL, 'needs the local server with short timers');
 test.skip(({ isMobile }) => isMobile, "the room's timers: one browser is enough");
 test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL });
 
-const sleep = ms => new Promise(resolve => { setTimeout(resolve, ms); });
 // Longer than the ghost time of the fast server, the room's next timer included
 const GHOST_WAIT = { timeout: 10_000 };
 

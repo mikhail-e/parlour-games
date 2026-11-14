@@ -4,14 +4,13 @@
 // game's own: the pause after a step's last answer. These run on the local
 // server whose times are seconds (playwright.config.js)
 const {
-    test, expect, text, createRoom, joinRoom, waitForPlayers, roomWith, startedRound, seatRow, answer, roundStep, waitForStep, questionOf,
+    test, expect, text, createRoom, joinRoom, waitForPlayers, roomWith, startedRound, seatRow, answer, roundStep, waitForStep, questionOf, sleep,
 } = require('./helpers');
 
 test.skip(!!process.env.BASE_URL, 'needs the local server with short timers');
 test.skip(({ isMobile }) => isMobile, "the room's timers: one browser is enough");
 test.use({ baseURL: process.env.E2E_FAST_TIMERS_URL });
 
-const sleep = ms => new Promise(resolve => { setTimeout(resolve, ms); });
 // Longer than the ghost time of the fast server, the room's next timer included
 const GHOST_WAIT = { timeout: 10_000 };
 // Longer than the fast server's pause after a step's last answer

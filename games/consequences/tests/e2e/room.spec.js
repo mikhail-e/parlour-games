@@ -6,13 +6,10 @@
 const {
     test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
     seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow, hideSocialWidgets, socialWidgetsHidden,
-    stubShare, expectCopyButtonsOnOneLine, questionOf,
+    stubShare, expectCopyButtonsOnOneLine, questionOf, listedNames,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
 
-// The names of the lobby's cards, in their order, without "(You)"
-const listedNames = page => page.locator('.player-name').evaluateAll(names =>
-    names.map(name => name.firstChild.textContent));
 // The names of the round's table, in their order
 const seatedNames = page => page.locator('#seatList .seat-name').evaluateAll(names =>
     names.map(name => name.firstChild.textContent));

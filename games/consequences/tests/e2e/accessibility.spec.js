@@ -1,31 +1,11 @@
 // WCAG 2.1 AA checks with axe on every screen and window of the game.
 // axe cannot measure contrast on the page's gradient background (it reports
 // such text as "incomplete", not as a violation): that needs a pixel check
-const { AxeBuilder } = require('@axe-core/playwright');
 const {
     test, expect, text, PAGE_STATUS_404, createRoom, roomWith, askToJoin, startedRound, answer, writeToReading,
-    showStories, confirmAnotherRound, seatRow, waitForLanding,
+    showStories, confirmAnotherRound, seatRow, waitForLanding, axeViolations,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
-
-const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-
-// "rule: element, element" for each violation - a readable diff when it fails
-async function violations(page, only) {
-    // Measure the colors as they end up, not half-way through a CSS
-    // transition (a confirm button under the finger that opened its window
-    // turns red). An added <style> tag is inline code the Content Security
-    // Policy blocks; a rule put into the page's own stylesheet is allowed
-    await page.evaluate(() => {
-        const sheet = [...document.styleSheets].find(each => each.href && each.href.endsWith('/css/style.css'));
-        sheet.insertRule('*, *::before, *::after { transition: none !important; }', sheet.cssRules.length);
-    });
-    let builder = new AxeBuilder({ page }).withTags(WCAG_21_AA);
-    if (only) builder = builder.include(only);
-    const result = await builder.analyze();
-    return result.violations.map(violation =>
-        `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`);
-}
 
 test('the message window', async ({ newPlayer }) => {
     const { page } = await newPlayer('Anna');
@@ -34,7 +14,7 @@ test('the message window', async ({ newPlayer }) => {
     await page.evaluate(() => { showMessage('A message'); });
     await expect(page.getByRole('dialog', { name: 'A message' })).toBeVisible();
 
-    expect(await violations(page, '.message-window')).toEqual([]);
+    expect(await axeViolations(page, '.message-window')).toEqual([]);
 });
 
 test('the landing page', async ({ newPlayer }) => {
@@ -42,7 +22,7 @@ test('the landing page', async ({ newPlayer }) => {
     await page.goto('/');
     await expect(page.locator('#avatarSelector .avatar-option')).toHaveCount(12);
 
-    expect(await violations(page)).toEqual([]);
+    expect(await axeViolations(page)).toEqual([]);
 });
 
 // A room link opens the landing page with a notification ("Ready to join")
@@ -51,7 +31,7 @@ test('the landing page from a room link', async ({ newPlayer }) => {
     await page.goto('/?join=ZZZZZZ');
     await expect(page.locator('.alert-info')).toContainText(text('readyToJoin'));
 
-    expect(await violations(page)).toEqual([]);
+    expect(await axeViolations(page)).toEqual([]);
 });
 
 test('the page-not-found page', async ({ newPlayer }) => {
@@ -60,7 +40,7 @@ test('the page-not-found page', async ({ newPlayer }) => {
     await anna.page.goto('/no-such/page/here');
     await expect(anna.page.getByRole('heading', { name: text('notFoundTitle') })).toBeVisible();
 
-    expect(await violations(anna.page)).toEqual([]);
+    expect(await axeViolations(anna.page)).toEqual([]);
 });
 
 test('the lobby of one player, Start off', async ({ newPlayer }) => {
@@ -68,20 +48,20 @@ test('the lobby of one player, Start off', async ({ newPlayer }) => {
     await createRoom(anna);
     await expect(anna.page.locator('#startRound')).toBeDisabled();
 
-    expect(await violations(anna.page)).toEqual([]);
+    expect(await axeViolations(anna.page)).toEqual([]);
 });
 
 test('the lobby of two', async ({ newPlayer }) => {
     const { players: [anna] } = await roomWith(newPlayer, ['Anna', 'Boris']);
 
-    expect(await violations(anna.page)).toEqual([]);
+    expect(await axeViolations(anna.page)).toEqual([]);
 });
 
 test('the writing: the question and the answer field', async ({ newPlayer }) => {
     const { players: [anna] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await anna.page.fill('#answerText', 'A pirate grandmother');
 
-    expect(await violations(anna.page)).toEqual([]);
+    expect(await axeViolations(anna.page)).toEqual([]);
 });
 
 test('the writing: the answer folded, a player away, Answer for', async ({ newPlayer }) => {
@@ -90,7 +70,7 @@ test('the writing: the answer folded, a player away, Answer for', async ({ newPl
     await answer(anna, 'Anna 1');
     await expect(seatRow(anna.page, 'Vera').getByRole('button')).toBeVisible();
 
-    expect(await violations(anna.page)).toEqual([]);
+    expect(await axeViolations(anna.page)).toEqual([]);
 });
 
 test('the reading: a closed sheet', async ({ newPlayer }) => {
@@ -98,7 +78,7 @@ test('the reading: a closed sheet', async ({ newPlayer }) => {
     await writeToReading(players);
     await expect(players[0].page.locator('#readingCard .closed-sheet')).toBeVisible();
 
-    expect(await violations(players[0].page)).toEqual([]);
+    expect(await axeViolations(players[0].page)).toEqual([]);
 });
 
 test('the reading: an open sheet', async ({ newPlayer }) => {
@@ -107,7 +87,7 @@ test('the reading: an open sheet', async ({ newPlayer }) => {
     await players[0].page.locator('#readingCard .closed-sheet').click();
     await expect(players[0].page.locator('#readingCard .story')).toBeVisible();
 
-    expect(await violations(players[0].page)).toEqual([]);
+    expect(await axeViolations(players[0].page)).toEqual([]);
 });
 
 test('the reading: every sheet open, the coffee coupon under Another round', async ({ newPlayer }) => {
@@ -116,7 +96,7 @@ test('the reading: every sheet open, the coffee coupon under Another round', asy
     for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
     await expect(players[0].page.locator('#coffeeCoupon')).toBeVisible();
 
-    expect(await violations(players[0].page)).toEqual([]);
+    expect(await axeViolations(players[0].page)).toEqual([]);
 });
 
 test('every story', async ({ newPlayer }) => {
@@ -125,7 +105,7 @@ test('every story', async ({ newPlayer }) => {
     for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
     await showStories(players[0]);
 
-    expect(await violations(players[0].page)).toEqual([]);
+    expect(await axeViolations(players[0].page)).toEqual([]);
 });
 
 test('every story: Another round asked inside the window', async ({ newPlayer }) => {
@@ -136,7 +116,7 @@ test('every story: Another round asked inside the window', async ({ newPlayer })
     await players[0].page.click('#windowAnotherRound');
     await expect(players[0].page.locator('#confirmWindowNewRound')).toBeVisible();
 
-    expect(await violations(players[0].page, '#storiesModal')).toEqual([]);
+    expect(await axeViolations(players[0].page, '#storiesModal')).toEqual([]);
 });
 
 // A round played: the lobby lists it, and its row opens the window on it
@@ -148,11 +128,11 @@ test('the rounds played in the lobby, and a round of them in the window', async 
     const { page } = players[0];
     await expect(page.locator('#roundsList .rounds-list__row')).toHaveCount(1);
 
-    expect(await violations(page)).toEqual([]);
+    expect(await axeViolations(page)).toEqual([]);
 
     await page.locator('#roundsList .rounds-list__row').click();
     await expect(page.locator('#storyList .sheet')).toHaveCount(2);
-    expect(await violations(page)).toEqual([]);
+    expect(await axeViolations(page)).toEqual([]);
 });
 
 // A newcomer to a round waits for the next one
@@ -161,7 +141,7 @@ test('the waiting screen', async ({ newPlayer }) => {
     const dasha = await newPlayer('Dasha');
     await askToJoin(dasha, code);
 
-    expect(await violations(dasha.page)).toEqual([]);
+    expect(await axeViolations(dasha.page)).toEqual([]);
 });
 
 test('the update banner', async ({ newPlayer }) => {
@@ -173,7 +153,7 @@ test('the update banner', async ({ newPlayer }) => {
     await page.evaluate(() => window.pwaManager.showUpdateAvailable());
     await expect(page.getByRole('button', { name: text('updateNow') })).toBeVisible();
 
-    expect(await violations(page, '.alert-warning')).toEqual([]);
+    expect(await axeViolations(page, '.alert-warning')).toEqual([]);
 });
 
 for (const id of ['newRoundModal', 'leaveModal']) {
@@ -183,6 +163,6 @@ for (const id of ['newRoundModal', 'leaveModal']) {
         await anna.page.click(id === 'newRoundModal' ? '#newRound' : '#leaveGame');
         await expect(anna.page.locator(`#${id}`)).toHaveClass(/\bshow\b/);
 
-        expect(await violations(anna.page, `#${id}`)).toEqual([]);
+        expect(await axeViolations(anna.page, `#${id}`)).toEqual([]);
     });
 }
