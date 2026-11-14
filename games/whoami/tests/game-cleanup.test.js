@@ -1,5 +1,7 @@
 // Ghosts: players offline for too long leave the room (the room's timer,
-// worker/room.js; tests/room-timers.test.js has when it goes off)
+// worker/room.js). When a player is a ghost is the kit's
+// (packages/room-kit/tests/players.test.js); here, what a ghost of whoami
+// takes with them and what stays
 
 const {
     createGame,
@@ -35,19 +37,6 @@ describe('Stale Disconnected Player Cleanup (ghosts)', () => {
         player.disconnectedAt = Date.now() - msAgo;
     }
 
-    test('removes a player disconnected for longer than the timeout', () => {
-        const { gameId, p1 } = createGameWithPlayers();
-        disconnect(games.get(gameId).players.find(p => p.id === p1.id), TEN_MINUTES + 1000);
-
-        const removals = removeStaleDisconnectedPlayers(games, TEN_MINUTES);
-
-        expect(removals).toHaveLength(1);
-        expect(removals[0].removedPlayer.id).toBe(p1.id);
-        expect(games.get(gameId).players.map(p => p.id)).toEqual(
-            expect.not.arrayContaining([p1.id])
-        );
-    });
-
     test('returns everything the player-left broadcast needs', () => {
         const { gameId, p1 } = createGameWithPlayers();
         disconnect(games.get(gameId).players.find(p => p.id === p1.id), TEN_MINUTES + 1000);
@@ -60,34 +49,6 @@ describe('Stale Disconnected Player Cleanup (ghosts)', () => {
         expect(removal.characters).toEqual({});
         expect(removal.revealedPlayers).toEqual([]);
         expect(removal.gameDeleted).toBe(false);
-    });
-
-    test('keeps connected players and recently disconnected players', () => {
-        const { gameId, p1 } = createGameWithPlayers();
-        // p1 disconnected just under the limit, p2 still connected
-        disconnect(games.get(gameId).players.find(p => p.id === p1.id), TEN_MINUTES - 1000);
-
-        const removals = removeStaleDisconnectedPlayers(games, TEN_MINUTES);
-
-        expect(removals).toEqual([]);
-        expect(games.get(gameId).players).toHaveLength(2);
-    });
-
-    test('a player without disconnectedAt gets a timestamp instead of being removed', () => {
-        // Games restored from disk / recreated from a backup have players
-        // marked disconnected but without a timestamp - the first pass only
-        // starts the clock, giving them the full timeout to come back
-        const { gameId, p1 } = createGameWithPlayers();
-        const player = games.get(gameId).players.find(p => p.id === p1.id);
-        player.isConnected = false;
-        delete player.disconnectedAt;
-
-        expect(removeStaleDisconnectedPlayers(games, TEN_MINUTES)).toEqual([]);
-        expect(typeof player.disconnectedAt).toBe('number');
-
-        // ...and once that clock runs out, a later pass removes them
-        player.disconnectedAt = Date.now() - (TEN_MINUTES + 1000);
-        expect(removeStaleDisconnectedPlayers(games, TEN_MINUTES)).toHaveLength(1);
     });
 
     test('a ghost removed from a started game can return with the same ID', () => {
@@ -126,16 +87,4 @@ describe('Stale Disconnected Player Cleanup (ghosts)', () => {
 
         expect(removal.characters[p2.id].character).toBe('Superman');
     });
-
-    test('removing the last player deletes the game', () => {
-        const { gameId } = createGameWithPlayers();
-        games.get(gameId).players.forEach(p => disconnect(p, TEN_MINUTES + 1000));
-
-        const removals = removeStaleDisconnectedPlayers(games, TEN_MINUTES);
-
-        expect(removals).toHaveLength(2);
-        expect(removals[1].gameDeleted).toBe(true);
-        expect(games.has(gameId)).toBe(false);
-    });
-
 });

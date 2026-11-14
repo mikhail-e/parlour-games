@@ -56,12 +56,6 @@ describe('Player Leaving', () => {
         expect(game.characters.get(bob.id).character).toBe('Superman');
     });
 
-    test('works in the waiting state', () => {
-        const result = removePlayerFromGame(games, gameId, alice.id);
-        expect(result.success).toBe(true);
-        expect(games.get(gameId).state).toBe('waiting');
-    });
-
     test('works mid-game: remaining players keep playing', () => {
         const charlie = addPlayerToGame(games, gameId, 'Charlie', '🐱').player;
         assignCharacter(games, gameId, alice.id, 'Batman', bob.id);

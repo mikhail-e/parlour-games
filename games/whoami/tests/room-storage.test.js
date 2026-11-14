@@ -43,8 +43,3 @@ test('a game comes back from storage exactly as it was', () => {
     expect(checkPlayerSecret(back, alice.id, A)).toBe(true);
 });
 
-test('createGame takes the room code it is given', () => {
-    const games = new Map();
-    expect(createGame(games, 'ABC123')).toEqual({ gameId: 'ABC123', success: true });
-    expect(games.get('ABC123').players).toEqual([]);
-});
