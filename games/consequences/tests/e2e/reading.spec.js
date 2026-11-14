@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf,
+    showStories, closeStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf, roundStep,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -172,15 +172,22 @@ test('every story is off until the last sheet opens; that changes no screen, and
     // The last to open reads their sheet like everyone else
     for (const player of players) {
         await expect(player.page.locator('#showStories')).toBeEnabled();
-        await expect(player.page.locator('#storiesCard')).toBeHidden();
+        await expect(player.page.locator('#storiesModal')).toBeHidden();
         await expect(answersOf(ownSheet(player.page))).toHaveCount(8);
         await expect(player.page.locator('#seatsCard')).toBeVisible();
     }
 
+    // Boris's window opens over his sheet, on this round, the room's first;
+    // Anna's screen does not change
     await showStories(boris);
-    await expect(boris.page.locator('#readingCard')).toBeHidden();
-    await expect(anna.page.locator('#storiesCard')).toBeHidden();
+    await expect(boris.page.locator('#storiesRound')).toHaveText(text('roundOf', 'en', { n: 1, count: 1 }));
+    await expect(anna.page.locator('#storiesModal')).toBeHidden();
     await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+
+    // Closed, it leaves Boris at his sheet, as he left it
+    await closeStories(boris);
+    await expect(answersOf(ownSheet(boris.page))).toHaveCount(8);
+    await expect(boris.page.locator('#showStories')).toBeEnabled();
 });
 
 test('a reload on every story goes back to the player\'s sheet, with the button on', async ({ newPlayer }) => {
@@ -193,7 +200,7 @@ test('a reload on every story goes back to the player\'s sheet, with the button 
 
     await expect(answersOf(ownSheet(players[0].page))).toHaveCount(8);
     await expect(players[0].page.locator('#showStories')).toBeEnabled();
-    await expect(players[0].page.locator('#storiesCard')).toBeHidden();
+    await expect(players[0].page.locator('#storiesModal')).toBeHidden();
 });
 
 test('the press of one round does not carry over to the next', async ({ newPlayer }) => {
@@ -209,7 +216,7 @@ test('the press of one round does not carry over to the next', async ({ newPlaye
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
 
     await expect(players[0].page.locator('#showStories')).toBeEnabled();
-    await expect(players[0].page.locator('#storiesCard')).toBeHidden();
+    await expect(players[0].page.locator('#storiesModal')).toBeHidden();
 });
 
 test('every story shows each sheet with who read it', async ({ newPlayer }) => {
@@ -220,8 +227,7 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
 
     for (const player of players) {
         await showStories(player);
-        await expect(player.page.locator('#readingCard')).toBeHidden();
-        await expect(player.page.locator('#seatsCard')).toBeHidden();
+        // «Another round» on the reading sheet has taken the place of «New round»
         await expect(player.page.locator('#newRound')).toBeHidden();
         const stories = player.page.locator('#storyList .sheet');
         await expect(stories).toHaveCount(3);
@@ -302,8 +308,11 @@ test('a story is shared under the name of the round\'s set, with its text and an
         text: `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${invitation}`,
     });
 
-    // In Russian the title is the set's Russian name
+    // In Russian the title is the set's Russian name: the language button is
+    // the room's, under the window
+    await closeStories(anna);
     await anna.page.locator('.lang-toggle-btn').click();
+    await showStories(anna);
     await expect(anna.page.locator('.story-send').first()).toHaveText(text('shareStory', 'ru'));
     await anna.page.locator('.story-send').first().click();
     await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(2);
@@ -347,20 +356,60 @@ test('without a share sheet the story is copied, under the name of the round\'s 
     expect(copied.endsWith(text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host }))).toBe(true);
 });
 
-test('Another round asks first: while a player is still reading, a No changes nothing', async ({ newPlayer }) => {
+// A page the clipboard is closed to (plain http, as a phone on the home
+// network): no navigator.clipboard, and the old way's copy records what is
+// selected in the field that has the focus, as the browser would copy it
+async function closeClipboard(player) {
+    await player.page.addInitScript(() => {
+        Object.defineProperty(Navigator.prototype, 'clipboard', { value: undefined, configurable: true });
+        window.copiedTexts = [];
+        document.execCommand = command => {
+            const field = document.activeElement;
+            if (command === 'copy' && field instanceof HTMLTextAreaElement) {
+                window.copiedTexts.push(field.value.slice(field.selectionStart, field.selectionEnd));
+            }
+            return true;
+        };
+    });
+}
+
+test('without a share sheet or a clipboard the story is copied the old way, from inside the window of every story', async ({ newPlayer }) => {
+    const { anna, story } = await storiesToShare(newPlayer, 'unsupported', closeClipboard);
+
+    await story.locator('.story-send').click();
+
+    // The window keeps the focus inside itself: a field outside it would lose
+    // the focus before the copy, and nothing would be copied
+    await expect(story.locator('.story-send')).toHaveText(text('copiedSuccess'));
+    const answers = await answersOf(story).allTextContents();
+    const site = new URL(anna.page.url()).host;
+    expect(await anna.page.evaluate(() => window.copiedTexts)).toEqual([
+        `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${text('shareStoryInvitation', 'en', { site })}`,
+    ]);
+    // The field made for the copy is gone
+    await expect(anna.page.locator('#storiesModal textarea')).toHaveCount(0);
+});
+
+test('Another round on the reading sheet asks first: while a player is still reading, a No changes nothing', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading([anna, boris]);
     for (const player of [anna, boris]) await ownSheet(player.page).locator('.closed-sheet').click();
-    await showStories(anna);
 
+    // It takes the place of New round under the sheet
+    await expect(anna.page.locator('#newRound')).toBeHidden();
+    await expect(anna.page.locator('#anotherRound')).toHaveClass(/\bbtn-outline-primary\b/);
     await anna.page.click('#anotherRound');
 
+    // The stories stay in every story, and the kit's red is only for what cannot be undone
     const window = anna.page.locator('#newRoundModal');
     await expect(window).toHaveClass(/\bshow\b/);
-    await expect(window).toContainText(text('newRoundText'));
+    await expect(anna.page.locator('#newRoundKeeps')).toHaveText(text('newRoundKeepsStories'));
+    await expect(anna.page.locator('#newRoundLoses')).toBeHidden();
+    await expect(anna.page.locator('#confirmNewRound')).toHaveClass(/\bbtn-primary\b/);
+    await expect(anna.page.locator('#confirmNewRound')).not.toHaveClass(/\bbtn-danger\b/);
     await window.locator('[data-bs-dismiss="modal"]').first().click();
     await expect(window).not.toHaveClass(/\bshow\b/);
-    await expect(anna.page.locator('#storiesCard')).toBeVisible();
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
     await expect(answersOf(ownSheet(boris.page))).toHaveCount(8);
 });
 
@@ -368,12 +417,11 @@ test('the question of Another round stays open through what happens in the room'
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading([anna, boris]);
     for (const player of [anna, boris]) await ownSheet(player.page).locator('.closed-sheet').click();
-    await showStories(anna);
     await anna.page.click('#anotherRound');
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
 
     await boris.page.goto('about:blank');
-    await expect(anna.page.locator('#storiesCard')).toBeVisible();
+    await expect(anna.page.locator('#readingCard')).toBeVisible();
     await expect.poll(() => anna.page.evaluate(() => currentGame.round.seats[1].absent)).toBe('offline');
 
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
@@ -385,18 +433,57 @@ test('Another round, said yes to, takes everyone back to the lobby, and the next
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     await showStories(players[1]);
+    const { page } = players[1];
+
+    // Its question comes inside the window, in the stories' place; Cancel brings them back
+    await page.click('#windowAnotherRound');
+    await expect(page.locator('#storiesTitle')).toHaveText(text('newRound'));
+    await expect(page.locator('#windowNewRoundText')).toHaveText(text('newRoundKeepsStories'));
+    await expect(page.locator('#storyList')).toBeHidden();
+    await expect(page.locator('#storiesEnd')).toBeHidden();
+    await expect(page.locator('#confirmWindowNewRound')).toHaveClass(/\bbtn-primary\b/);
+    await expect(page.locator('#cancelWindowNewRound')).toBeFocused();
+    await page.click('#cancelWindowNewRound');
+    await expect(page.locator('#storiesTitle')).toHaveText(await setText(page, 'AllStories'));
+    await expect(page.locator('#storyList .sheet')).toHaveCount(2);
+    await expect(page.locator('#windowNewRoundButtons')).toBeHidden();
+    await expect(page.locator('#windowAnotherRound')).toBeFocused();
+    expect(await roundStep(page)).toBe(8);
 
     await confirmAnotherRound(players[1]);
 
     for (const player of players) {
         await expect(player.page.locator('#playersCard')).toBeVisible();
-        await expect(player.page.locator('#storiesCard')).toBeHidden();
+        await expect(player.page.locator('#storiesModal')).toBeHidden();
         await waitForPlayers(player.page, 2);
     }
     await expect(players[1].page.locator('#newRoundModal')).toBeHidden();
     await startRound(players);
     await expect(players[0].page.locator('#questionText')).toHaveText(await questionOf(players[0].page, 1));
     expect(await setOf(players[0].page)).not.toBe(last);
+});
+
+test('New round in the middle of the reading asks with the reading\'s words, never red, and the round goes into the rounds played', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const set = await setOf(anna.page);
+    await writeToReading([anna, boris]);
+    await ownSheet(anna.page).locator('.closed-sheet').click();
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+
+    // Boris has not opened his sheet: New round is still there, in ink
+    await expect(anna.page.locator('#newRound')).toHaveClass(/\bbtn-outline-primary\b/);
+    await expect(anna.page.locator('#newRound')).not.toHaveClass(/\bbtn-outline-danger\b/);
+    await anna.page.click('#newRound');
+    await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+    await expect(anna.page.locator('#newRoundKeeps')).toHaveText(text('newRoundKeepsStories'));
+    await expect(anna.page.locator('#newRoundLoses')).toBeHidden();
+    await expect(anna.page.locator('#confirmNewRound')).not.toHaveClass(/\bbtn-danger\b/);
+    await anna.page.click('#confirmNewRound');
+
+    for (const player of [anna, boris]) {
+        await expect(player.page.locator('#playersCard')).toBeVisible();
+        await expect(player.page.locator('#roundsList .rounds-list__set')).toHaveText([text(`${set}Name`)]);
+    }
 });
 
 // The set names the reading's stories («The tales are ready», «Every tale»,
@@ -414,7 +501,7 @@ test("the reading and every story are titled by the round's set's stories, with 
 
     await ownSheet(boris.page).locator('.closed-sheet').click();
     await showStories(anna);
-    await expect(anna.page.locator('#storiesCard .sheet-title')).toHaveText([text(`${set}AllStories`)]);
+    await expect(anna.page.locator('#storiesModal .modal-title')).toHaveText([text(`${set}AllStories`)]);
     await expect(anna.page.locator('#storyList .story-head').nth(0)).toContainText(text(`${set}StoryTitle1`));
     await expect(anna.page.locator('#storyList .story-head').nth(1)).toContainText(text(`${set}StoryTitle2`));
 });

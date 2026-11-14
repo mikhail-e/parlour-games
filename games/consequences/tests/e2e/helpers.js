@@ -100,17 +100,35 @@ async function writeToReading(players, answerOf = answerText) {
     for (let step = 0; step < 8; step++) await answerStep(players, step, answerOf);
 }
 
-// A player goes on from the reading to every story, by their own press
+// A player goes on from the reading to every story, by their own press: the
+// window of every story opens over their sheet
 async function showStories(player) {
     await player.page.click('#showStories');
-    await expect(player.page.locator('#storiesCard')).toBeVisible();
+    await expect(player.page.locator('#storiesModal')).toHaveClass(/\bshow\b/);
 }
 
-// Another round: the player presses it and says yes in the window
+// The window of every story closed with its cross: the room's screen under it
+async function closeStories(player) {
+    await player.page.click('#storiesModal .btn-close');
+    await expect(player.page.locator('#storiesModal')).toBeHidden();
+}
+
+// Another round, and back in the lobby. With the window of every story open,
+// from under its last story, the question inside the window - and then the
+// window is closed, as it stays open on its round when the round ends; else
+// from the reading sheet, the question in its own window
 async function confirmAnotherRound(player) {
-    await player.page.click('#anotherRound');
-    await expect(player.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
-    await player.page.click('#confirmNewRound');
+    const { page } = player;
+    if (await page.locator('#storiesModal').isVisible()) {
+        await page.click('#windowAnotherRound');
+        await page.click('#confirmWindowNewRound');
+        await expect.poll(() => roundStep(page)).toBeNull();
+        await closeStories(player);
+        return;
+    }
+    await page.click('#anotherRound');
+    await expect(page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+    await page.click('#confirmNewRound');
 }
 
 // A player back in the started round by its link, from a new page of their
@@ -179,6 +197,7 @@ module.exports = {
     answerStep,
     writeToReading,
     showStories,
+    closeStories,
     confirmAnotherRound,
     returnToRound,
     seatRow,

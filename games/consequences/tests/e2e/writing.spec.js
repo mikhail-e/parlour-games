@@ -615,7 +615,11 @@ test('New round in the middle of one asks first, then takes everyone back to the
     // Cancel keeps the round
     await anna.page.click('#newRound');
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
-    await expect(anna.page.locator('#newRoundModal .modal-body')).toHaveText(text('newRoundText'));
+    // While writing the round's sheets are lost: the red of what cannot be undone
+    await expect(anna.page.locator('#newRoundLoses')).toHaveText(text('newRoundText'));
+    await expect(anna.page.locator('#newRoundKeeps')).toBeHidden();
+    await expect(anna.page.locator('#confirmNewRound')).toHaveClass(/\bbtn-danger\b/);
+    await expect(anna.page.locator('#newRound')).toHaveClass(/\bbtn-outline-danger\b/);
     await anna.page.locator('#newRoundModal').getByRole('button', { name: text('cancel') }).click();
     await expect(anna.page.locator('#newRoundModal')).toBeHidden();
     expect(await roundStep(anna.page)).toBe(2);

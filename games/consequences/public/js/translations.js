@@ -58,9 +58,20 @@ const translations = {
         shareStoryInvitation: "This story was written in a game of Consequences. Create your own at {site}",
         anotherRound: "Another round",
 
-        // A new round in the middle of one
+        // The room's history: every story of a round in a window, the rounds
+        // played in the lobby
+        roundOf: "Round {n} of {count}",
+        previousRound: "Previous",
+        nextRound: "Next",
+        newRoundStarted: "A new round has started: close the window when you finish reading.",
+        roundsPlayed: "Rounds played",
+        roundNumber: "Round {n}",
+
+        // A new round in the middle of one: while writing its sheets are lost,
+        // while reading its stories go into the history
         newRound: "New round",
         newRoundText: "The sheets of this round will be lost. Start a new round?",
+        newRoundKeepsStories: "The stories of this round will stay in Every story. Someone may still be reading their sheet. Start a new round?",
         confirmNewRound: "Yes, a new round",
 
         // The sets of questions (game-logic.js lists them): each set's name,
@@ -288,9 +299,20 @@ const translations = {
         shareStoryInvitation: "Эту историю сочинили в «Чепухе». Создайте свою на {site}",
         anotherRound: "Ещё раунд",
 
-        // A new round in the middle of one
+        // The room's history: every story of a round in a window, the rounds
+        // played in the lobby
+        roundOf: "Раунд {n} из {count}",
+        previousRound: "Прошлый",
+        nextRound: "Следующий",
+        newRoundStarted: "Начался новый раунд: закройте окно, когда дочитаете.",
+        roundsPlayed: "Сыгранные раунды",
+        roundNumber: "Раунд {n}",
+
+        // A new round in the middle of one: while writing its sheets are lost,
+        // while reading its stories go into the history
         newRound: "Новый раунд",
         newRoundText: "Листы этого раунда пропадут. Начать новый раунд?",
+        newRoundKeepsStories: "Истории этого раунда останутся во «Всех историях». Кто-то, может быть, ещё читает свой лист. Начать новый раунд?",
         confirmNewRound: "Да, новый раунд",
 
         // The sets of questions (game-logic.js lists them): each set's name,
