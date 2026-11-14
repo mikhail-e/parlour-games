@@ -2,11 +2,11 @@
 
 ## 1. Начало
 
-- [ ] 1.1 Ветка `feature/question-presets` от `develop`, первый коммит — этот change (`openspec/changes/question-presets/`); проверка — `git status` чистый, кроме черновика `games/consequences/docs/question-presets.md`, `openspec status --change question-presets` видит change
+- [x] 1.1 Ветка `feature/question-presets` от `develop`, первый коммит — этот change (`openspec/changes/question-presets/`); проверка — `git status` чистый, кроме черновика `games/consequences/docs/question-presets.md`, `openspec status --change question-presets` видит change
 
 ## 2. Сервер: наборы и выбор
 
-- [ ] 2.1 `game-logic.js` (design, «Наборы — список имён», «Выбор при старте», «Раунд без набора»):
+- [x] 2.1 `game-logic.js` (design, «Наборы — список имён», «Выбор при старте», «Раунд без набора»):
   - список `QUESTION_SETS`;
   - `startRound` с функцией случайности параметром выбирает набор без `game.lastQuestionSet` и кладёт его в `round.questionSet` и `game.lastQuestionSet`;
   - `fields()` даёт `lastQuestionSet: null`;
@@ -20,7 +20,7 @@
   - раунд в форме прежней версии (без `questionSet`) отдаётся как `classic`.
 
   Тесты зелёные, а временно убранное исключение прошлого набора роняет тест на повтор.
-- [ ] 2.2 CLAUDE.md игры: раунд (набор раунда, прошлый набор игры, «Классика» для раунда без набора), `serializeGame` и `roundView`; проверка — сверка с design.md: каждое решение о сервере записано один раз
+- [x] 2.2 CLAUDE.md игры: раунд (набор раунда, прошлый набор игры, «Классика» для раунда без набора), `serializeGame` и `roundView`; проверка — сверка с design.md: каждое решение о сервере записано один раз
 
 ## 3. Вид: где стоит название набора
 
