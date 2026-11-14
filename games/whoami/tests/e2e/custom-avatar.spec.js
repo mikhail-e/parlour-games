@@ -24,6 +24,89 @@ test('an uploaded photo becomes the selected first tile', async ({ newPlayer }) 
     await expect(page.locator('#selectedAvatar')).toHaveValue(/^data:image\/jpeg;base64,/);
 });
 
+// The colour of these points of a photo, as the page draws it: [r, g, b, a]
+function pixelsOf(page, src, points) {
+    return page.evaluate(async ([url, spots]) => {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+        return spots.map(([x, y]) => [...context.getImageData(x, y, 1, 1).data]);
+    }, [src, points]);
+}
+
+// A point of the top half (grey) and one of the bottom half (see-through) of
+// pngFile({ transparent: true }), once shrunk to the avatar's 192 pixels
+const SEEN = [96, 30];
+const SEE_THROUGH = [96, 170];
+const near = (value, expected) => Math.abs(value - expected) <= 8;
+
+// A browser that cannot make a WebP picture, as Safari may be: asked for one,
+// it hands back a PNG (the canvas's own fallback)
+async function withoutWebp(page) {
+    await page.addInitScript(() => {
+        const toDataURL = HTMLCanvasElement.prototype.toDataURL;
+        HTMLCanvasElement.prototype.toDataURL = function (type, quality) {
+            return toDataURL.call(this, type === 'image/webp' ? 'image/png' : type, quality);
+        };
+    });
+}
+
+async function uploadedPhoto(page, file) {
+    await page.locator('#avatarFileInput').setInputFiles(file);
+    await expect(avatarTiles(page).first().locator('img')).toBeVisible();
+    return avatarTiles(page).first().locator('img').getAttribute('src');
+}
+
+test('a picture with a see-through background keeps it, for every player', async ({ newPlayer }) => {
+    const alice = await newPlayer('Alice');
+    const bob = await newPlayer('Bob');
+    await alice.page.goto('/');
+
+    const photo = await uploadedPhoto(alice.page, pngFile(64, 64, { transparent: true }));
+
+    expect(photo).toMatch(/^data:image\/webp;base64,/);
+    const [seen, seeThrough] = await pixelsOf(alice.page, photo, [SEEN, SEE_THROUGH]);
+    expect(seen[3]).toBe(255);
+    expect(seen.slice(0, 3).every(channel => near(channel, 0x7f))).toBe(true);
+    expect(seeThrough[3]).toBe(0);
+
+    // The room keeps it as it is: the other player's page shows the same picture
+    const code = await createRoom(alice);
+    await joinRoom(bob, code);
+    await expect(playerCard(bob.page, 'Alice').locator('img')).toHaveAttribute('src', photo);
+});
+
+test('a browser that cannot make a WebP keeps the see-through background in a PNG', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Alice');
+    await withoutWebp(page);
+    await page.goto('/');
+
+    const photo = await uploadedPhoto(page, pngFile(64, 64, { transparent: true }));
+
+    expect(photo).toMatch(/^data:image\/png;base64,/);
+    const [seen, seeThrough] = await pixelsOf(page, photo, [SEEN, SEE_THROUGH]);
+    expect(seen).toEqual([0x7f, 0x7f, 0x7f, 255]);
+    expect(seeThrough[3]).toBe(0);
+});
+
+test('a see-through picture too large as a PNG is still taken, on white, as before', async ({ newPlayer }) => {
+    const { page } = await newPlayer('Alice');
+    await withoutWebp(page);
+    await page.goto('/');
+
+    const photo = await uploadedPhoto(page, pngFile(192, 192, { transparent: true, noisy: true }));
+
+    expect(photo).toMatch(/^data:image\/jpeg;base64,/);
+    const [[r, g, b, a]] = await pixelsOf(page, photo, [SEE_THROUGH]);
+    expect([r, g, b].every(channel => near(channel, 255))).toBe(true);
+    expect(a).toBe(255);
+});
+
 test('clicking the photo itself selects its tile', async ({ newPlayer }) => {
     const { page } = await newPlayer('Alice');
     await page.goto('/');
