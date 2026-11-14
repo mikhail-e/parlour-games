@@ -11,6 +11,7 @@ Key facts:
 - Eight questions, one at a time, for everyone at once: Who? With whom? When? Where? and others. They come in seven sets (Classic, Incident, He and She, Fairy Tale, Detective Story, The News, Journey); each round draws one at random, never the last round's
 - Each player answers on the sheet in front of them and the sheets move on to the next player; nobody sees what was written before
 - At the end every player gets a sheet, opens it and reads its story aloud; once every sheet is open, everyone sees every story
+- The stories of every round played stay in the room while it lives, for every player in it, newcomers too
 - A player who is away is waited for, and any player may answer or read for them; a newcomer joins at the next round
 - English and Russian: the browser's language at first, switchable on the page
 - Installable PWA; it needs a connection, since a room lives on the server

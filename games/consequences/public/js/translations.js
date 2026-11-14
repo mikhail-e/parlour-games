@@ -12,7 +12,7 @@ const translations = {
         howToPlay: "How to Play",
         rule1: "Everyone answers the same question on their own sheet and passes the sheet on: nobody sees what was written before",
         rule2: "Eight questions: who, with whom, when, where and others. They come in sets (classic, fairy tale, detective story and four more), and every round draws its own",
-        rule3: "At the end everyone reads out the story that came to them",
+        rule3: "At the end everyone reads out the story that came to them. The stories of every round played stay in the room to read again",
 
         // The lobby
         players: "Players",
@@ -253,7 +253,7 @@ const translations = {
         howToPlay: "Как играть",
         rule1: "Все отвечают на один вопрос, каждый на своём листе, и передают лист дальше: прежних ответов никто не видит",
         rule2: "Восемь вопросов: кто, с кем, когда, где и другие. Они собраны в наборы (классика, сказка, детектив и ещё четыре), и в каждом раунде выпадает свой",
-        rule3: "В конце каждый читает вслух историю, которая к нему пришла",
+        rule3: "В конце каждый читает вслух историю, которая к нему пришла. Истории всех сыгранных раундов можно перечитать, пока в комнате играют",
 
         // The lobby
         players: "Игроки",
