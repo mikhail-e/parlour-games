@@ -7,8 +7,10 @@
 // once its last sheet is open («Every story»), or a round of the room's
 // history (the lobby's rounds played). Whether it is open and which round it
 // shows is this page's own, as the room knows nothing of it; it stays open
-// while the room's round changes. The room sends the sets of its history with
-// the game (historySets), and a round of it when the page asks (history-round).
+// while the room's round changes, but for the player who said yes to «Another
+// round» in it: they go on to the lobby. The room sends the sets of its
+// history with the game (historySets), and a round of it when the page asks
+// (history-round).
 //
 // The screen is drawn anew from the round (round-state: game-logic.js's
 // roundView) on every change, as the players list is: never one seat patched.
@@ -719,7 +721,8 @@ function setUpRoomGame() {
     // The window of every story: the rounds back and forth, and «Another
     // round» with its question inside it (Bootstrap's windows do not open one
     // over another). It stays open when the round ends: the stories it shows
-    // are the history's now
+    // are the history's now. Only the player who said yes in it goes on, to
+    // the lobby, as from the reading sheet's question
     const windowElement = document.getElementById('storiesModal');
     storiesModal = new bootstrap.Modal(windowElement);
     windowElement.addEventListener('hidden.bs.modal', () => {
@@ -740,8 +743,10 @@ function setUpRoomGame() {
         document.getElementById('windowAnotherRound').focus();
     });
     document.getElementById('confirmWindowNewRound').addEventListener('click', () => {
-        storiesWindow.asking = false;
+        // Closed at once for the page: the round-state that comes while the
+        // window fades draws nothing in it, so the question fades as it is
+        storiesWindow.open = false;
+        storiesModal.hide();
         sendMove('new-round');
-        renderStoriesWindow();
     });
 }
