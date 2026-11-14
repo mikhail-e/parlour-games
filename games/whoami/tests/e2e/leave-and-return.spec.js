@@ -5,46 +5,12 @@ const {
     holdRoomJoin, releaseRoomJoin, roomWith, listedNames,
 } = require('./helpers');
 
+// Leaving the lobby, in every tab, the last one out, and Copy Link: the kit's
+// tests (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').roomPageTests({ text });
+
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const storedPlayerId = page => page.evaluate(() => localStorage.getItem('playerId'));
-
-test('leaving goes home with the code and the name filled in', async ({ newPlayer }) => {
-    const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
-
-    await leaveGame(bob);
-
-    await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await expect(bob.page.locator('#playerName')).toHaveValue('Bob');
-    await expect(bob.page.locator('#roomCode')).toHaveValue(code);
-    await waitForPlayers(alice.page, 1);
-    await expect(alice.page.locator('.alert.position-fixed')).toContainText(
-        text('playerLeftNotification', 'en', { playerName: 'Bob' }));
-});
-
-test('the last player to leave deletes the room', async ({ newPlayer }) => {
-    const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
-
-    await leaveGame(bob);
-    await waitForPlayers(alice.page, 1);
-    await leaveGame(alice);
-
-    await expect(alice.page).toHaveURL(/\/$/);
-    await alice.page.goto(`/game/${code}`);
-    await expect(alice.page).toHaveURL(/\/\?error=room-not-found$/);
-});
-
-test('Leave in one tab takes the player out of the room in every tab', async ({ newPlayer }) => {
-    const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
-    // A second tab of the same browser is the same player
-    const secondTab = { name: 'Alice', page: await alice.context.newPage() };
-    await joinRoom(secondTab, code);
-    await waitForPlayers(bob.page, 2);
-
-    await leaveGame(alice);
-
-    await expect(secondTab.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await waitForPlayers(bob.page, 1);
-});
 
 test('a tab whose connection joins just after its player left goes home too', async ({ newPlayer }) => {
     const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);

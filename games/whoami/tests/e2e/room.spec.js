@@ -12,12 +12,6 @@ test('both players see both cards in join order', async ({ newPlayer }) => {
     expect(await listedNames(bob.page)).toEqual(['Alice', 'Bob']);
 });
 
-test('two players may have the same name', async ({ newPlayer }) => {
-    const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Sam', 'Sam']);
-
-    await expect(playerCard(alice.page, 'Sam')).toHaveCount(2);
-});
-
 test('no + on your own card', async ({ newPlayer }) => {
     const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Bob']);
 

@@ -156,20 +156,6 @@ test('a saved photo comes back first on the next visit', async ({ newPlayer }) =
     await expect(avatarTiles(alice.page).first()).toHaveClass(/selected/);
 });
 
-test('both players see the photo on the card', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    await alice.page.goto('/');
-    await uploadPhoto(alice.page);
-
-    const code = await createRoom(alice);
-    await joinRoom(bob, code);
-
-    for (const page of [alice.page, bob.page]) {
-        await expect(playerCard(page, 'Alice').locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
-    }
-});
-
 test('a saved "photo" with HTML or javascript: is never rendered', async ({ newPlayer }) => {
     for (const forged of ['data:image/png;base64,"><img src=x onerror=alert(1)>', 'javascript:alert(1)']) {
         const alice = await newPlayer('Alice');

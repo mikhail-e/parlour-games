@@ -2,7 +2,11 @@
 // sign, creating a room, joining by its code or its link, the name and the
 // avatar, a full room. The form is the kit's landing.js on this page's markup
 const crypto = require('crypto');
-const { test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForLanding, waitForPlayers, playerCard, pngFile, avatarTiles } = require('./helpers');
+const { test, expect, text, answerMessage, serverErrorText, createRoom, waitForLanding, waitForPlayers } = require('./helpers');
+
+// A room that is gone, the name and the avatar remembered, players of one
+// name, a photo: the kit's tests (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text });
 
 test('the sign is one picture named Consequences, English on a Russian page too', async ({ newPlayer }) => {
     const { page } = await newPlayer('Аня', { locale: 'ru-RU' });
@@ -40,15 +44,6 @@ test('a friend joins by the code typed in lower case', async ({ newPlayer }) => 
     for (const player of [alice, bob]) await waitForPlayers(player.page, 2);
 });
 
-test('a link to a room that does not exist leads home with a message', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-
-    await alice.page.goto('/game/ZZZZZ9');
-
-    await expect(alice.page).toHaveURL(/\/\?error=room-not-found$/);
-    await expect(alice.page.locator('.alert-danger')).toContainText(text('roomNotFound'));
-});
-
 test('a room link opened in a new tab leads home with the code ready, and Join enters the room', async ({ newPlayer }) => {
     const alice = await newPlayer('Alice');
     const bob = await newPlayer('Bob');
@@ -63,58 +58,6 @@ test('a room link opened in a new tab leads home with the code ready, and Join e
     await bob.page.click('#joinBtn');
     await expect(bob.page).toHaveURL(new RegExp(`/game/${code}$`));
     for (const player of [alice, bob]) await waitForPlayers(player.page, 2);
-});
-
-test('a photo instead of an emoji: every player sees it by the name', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    await alice.page.goto('/');
-    await alice.page.locator('#avatarFileInput').setInputFiles(pngFile());
-    await expect(avatarTiles(alice.page).first()).toHaveClass(/selected/);
-
-    const code = await createRoom(alice);
-    await joinRoom(bob, code);
-
-    for (const page of [alice.page, bob.page]) {
-        await expect(playerCard(page, 'Alice').locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
-    }
-});
-
-test('the name and the avatar are remembered after creating a room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    await alice.page.goto('/');
-    await waitForLanding(alice.page);
-    const chosen = await avatarTiles(alice.page).nth(4).getAttribute('data-avatar');
-    await avatarTiles(alice.page).nth(4).click();
-
-    await createRoom(alice);
-    await alice.page.goto('/');
-
-    await expect(alice.page.locator('#playerName')).toHaveValue('Alice');
-    await expect(avatarTiles(alice.page).first()).toHaveAttribute('data-avatar', chosen);
-    await expect(avatarTiles(alice.page).first()).toHaveClass(/selected/);
-});
-
-test('the name and the avatar are remembered after joining a room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-    await bob.page.goto(`/game/${code}`);
-    await waitForLanding(bob.page);
-    const chosen = await avatarTiles(bob.page).nth(7).getAttribute('data-avatar');
-    await avatarTiles(bob.page).nth(7).click();
-
-    await joinRoom(bob, code);
-    await bob.page.goto('/');
-
-    await expect(bob.page.locator('#playerName')).toHaveValue('Bob');
-    await expect(avatarTiles(bob.page).first()).toHaveAttribute('data-avatar', chosen);
-});
-
-test('two players with the same name are two players', async ({ newPlayer }) => {
-    const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Sam', 'Sam']);
-
-    await expect(playerCard(alice.page, 'Sam')).toHaveCount(2);
 });
 
 // Eleven friends join over the API, each a browser of its own (an ID and a
