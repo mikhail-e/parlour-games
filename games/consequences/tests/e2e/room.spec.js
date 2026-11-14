@@ -6,7 +6,7 @@
 const {
     test, expect, text, answerMessage, serverErrorText, createRoom, joinRoom, roomWith, waitForPlayers, waitForLanding, leaveGame,
     seedStorage, startedRound, answer, answerStep, waitForStep, returnToRound, seatRow, hideSocialWidgets, socialWidgetsHidden,
-    stubShare, expectCopyButtonsOnOneLine,
+    stubShare, expectCopyButtonsOnOneLine, questionOf,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
 
@@ -127,7 +127,7 @@ test('a page that fails to draw as it enters stays in the room, and its error is
     // Still in the room at his question, and his page is in the room again:
     // his answer goes through
     await expect(boris.page).toHaveURL(/\/game\/[A-Z0-9]{6}$/);
-    await expect(boris.page.locator('#questionText')).toHaveText(text('question1'));
+    await expect(boris.page.locator('#questionText')).toHaveText(await questionOf(boris.page, 1));
     await answerStep([anna, boris], 0);
 });
 
@@ -171,7 +171,7 @@ test('a player whose page goes is offline for the others, and comes back to thei
     await expect(seatRow(anna.page, 'Vera')).not.toContainText(text('statusOffline'));
     await expect(seatRow(anna.page, 'Vera')).toContainText(text('statusWriting'));
     expect(await seatedNames(back.page)).toEqual(['Anna', 'Boris', 'Vera']);
-    await expect(back.page.locator('#questionText')).toHaveText(text('question2'));
+    await expect(back.page.locator('#questionText')).toHaveText(await questionOf(back.page, 2));
     await answerStep([anna, boris, back], 1);
 });
 
