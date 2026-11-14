@@ -11,6 +11,12 @@
 // the room's. It never carries an answer before the last sheet is open. The
 // answers of an open sheet go to the sockets of the player who opened it
 // (`sheet`), and again to their page when it joins after a reload.
+//
+// The room's history: a round that reached the reading is kept as it ends,
+// under its own key `history:N` (game-logic.js's header has its form), in the
+// same write as the game; the game keeps only the sets of its rounds, and a
+// page asks for the round it shows (`history-round`). The kit's deleteAll()
+// takes the keys with the room.
 import gameLogic from '../game-logic.js';
 import { GameRoom, isPlayer, isPlayerOf } from '@parlour-games/room-kit/worker/game-room.js';
 
@@ -24,7 +30,11 @@ const MOVES = {
     'return-sheet': 'returnSheet',
     'open-sheet': 'openSheet',
     'new-round': 'newRound',
+    'history-round': 'historyRound',
 };
+
+// Where the room keeps round N of its history
+const historyKey = number => `history:${number}`;
 
 // A player ID from a message: a text, or nothing
 const idFrom = value => (typeof value === 'string' ? value : null);
@@ -74,8 +84,13 @@ export class Room extends GameRoom {
         if (this.game && this.game.round) this.broadcastRound();
     }
 
+    // The round and the sets of the history, whose rounds a page asks for
     broadcastRound() {
-        this.broadcast('round-state', { state: this.game.state, round: gameLogic.roundView(this.game) }, { only: isPlayer });
+        this.broadcast('round-state', {
+            state: this.game.state,
+            round: gameLogic.roundView(this.game),
+            historySets: gameLogic.historySetsOf(this.game)
+        }, { only: isPlayer });
     }
 
     // The room has just been loaded: a sheet held by a player without a page
@@ -182,7 +197,9 @@ export class Room extends GameRoom {
         await this.afterChange();
     }
 
-    // Back to the lobby: the pages draw it, the newcomers waiting just join
+    // Back to the lobby: the pages draw it, the newcomers waiting just join.
+    // A round that reached the reading goes into the history, in the same
+    // write as the game
     async newRound(ws, data, me) {
         const result = gameLogic.newRound(this.games, me.gameId, me.playerId);
         if (!result.success) {
@@ -190,8 +207,25 @@ export class Room extends GameRoom {
             return;
         }
         console.log(`Game ${me.gameId} back in the lobby, by player ${me.playerId}`);
-        this.broadcast('round-state', { state: this.game.state, round: null }, { only: isPlayer });
+        this.broadcast('round-state', {
+            state: this.game.state,
+            round: null,
+            historySets: gameLogic.historySetsOf(this.game)
+        }, { only: isPlayer });
         this.endJoinRequests(result.endedJoinRequests, 'retry');
-        await this.afterChange();
+        const { history } = result;
+        await this.afterChange(history ? { [historyKey(history.number)]: history.round } : {});
+    }
+
+    // A round of the history, `number` from 1, for the sender's page only.
+    // It changes nothing, so nothing is saved
+    async historyRound(ws, data) {
+        const number = data ? data.number : undefined;
+        const round = gameLogic.isHistoryNumber(this.game, number) ? await this.ctx.storage.get(historyKey(number)) : null;
+        if (!round) {
+            this.send(ws, 'error', 'No such round');
+            return;
+        }
+        this.send(ws, 'history-round', { number, round });
     }
 }

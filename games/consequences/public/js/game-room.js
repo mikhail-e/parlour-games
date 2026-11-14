@@ -3,6 +3,13 @@
 // kit's. This file draws the room from currentGame - the lobby, the writing,
 // the reading, every story - and sends the game's moves.
 //
+// Every story is a window (#storiesModal) over the room: the round being read
+// once its last sheet is open («Every story»), or a round of the room's
+// history (the lobby's rounds played). Whether it is open and which round it
+// shows is this page's own, as the room knows nothing of it; it stays open
+// while the room's round changes. The room sends the sets of its history with
+// the game (historySets), and a round of it when the page asks (history-round).
+//
 // The screen is drawn anew from the round (round-state: game-logic.js's
 // roundView) on every change, as the players list is: never one seat patched.
 // One part stays: the answer form is in the page from the start and is only
@@ -27,10 +34,17 @@ let formSheet = null;
 let formFor = null;
 // An answer sent and not yet in the round: the button waits for it
 let answerSending = false;
-// This player has pressed «Every story»: each comes to them in their own time,
-// so the last sheet to open changes nobody's screen - or its reader would
-// never see it. Nothing the room knows: a reload goes back to the reading
-let storiesAsked = false;
+// This player has opened every story of the round being read: each comes to
+// them in their own time, so the last sheet to open changes nobody's screen -
+// or its reader would never see it. The screen may sleep after it
+let storiesSeen = false;
+// The window of every story: open or not, the round it shows (1 to the last
+// of windowRoundCount()), and whether it asks «Another round»'s question
+const storiesWindow = { open: false, number: 0, asking: false, drawn: null };
+// The rounds of the room's history this page has got, by number: a round of
+// the history never changes. And the ones asked for, not answered yet
+const historyRounds = new Map();
+const historyAsked = new Set();
 // The player's own answer as this tab sent it ({ room, step, text }), kept in
 // the tab (a reload keeps it): shown while they wait, and «Change the answer»
 // puts it back into the field. The room never sends an answer's text back
@@ -41,6 +55,7 @@ let sentAnswer = AppStorage.session.get('sentAnswer');
 let takingBack = null;
 
 let newRoundModal = null;
+let storiesModal = null;
 
 // Races another player won, or a double tap: the round-state that follows
 // shows how things are, nothing went wrong
@@ -53,7 +68,9 @@ const LOST_RACES = [
     'This sheet is already open',
     'You are already holding a sheet',
     'This step is over',
-    'There is no answer to change'
+    'There is no answer to change',
+    // A round of the history the room does not have: the window shows none
+    'No such round'
 ];
 
 // The page's texts (i18n.js is loaded before this script)
@@ -109,6 +126,8 @@ startRoomPage({
     onGameState(game) {
         openSheets.clear();
         waitingNewcomers.clear();
+        // What the last socket asked may never come: the window asks again
+        historyAsked.clear();
         for (const request of game.joinRequests || []) waitingNewcomers.set(request.playerId, request);
         renderRoom();
     },
@@ -121,10 +140,19 @@ startRoomPage({
     events: {
         'round-state': (data) => {
             if (!currentGame || !data) return;
+            keepEndedRound(currentGame.round, data.historySets || []);
             currentGame.state = data.state;
             currentGame.round = data.round;
+            currentGame.historySets = data.historySets || [];
             // Back in the lobby: the newcomers who waited are joining
             if (!data.round) waitingNewcomers.clear();
+            renderRoom();
+        },
+        // A round of the room's history this page asked for
+        'history-round': (data) => {
+            if (!data || !data.round) return;
+            historyAsked.delete(data.number);
+            historyRounds.set(data.number, data.round);
             renderRoom();
         },
         // A sheet this player opened, with its answers
@@ -151,20 +179,22 @@ function renderRoom() {
     if (!currentGame) return;
     const round = currentGame.round || null;
     const reading = Boolean(round) && round.step >= round.questionCount;
-    const stories = round && storiesAsked ? round.stories : null;
+    // Every sheet open: «Another round» on the reading sheet takes the place of «New round»
+    const allRead = reading && Boolean(round.stories);
 
     showCard('inviteCard', !round);
     showCard('playersCard', !round);
+    showCard('roundsCard', !round && historySets().length > 0);
     showCard('writingCard', Boolean(round) && !reading);
-    showCard('readingCard', reading && !stories);
-    showCard('storiesCard', Boolean(stories));
-    showCard('seatsCard', Boolean(round) && !stories);
-    showCard('newRound', Boolean(round) && !stories);
+    showCard('readingCard', reading);
+    showCard('seatsCard', Boolean(round));
+    showCard('newRound', Boolean(round) && !allRead);
     if (!round && newRoundModal) newRoundModal.hide();
+    renderNewRoundQuestion(reading);
 
     if (!round) {
         openSheets.clear();
-        storiesAsked = false;
+        storiesSeen = false;
         // A round's answer is no answer of the next one
         if (sentAnswer) {
             sentAnswer = null;
@@ -173,12 +203,27 @@ function renderRoom() {
     }
     renderLobby();
     if (round && !reading) renderWriting(round);
-    if (reading && !stories) renderReading(round);
-    if (stories) renderStories(round);
-    if (round && !stories) renderSeats(round, reading);
+    if (reading) renderReading(round);
+    if (round) renderSeats(round, reading);
+    renderStoriesWindow();
 
-    // A phone that sleeps loses the room: awake while the round is on
-    keepScreenAwake(Boolean(round) && !stories);
+    // A phone that sleeps loses the room: awake while the round is on, until
+    // this page has opened every story
+    keepScreenAwake(Boolean(round) && !storiesSeen);
+}
+
+// «New round» and its question by the round's phase: while writing the
+// round's sheets are lost (red: it cannot be undone), while reading its
+// stories go into the history (the kit's red is only for what cannot be undone)
+function renderNewRoundQuestion(reading) {
+    const newRound = document.getElementById('newRound');
+    newRound.classList.toggle('btn-outline-danger', !reading);
+    newRound.classList.toggle('btn-outline-primary', reading);
+    document.getElementById('newRoundLoses').hidden = reading;
+    document.getElementById('newRoundKeeps').hidden = !reading;
+    const confirm = document.getElementById('confirmNewRound');
+    confirm.classList.toggle('btn-danger', !reading);
+    confirm.classList.toggle('btn-primary', reading);
 }
 
 function showCard(id, shown) {
@@ -193,6 +238,21 @@ function renderLobby() {
     const enough = players.length >= MIN_PLAYERS;
     document.getElementById('startRound').disabled = !enough;
     document.getElementById('startHint').hidden = enough;
+    renderRoundsPlayed();
+}
+
+// The rounds played, in order: each row opens the window of every story on
+// its round. Their sets' names in the page's language
+function renderRoundsPlayed() {
+    document.getElementById('roundsList').replaceChildren(...historySets().map((questionSet, index) => {
+        const row = button('rounds-list__row', undefined, () => openStoriesWindow(index + 1));
+        const icon = createIcon('caret-right');
+        row.append(element('span', 'rounds-list__number', say('roundNumber', { n: index + 1 })),
+            element('span', 'rounds-list__set', sayOfSet({ questionSet }, 'Name')), icon);
+        const item = element('li');
+        item.append(row);
+        return item;
+    }));
 }
 
 // Names and avatars are the players' own: text only, never HTML
@@ -232,14 +292,8 @@ function renderWriting(round) {
         field.value = (takenBack && sentAnswerAt(step)) || '';
         answerSending = false;
         if (takenBack) takingBack = null;
-        // A sheet that comes to the player opens with the focus in its field,
-        // after the end of its text: the form is shown further down
-        if (target) {
-            setTimeout(() => {
-                field.focus();
-                field.setSelectionRange(field.value.length, field.value.length);
-            });
-        }
+        // A sheet that comes to the player opens with the focus in its field
+        if (target) setTimeout(focusAnswerField);
     }
 
     // The sheet's title is the round's set; an absent player's sheet the player
@@ -268,6 +322,16 @@ function renderWriting(round) {
         document.getElementById('questionText').textContent = sayOfSet(round, `Question${step + 1}`);
         updateAnswerField();
     }
+}
+
+// The focus in the answer field, after the end of its text: the form is shown
+// further down. Not under the window of every story, which keeps the focus
+// inside itself: the field gets it when the window closes
+function focusAnswerField() {
+    if (storiesWindow.open || document.getElementById('writingCard').hidden || document.getElementById('answerForm').hidden) return;
+    const field = document.getElementById('answerText');
+    field.focus();
+    field.setSelectionRange(field.value.length, field.value.length);
 }
 
 // The player's own answer at this step, as this tab sent it, or null: the
@@ -341,20 +405,30 @@ function renderReading(round) {
     }
     parts.push(element('p', 'opened-count', say('openedCount', { opened: round.opened, count: round.seats.length })));
     parts.push(storiesButton(round));
+    if (round.stories) parts.push(anotherRoundButton());
     document.getElementById('readingCard').replaceChildren(...parts);
 }
 
-// «Every story»: there from the start of the reading, off until the last sheet is open
+// «Every story»: there from the start of the reading, off until the last sheet
+// is open; it opens the window on the round being read, the last of the window
 function storiesButton(round) {
     const show = button('btn btn-primary btn-lg', sayOfSet(round, 'AllStories'), () => {
-        storiesAsked = true;
-        renderRoom();
-        document.getElementById('storiesCard').scrollIntoView({ block: 'start', behavior: 'instant' });
+        storiesSeen = true;
+        openStoriesWindow(windowRoundCount());
     });
     show.id = 'showStories';
     show.disabled = !round.stories;
     const row = element('div', 'd-grid mt-3');
     row.append(show);
+    return row;
+}
+
+// «Another round» on the reading sheet, once every sheet is open: it asks first
+function anotherRoundButton() {
+    const another = button('btn btn-outline-primary btn-lg', say('anotherRound'), () => newRoundModal.show());
+    another.id = 'anotherRound';
+    const row = element('div', 'd-grid mt-2');
+    row.append(another);
     return row;
 }
 
@@ -410,22 +484,140 @@ function storyList(answers) {
     return list;
 }
 
-// Every story, once the last sheet is open: each sheet whole, with who read it
-function renderStories(round) {
-    document.getElementById('storiesTitle').textContent = sayOfSet(round, 'AllStories');
-    document.getElementById('storyList').replaceChildren(...round.stories.map((story) => {
+// The sets of the room's history; a room of an earlier version sends none
+function historySets() {
+    return (currentGame && currentGame.historySets) || [];
+}
+
+// The round being read, once every sheet is open: the window's last round.
+// It is not in the history until it ends
+function roundBeingRead() {
+    const round = currentGame && currentGame.round;
+    return round && round.step >= round.questionCount && round.stories ? round : null;
+}
+
+// The rounds the window pages through: the history, then the round being read
+function windowRoundCount() {
+    return historySets().length + (roundBeingRead() ? 1 : 0);
+}
+
+// Round `number` of the window as { questionSet, stories: [{ answers, readBy }] },
+// readBy a name or null; stories null while the room has not sent them
+function windowRound(number) {
+    const sets = historySets();
+    if (number <= sets.length) {
+        const kept = historyRounds.get(number);
+        return { questionSet: sets[number - 1], stories: kept ? kept.stories : null };
+    }
+    const round = roundBeingRead();
+    if (!round) return null;
+    return {
+        questionSet: round.questionSet,
+        stories: round.stories.map(story => ({ answers: story.answers, readBy: nameOf(round, story.readBy) || null }))
+    };
+}
+
+// A round of the history the window needs and the page has not got: the room sends it
+function askForHistoryRound(number) {
+    if (number < 1 || number > historySets().length || historyRounds.has(number) || historyAsked.has(number)) return;
+    historyAsked.add(number);
+    sendMove('history-round', { number });
+}
+
+// The round being read has just ended with every story seen: it is the
+// history's newest round now, and the page keeps what it had - the window open
+// on it goes on showing it, with nothing to ask
+function keepEndedRound(round, sets) {
+    if (!round || round.step < round.questionCount || !round.stories || sets.length !== historySets().length + 1) return;
+    historyRounds.set(sets.length, {
+        questionSet: round.questionSet,
+        stories: round.stories.map(story => ({ answers: story.answers, readBy: nameOf(round, story.readBy) || null }))
+    });
+}
+
+function openStoriesWindow(number) {
+    Object.assign(storiesWindow, { open: true, number, asking: false, drawn: null });
+    renderStoriesWindow();
+    storiesModal.show();
+}
+
+// The window as it is now: its round's title and number, its stories (drawn
+// anew only when the round, its stories or the language change, so a reader's
+// place and a «Copied!» stay), the buttons, the line of a new round started
+function renderStoriesWindow() {
+    if (!storiesWindow.open) return;
+    const count = windowRoundCount();
+    const { number } = storiesWindow;
+    const shown = number >= 1 && number <= count ? windowRound(number) : null;
+    // The round being read in the window has ended without its stories: its question is over
+    if (storiesWindow.asking && (!roundBeingRead() || number !== count)) storiesWindow.asking = false;
+    const { asking } = storiesWindow;
+
+    const title = document.getElementById('storiesTitle');
+    // The question's title is the one of New round's own window, with its icon
+    if (asking) title.replaceChildren(createIcon('refresh'), element('span', '', say('newRound')));
+    else title.textContent = shown ? sayOfSet(shown, 'AllStories') : '';
+    const line = document.getElementById('storiesRound');
+    line.hidden = asking;
+    line.textContent = say('roundOf', { n: number, count });
+
+    // Opened in the lobby or the reading, it shows the writing only if a round began meanwhile
+    const round = currentGame.round;
+    document.getElementById('newRoundStarted').hidden = asking || !round || round.step >= round.questionCount;
+
+    const list = document.getElementById('storyList');
+    list.hidden = asking;
+    const drawn = shown && shown.stories ? `${number}:${shown.questionSet}:${document.documentElement.lang}` : null;
+    if (drawn !== storiesWindow.drawn) {
+        storiesWindow.drawn = drawn;
+        list.replaceChildren(...(drawn ? storySheets(shown) : []));
+    }
+    list.setAttribute('aria-busy', String(Boolean(shown) && !drawn));
+    askForHistoryRound(number);
+    // The round before it is asked for at once: «Previous» need not wait
+    askForHistoryRound(number - 1);
+
+    document.getElementById('storiesEnd').hidden = asking;
+    document.getElementById('previousRound').disabled = number <= 1;
+    document.getElementById('nextRound').disabled = number >= count;
+    document.getElementById('windowAnotherRound').hidden = !roundBeingRead() || number !== count;
+    document.getElementById('windowNewRoundText').hidden = !asking;
+    document.getElementById('windowNewRoundButtons').hidden = !asking;
+}
+
+// Another round of the window, from its first story: the window's head gets
+// the focus, so a keyboard or a screen reader starts at the new round
+function showWindowRound(step) {
+    const count = windowRoundCount();
+    const number = Math.min(Math.max(storiesWindow.number + step, 1), count);
+    if (number === storiesWindow.number) return;
+    storiesWindow.number = number;
+    renderStoriesWindow();
+    document.getElementById('storiesBody').scrollTop = 0;
+    const list = document.getElementById('storyList');
+    list.classList.remove('stories--from-left', 'stories--from-right');
+    // A new animation for a list that had one: its class anew, after a reflow
+    void list.offsetWidth;
+    list.classList.add(step > 0 ? 'stories--from-right' : 'stories--from-left');
+    document.getElementById('storiesTitle').focus();
+}
+
+// Every story of a round: each sheet whole, its title the number in words, who
+// read it, and the strip to share it
+function storySheets(shown) {
+    return shown.stories.map((story, number) => {
         const sheet = element('div', 'sheet');
-        sheet.dataset.sheet = story.sheet;
+        sheet.dataset.sheet = number;
         const head = element('div', 'story-head');
-        head.append(element('span', '', sayOfSet(round, `StoryTitle${story.sheet + 1}`)),
-            element('small', '', say('storyReadBy', { name: nameOf(round, story.readBy) })));
+        head.append(element('span', '', sayOfSet(shown, `StoryTitle${number + 1}`)));
+        if (story.readBy) head.append(element('small', '', say('storyReadBy', { name: story.readBy })));
         const share = element('button', 'story-send');
         share.type = 'button';
         share.append(createIcon('export'), element('span', '', say('shareStory')));
-        share.addEventListener('click', () => shareStory(share, round, story.answers));
+        share.addEventListener('click', () => shareStory(share, shown, story.answers));
         sheet.append(head, storyList(story.answers), share);
         return sheet;
-    }));
+    });
 }
 
 // A story for friends: the round's set as its title - capitals between two
@@ -514,14 +706,42 @@ function setUpRoomGame() {
         if (held) sendMove('return-sheet', { playerId: held.playerId });
     });
 
-    // A new round in the middle of one asks first: its sheets are lost
+    // A new round asks first: while writing its sheets are lost, after every
+    // story another player may still be reading their sheet («Another round»
+    // on the reading sheet opens the same window)
     newRoundModal = new bootstrap.Modal(document.getElementById('newRoundModal'));
-    // Both ask first: after every story too, another player may still be reading their sheet
-    for (const id of ['newRound', 'anotherRound']) {
-        document.getElementById(id).addEventListener('click', () => newRoundModal.show());
-    }
+    document.getElementById('newRound').addEventListener('click', () => newRoundModal.show());
     document.getElementById('confirmNewRound').addEventListener('click', () => {
         newRoundModal.hide();
         sendMove('new-round');
+    });
+
+    // The window of every story: the rounds back and forth, and «Another
+    // round» with its question inside it (Bootstrap's windows do not open one
+    // over another). It stays open when the round ends: the stories it shows
+    // are the history's now
+    const windowElement = document.getElementById('storiesModal');
+    storiesModal = new bootstrap.Modal(windowElement);
+    windowElement.addEventListener('hidden.bs.modal', () => {
+        storiesWindow.open = false;
+        storiesWindow.asking = false;
+        focusAnswerField();
+    });
+    document.getElementById('previousRound').addEventListener('click', () => showWindowRound(-1));
+    document.getElementById('nextRound').addEventListener('click', () => showWindowRound(1));
+    document.getElementById('windowAnotherRound').addEventListener('click', () => {
+        storiesWindow.asking = true;
+        renderStoriesWindow();
+        document.getElementById('cancelWindowNewRound').focus();
+    });
+    document.getElementById('cancelWindowNewRound').addEventListener('click', () => {
+        storiesWindow.asking = false;
+        renderStoriesWindow();
+        document.getElementById('windowAnotherRound').focus();
+    });
+    document.getElementById('confirmWindowNewRound').addEventListener('click', () => {
+        storiesWindow.asking = false;
+        sendMove('new-round');
+        renderStoriesWindow();
     });
 }
