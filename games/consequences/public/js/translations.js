@@ -67,6 +67,13 @@ const translations = {
         roundsPlayed: "Rounds played",
         roundNumber: "Round {n}",
 
+        // The coffee coupon on the reading sheet, once every sheet is open; its
+        // plate says "Buy me a coffee" in English in both languages, as the landing page's
+        intermission: "Intermission",
+        // The ask in two phrases, a line each: why, then how
+        coffeeAskWhy: "Enjoyed it? Consequences is free and has no ads.",
+        coffeeAskHow: "You can support it with a cup of coffee.",
+
         // A new round in the middle of one: while writing its sheets are lost,
         // while reading its stories go into the history
         newRound: "New round",
@@ -307,6 +314,11 @@ const translations = {
         newRoundStarted: "Начался новый раунд: закройте окно, когда дочитаете.",
         roundsPlayed: "Сыгранные раунды",
         roundNumber: "Раунд {n}",
+
+        // The coffee coupon on the reading sheet, once every sheet is open
+        intermission: "Антракт",
+        coffeeAskWhy: "Понравилось? «Чепуха» бесплатна и без рекламы.",
+        coffeeAskHow: "Её можно поддержать чашкой кофе.",
 
         // A new round in the middle of one: while writing its sheets are lost,
         // while reading its stories go into the history

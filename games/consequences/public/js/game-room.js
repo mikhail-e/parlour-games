@@ -17,6 +17,8 @@
 // moves and a language change. It is emptied when its sheet changes - the next
 // step, another seat's sheet.
 /* global createIcon, shareOrCopy, AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
+// From the game's config.js
+/* global APP_STORAGE_PREFIX */
 // From the kit's room-page.js
 /* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
 
@@ -41,6 +43,18 @@ let storiesSeen = false;
 // The window of every story: open or not, the round it shows (1 to the last
 // of windowRoundCount()), and whether it asks «Another round»'s question
 const storiesWindow = { open: false, number: 0, asking: false, drawn: null };
+// The room where this browser last pressed the coffee coupon's plate: the
+// coupon stays hidden there for the rest of the room. A click is not a
+// payment, so the next room - the next game - shows it again
+const COFFEE_ROOM_KEY = `${APP_STORAGE_PREFIX}-coffee-room`;
+// The author's page on Buy Me a Coffee: the same address as the landing page's plate
+const COFFEE_PAGE = 'https://www.buymeacoffee.com/mikhail.e';
+// Whether this page shows the coupon in the round being read, decided once per
+// round (its number in the room): the reading sheet is drawn anew on every
+// change of the room - another player's page going or coming -, and a press
+// must not take the coupon away under the player while they are on Buy Me a
+// Coffee's tab. A reload, another tab, the next round decide afresh
+let coffeeShown = { round: null, show: false };
 // The rounds of the room's history this page has got, by number: a round of
 // the history never changes. And the ones asked for, not answered yet
 const historyRounds = new Map();
@@ -405,7 +419,10 @@ function renderReading(round) {
     }
     parts.push(element('p', 'opened-count', say('openedCount', { opened: round.opened, count: round.seats.length })));
     parts.push(storiesButton(round));
-    if (round.stories) parts.push(anotherRoundButton());
+    if (round.stories) {
+        parts.push(anotherRoundButton());
+        if (showCoffee()) parts.push(coffeeCoupon());
+    }
     document.getElementById('readingCard').replaceChildren(...parts);
 }
 
@@ -430,6 +447,46 @@ function anotherRoundButton() {
     const row = element('div', 'd-grid mt-2');
     row.append(another);
     return row;
+}
+
+// The coupon in the round being read: shown unless the plate was pressed in
+// this room, as the page knew it when it first drew the round's end. The round
+// being read is not in the history yet, so its number is one past the history's
+function showCoffee() {
+    const number = historySets().length + 1;
+    if (coffeeShown.round !== number) {
+        coffeeShown = { round: number, show: AppStorage.get(COFFEE_ROOM_KEY) !== currentGame.id };
+    }
+    return coffeeShown.show;
+}
+
+// The coffee coupon under «Another round», the game's one ask for support (the
+// owner's pick): an intermission's buffet coupon. Its plate is the kit's
+// (.bmc-button), on one line, English in both languages like the landing
+// page's; the link tells Buy Me a Coffee nothing of the room's address
+// (rel="noreferrer", _headers) and opens as it is: the page only remembers the
+// room it was pressed in
+function coffeeCoupon() {
+    const coupon = element('div', 'coffee-coupon');
+    coupon.id = 'coffeeCoupon';
+    const link = element('a', 'bmc-button');
+    link.href = COFFEE_PAGE;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.lang = 'en';
+    const cup = element('img', 'bmc-button__cup');
+    cup.src = '/kit/img/bmc-cup.svg';
+    cup.alt = '';
+    const main = element('span', 'bmc-button__main');
+    main.append(cup, 'Buy me a coffee');
+    link.append(main);
+    link.addEventListener('click', () => AppStorage.set(COFFEE_ROOM_KEY, currentGame.id));
+    // The ask in two phrases, a line each: a line never breaks in the middle
+    // of a phrase while the whole phrase fits on it
+    const ask = element('p', 'coffee-coupon__text');
+    ask.append(element('span', 'coffee-coupon__line', say('coffeeAskWhy')), ' ', element('span', 'coffee-coupon__line', say('coffeeAskHow')));
+    coupon.append(element('p', 'coffee-coupon__title', say('intermission')), ask, link);
+    return coupon;
 }
 
 function sheetSection(title, ...content) {

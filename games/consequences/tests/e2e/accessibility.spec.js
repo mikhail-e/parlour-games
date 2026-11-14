@@ -110,6 +110,15 @@ test('the reading: an open sheet', async ({ newPlayer }) => {
     expect(await violations(players[0].page)).toEqual([]);
 });
 
+test('the reading: every sheet open, the coffee coupon under Another round', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
+    await expect(players[0].page.locator('#coffeeCoupon')).toBeVisible();
+
+    expect(await violations(players[0].page)).toEqual([]);
+});
+
 test('every story', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await writeToReading(players);
