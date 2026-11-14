@@ -675,9 +675,9 @@
   from { opacity: .2; transform: translateX(-24px); }
 }
 
-/* The coffee coupon at the end of the window of every story: a buffet coupon
-   of the intermission, cut out of the programme along its dashes. After the
-   rule above, so its own top margin beats the end's 12px */
+/* The coffee coupon on the reading sheet, under «Every story» and «Another
+   round» once every sheet is open: a buffet coupon of the intermission, cut
+   out of the programme along its dashes */
 .coffee-coupon {
   margin-top: 22px;
   padding: 14px 16px 16px;

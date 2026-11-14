@@ -67,8 +67,8 @@ const translations = {
         roundsPlayed: "Rounds played",
         roundNumber: "Round {n}",
 
-        // The coffee coupon at the end of the window of every story; its plate
-        // says "Buy me a coffee" in English in both languages, as the landing page's
+        // The coffee coupon on the reading sheet, once every sheet is open; its
+        // plate says "Buy me a coffee" in English in both languages, as the landing page's
         intermission: "Intermission",
         coffeeAsk: "Enjoyed it? Consequences is free and has no ads. You can support it with a cup of coffee.",
 
@@ -313,7 +313,7 @@ const translations = {
         roundsPlayed: "Сыгранные раунды",
         roundNumber: "Раунд {n}",
 
-        // The coffee coupon at the end of the window of every story
+        // The coffee coupon on the reading sheet, once every sheet is open
         intermission: "Антракт",
         coffeeAsk: "Понравилось? «Чепуха» бесплатна и без рекламы. Её можно поддержать чашкой кофе.",
 
