@@ -45,6 +45,155 @@
   font-weight: 600;
 }
 
+/* ===== The valance ===== */
+
+/* While a round is on (body.in-round, game-room.js) the sign and the ticket
+   give their place to the sheet: a valance across the top of the screen, the
+   stage's upper drape, with the name and the room code under it (the owner's
+   pick from a page of variants, the code under the name on every screen).
+   The name is the sign's own <text> in a picture of its own (.brand-name),
+   the code the kit's ticket repainted, so the page has one #roomCode, filled
+   by the kit */
+:root {
+  --valance-top: #0d281c;     /* velvet darker than the curtain */
+  --valance-bottom: #12392a;
+  --valance-gold: #e5c56f;    /* the name */
+  --valance-cord: #c9a24a;    /* the braid along the scalloped hem */
+  --valance-fold: 56px;       /* one fold and its scallop (the owner's pick) */
+  --valance-hem: 13px;        /* how deep a scallop hangs */
+  --valance-hem-edge: #0e2f21; /* a scallop's lower edge, turning under */
+  /* A fold across its width: the crease at its edges, the light in its middle */
+  --valance-folds: linear-gradient(90deg, rgba(0, 0, 0, .34) 0%, rgba(0, 0, 0, 0) 26%, rgba(255, 255, 255, .08) 50%, rgba(0, 0, 0, 0) 74%, rgba(0, 0, 0, .34) 100%);
+}
+
+/* The valance's name is hidden in the lobby, where the sign is the h1's
+   picture; during a round the sign is: the h1 always shows one */
+.brand-name {
+  display: none;
+}
+
+body.in-round .brand-sign {
+  display: none;
+}
+
+/* The ribbon runs from edge to edge of the window, out of the .container and
+   over the body's padding at the top. 100vw counts a scrollbar that takes
+   room (Windows, a Mac set to show them): the body's overflow, which the
+   browser gives the window, cuts that much off instead of scrolling sideways */
+body.in-round {
+  overflow-x: hidden;
+}
+
+/* Every fold ends in its own scallop: the folds, the scallops and the braid
+   are tiles of one width, centred on the window's middle, so a crease falls
+   where two scallops meet and the name hangs over a scallop's middle. The
+   shadow follows the scallops (a box-shadow would lie under them straight) */
+body.in-round .room-head {
+  position: relative;
+  width: 100vw;
+  margin-top: -20px;
+  margin-left: calc(50% - 50vw);
+  padding: 12px 16px;
+  background:
+    var(--valance-folds) 50% 0 / var(--valance-fold) 100% repeat-x,
+    linear-gradient(180deg, var(--valance-top), var(--valance-bottom));
+  filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .45));
+}
+
+/* The scallops: the folds go on into them, cut out by a mask of half
+   ellipses (the mask gives the shape, the tokens the colors) */
+body.in-round .room-head::before,
+body.in-round .room-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--valance-hem);
+}
+
+body.in-round .room-head::before {
+  background:
+    var(--valance-folds) 50% 0 / var(--valance-fold) 100% repeat-x,
+    linear-gradient(180deg, var(--valance-bottom), var(--valance-hem-edge));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 13' preserveAspectRatio='none'%3E%3Cpath d='M0 0A28 11.5 0 0 0 56 0Z'/%3E%3C/svg%3E") 50% 0 / var(--valance-fold) var(--valance-hem) repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 13' preserveAspectRatio='none'%3E%3Cpath d='M0 0A28 11.5 0 0 0 56 0Z'/%3E%3C/svg%3E") 50% 0 / var(--valance-fold) var(--valance-hem) repeat-x;
+}
+
+/* The braid: the same curve as the scallops' edge, drawn over it */
+body.in-round .room-head::after {
+  background: var(--valance-cord);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 13' preserveAspectRatio='none'%3E%3Cpath d='M0 0A28 11.5 0 0 0 56 0' fill='none' stroke='black' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 50% 0 / var(--valance-fold) var(--valance-hem) repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 13' preserveAspectRatio='none'%3E%3Cpath d='M0 0A28 11.5 0 0 0 56 0' fill='none' stroke='black' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 50% 0 / var(--valance-fold) var(--valance-hem) repeat-x;
+}
+
+body.in-round .brand {
+  margin: 0;
+}
+
+/* The name as the sign draws it, in gold; the height sets its size, the
+   picture's own proportions its width */
+body.in-round .brand-name {
+  display: block;
+  height: 30px;
+  width: auto;
+  aspect-ratio: 500 / 95;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.brand-name text {
+  fill: var(--valance-gold);
+}
+
+/* The ticket as a line under the name: no paper, no dashed edge */
+body.in-round .room-ticket {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: .4em;
+  margin: 4px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  color: var(--on-page-soft);
+  font-size: .72rem;
+  letter-spacing: .14em;
+  white-space: nowrap;
+}
+
+body.in-round .room-ticket #roomCode {
+  color: var(--on-page);
+  font-size: .95rem;
+  letter-spacing: .18em;
+}
+
+/* On a phone the kit's .container has padding at the top too */
+@media (max-width: 768px) {
+  body.in-round .room-head {
+    margin-top: -30px;
+  }
+}
+
+@media (min-width: 768px) {
+  body.in-round .room-head {
+    padding: 14px 16px;
+  }
+
+  body.in-round .brand-name {
+    height: 38px;
+  }
+
+  body.in-round .room-ticket {
+    font-size: .8rem;
+  }
+
+  body.in-round .room-ticket #roomCode {
+    font-size: 1.1rem;
+  }
+}
+
 /* ===== The round ===== */
 
 /* The sheet's paper and its pleats: lighter than the kit's cards, so the
