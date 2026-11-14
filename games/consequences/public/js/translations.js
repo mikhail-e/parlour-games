@@ -12,7 +12,7 @@ const translations = {
         howToPlay: "How to Play",
         rule1: "Everyone answers the same question on their own sheet and passes the sheet on: nobody sees what was written before",
         rule2: "Eight questions: who, with whom, when, where and others. They come in sets (classic, fairy tale, detective story and four more), and every round draws its own",
-        rule3: "At the end everyone reads out the story that came to them",
+        rule3: "At the end everyone reads out the story that came to them. The stories of every round played stay in the room to read again",
 
         // The lobby
         players: "Players",
@@ -58,9 +58,20 @@ const translations = {
         shareStoryInvitation: "This story was written in a game of Consequences. Create your own at {site}",
         anotherRound: "Another round",
 
-        // A new round in the middle of one
+        // The room's history: every story of a round in a window, the rounds
+        // played in the lobby
+        roundOf: "Round {n} of {count}",
+        previousRound: "Previous",
+        nextRound: "Next",
+        newRoundStarted: "A new round has started: close the window when you finish reading.",
+        roundsPlayed: "Rounds played",
+        roundNumber: "Round {n}",
+
+        // A new round in the middle of one: while writing its sheets are lost,
+        // while reading its stories go into the history
         newRound: "New round",
         newRoundText: "The sheets of this round will be lost. Start a new round?",
+        newRoundKeepsStories: "The stories of this round will stay in Every story. Someone may still be reading their sheet. Start a new round?",
         confirmNewRound: "Yes, a new round",
 
         // The sets of questions (game-logic.js lists them): each set's name,
@@ -242,7 +253,7 @@ const translations = {
         howToPlay: "Как играть",
         rule1: "Все отвечают на один вопрос, каждый на своём листе, и передают лист дальше: прежних ответов никто не видит",
         rule2: "Восемь вопросов: кто, с кем, когда, где и другие. Они собраны в наборы (классика, сказка, детектив и ещё четыре), и в каждом раунде выпадает свой",
-        rule3: "В конце каждый читает вслух историю, которая к нему пришла",
+        rule3: "В конце каждый читает вслух историю, которая к нему пришла. Истории всех сыгранных раундов можно перечитать, пока в комнате играют",
 
         // The lobby
         players: "Игроки",
@@ -288,9 +299,20 @@ const translations = {
         shareStoryInvitation: "Эту историю сочинили в «Чепухе». Создайте свою на {site}",
         anotherRound: "Ещё раунд",
 
-        // A new round in the middle of one
+        // The room's history: every story of a round in a window, the rounds
+        // played in the lobby
+        roundOf: "Раунд {n} из {count}",
+        previousRound: "Прошлый",
+        nextRound: "Следующий",
+        newRoundStarted: "Начался новый раунд: закройте окно, когда дочитаете.",
+        roundsPlayed: "Сыгранные раунды",
+        roundNumber: "Раунд {n}",
+
+        // A new round in the middle of one: while writing its sheets are lost,
+        // while reading its stories go into the history
         newRound: "Новый раунд",
         newRoundText: "Листы этого раунда пропадут. Начать новый раунд?",
+        newRoundKeepsStories: "Истории этого раунда останутся во «Всех историях». Кто-то, может быть, ещё читает свой лист. Начать новый раунд?",
         confirmNewRound: "Да, новый раунд",
 
         // The sets of questions (game-logic.js lists them): each set's name,
@@ -493,6 +515,7 @@ const serverErrors = {
         'The stories are not ready yet': "Истории ещё не готовы",
         'Another player is reading your sheet': "Ваш лист читает другой игрок",
         'This sheet is already open': "Этот лист уже открыт",
+        'No such round': "Такого раунда нет",
     }
 };
 

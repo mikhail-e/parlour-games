@@ -20,6 +20,15 @@
 //     stepEndsAt: time | null,  // every sheet has this step's answer: when they move on
 //   }
 //   game.lastQuestionSet = name | null  // the set of the room's last round: the next one draws another
+//   game.historySets = [name, ...]      // the room's history: the set of every round that reached the reading, in order
+//
+// The room's history: a round that reached the reading goes into it when it
+// ends ("Another round", "New round"), every sheet whole, even one nobody
+// opened; a round ended while writing does not. The room keeps history round
+// N (from 1) under its own key, `history:N` (worker/room.js); the game keeps
+// only their sets:
+//
+//   { questionSet: name, stories: [{ answers: [text x 8], readBy: name | null }] }
 
 // The players of the room - joining with the browser's secret, a leaver's
 // return to the round, newcomers waiting, online and offline, ghosts, the
@@ -54,15 +63,15 @@ const {
     playersView
 } = players.roomPlayers({
     // The round: none in the lobby; the set of the last one, which the next
-    // round does not draw
-    fields: () => ({ round: null, lastQuestionSet: null }),
+    // round does not draw; the sets of the room's history
+    fields: () => ({ round: null, lastQuestionSet: null, historySets: [] }),
     // A leaver of the round keeps their seat: the others see whose it is
     snapshot: (game, player) => ({ name: player.name, avatar: player.avatar }),
     // A leaver puts down the absent players' sheets they held
     forget: (game, playerId) => releaseSheetsOf(game, playerId),
     // The round goes with the players list (a join, a return, a leaver): a
     // seat's presence is part of it
-    view: game => ({ round: roundView(game) }),
+    view: game => ({ round: roundView(game), historySets: historySetsOf(game) }),
 });
 
 // The sheet in front of seat i at the round's step: sheet j starts at seat j
@@ -320,10 +329,42 @@ function allStories(game) {
     }));
 }
 
+// A player of the list, or a leaver of the round as the kit keeps them
+function playerOrLeaver(game, playerId) {
+    return game.players.find(each => each.id === playerId) || game.recentlyLeft.get(playerId) || {};
+}
+
+// The sets of the room's history; a game an earlier version saved has none
+function historySetsOf(game) {
+    return game.historySets || [];
+}
+
+// The round as the room's history keeps it, once it has reached the reading:
+// its set, and every story with the name of who read it (null: nobody opened
+// it). A name, not an ID: the history outlives a leaver's snapshot. Before
+// the reading, null: a round ended while writing is not kept
+function historyRoundOf(game) {
+    const round = game.round;
+    if (!round || round.step !== READING_STEP) return null;
+    return {
+        questionSet: round.questionSet || CLASSIC,
+        stories: round.sheets.map((sheet, sheetNumber) => {
+            const readBy = round.openedBy[sheetNumber];
+            return { answers: answersOf(round, sheetNumber), readBy: (readBy && playerOrLeaver(game, readBy).name) || null };
+        }),
+    };
+}
+
+// What a page may ask of the history: a round's number, 1 to the last
+function isHistoryNumber(game, number) {
+    return Number.isInteger(number) && number >= 1 && number <= historySetsOf(game).length;
+}
+
 // "New round" in the middle of one, or "Another round" after every story:
 // back to the lobby. The players of the list stay; the leavers' seats go with
 // the round; the newcomers waiting just join (worker/room.js tells their
-// pages to try again)
+// pages to try again). A round that reached the reading goes into the room's
+// history: `history` is its number and the round to keep (null: none)
 function newRound(games, gameId, playerId) {
     const game = games.get(gameId);
     if (!game) return { success: false, error: 'Game not found' };
@@ -332,13 +373,20 @@ function newRound(games, gameId, playerId) {
     }
     if (game.state !== 'started') return { success: false, error: 'No round is on' };
 
+    // Before the leavers' snapshots go: their names are in it
+    const kept = historyRoundOf(game);
+    let history = null;
+    if (kept) {
+        game.historySets = [...historySetsOf(game), kept.questionSet];
+        history = { number: game.historySets.length, round: kept };
+    }
     game.state = 'waiting';
     game.round = null;
     game.recentlyLeft.clear();
     const endedJoinRequests = [...game.joinRequests.keys()];
     game.joinRequests.clear();
     touchGame(game);
-    return { success: true, endedJoinRequests };
+    return { success: true, endedJoinRequests, history };
 }
 
 // The round as every page gets it: its set of questions, the step, and for
@@ -357,8 +405,7 @@ function roundView(game) {
         step: round.step,
         questionCount: QUESTION_COUNT,
         seats: round.seats.map((playerId, seatIndex) => {
-            const player = game.players.find(each => each.id === playerId)
-                || (game.recentlyLeft.get(playerId) || {});
+            const player = playerOrLeaver(game, playerId);
             const sheetNumber = sheetAt(round, seatIndex);
             const answer = reading ? null : round.sheets[sheetNumber][round.step];
             return {
@@ -380,14 +427,16 @@ function roundView(game) {
 }
 
 // The game as a player's page gets it (game-state): never a secret's hash,
-// never an answer before the stories
+// never an answer before the stories. The history goes as its sets only: a
+// page asks for the round it shows (worker/room.js, history-round)
 function serializeGame(game) {
     return {
         id: game.id,
         players: game.players,
         state: game.state,
         created: game.created,
-        round: roundView(game)
+        round: roundView(game),
+        historySets: historySetsOf(game)
     };
 }
 
@@ -410,6 +459,8 @@ module.exports = {
     sheetsOpenedBy,
     allStories,
     newRound,
+    historySetsOf,
+    isHistoryNumber,
     roundView,
     sheetAt,
     checkAnswer,

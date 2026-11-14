@@ -4,7 +4,7 @@
 const { AxeBuilder } = require('@axe-core/playwright');
 const {
     test, expect, text, PAGE_STATUS_404, createRoom, roomWith, askToJoin, startedRound, answer, writeToReading,
-    showStories, seatRow, waitForLanding,
+    showStories, confirmAnotherRound, seatRow, waitForLanding,
 } = require('./helpers');
 /* global showMessage -- the kit's notify.js, called in the page */
 
@@ -117,6 +117,33 @@ test('every story', async ({ newPlayer }) => {
     await showStories(players[0]);
 
     expect(await violations(players[0].page)).toEqual([]);
+});
+
+test('every story: Another round asked inside the window', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
+    await showStories(players[0]);
+    await players[0].page.click('#windowAnotherRound');
+    await expect(players[0].page.locator('#confirmWindowNewRound')).toBeVisible();
+
+    expect(await violations(players[0].page, '#storiesModal')).toEqual([]);
+});
+
+// A round played: the lobby lists it, and its row opens the window on it
+test('the rounds played in the lobby, and a round of them in the window', async ({ newPlayer }) => {
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    await writeToReading(players);
+    for (const player of players) await player.page.locator('#readingCard .closed-sheet').click();
+    await confirmAnotherRound(players[0]);
+    const { page } = players[0];
+    await expect(page.locator('#roundsList .rounds-list__row')).toHaveCount(1);
+
+    expect(await violations(page)).toEqual([]);
+
+    await page.locator('#roundsList .rounds-list__row').click();
+    await expect(page.locator('#storyList .sheet')).toHaveCount(2);
+    expect(await violations(page)).toEqual([]);
 });
 
 // A newcomer to a round waits for the next one

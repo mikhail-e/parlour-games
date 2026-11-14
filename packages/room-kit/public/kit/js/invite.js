@@ -29,7 +29,9 @@ function setUpInvitation(roomCode) {
 
 // Copy a text and flash "Copied!" on the button that was pressed. A page the
 // clipboard is closed to (plain http, as a phone on the home network) copies
-// the old way, from a field made for it
+// the old way, from a field made for it. The field goes into the window the
+// button is in, if any: an open Bootstrap window keeps the focus inside
+// itself, and would take it from a field outside before it is copied
 async function copyAndSay(button, text) {
     try {
         await navigator.clipboard.writeText(text);
@@ -37,7 +39,7 @@ async function copyAndSay(button, text) {
         const field = document.createElement('textarea');
         field.value = text;
         field.style.position = 'fixed'; // selecting it must not scroll the page
-        document.body.append(field);
+        (button.closest('.modal, dialog') || document.body).append(field);
         field.select();
         document.execCommand('copy');
         field.remove();

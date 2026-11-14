@@ -12,7 +12,7 @@ const { test, expect } = require('@parlour-games/room-kit/e2e');
 const { pageTexts, ...kitHelpers } = require('@parlour-games/room-kit/e2e-helpers');
 // The sets a round draws from: their texts are the pages' (translations.js)
 const { QUESTION_SETS } = require('../../game-logic');
-/* global currentGame -- the room page's picture of the game (the kit's room-page.js), inside page.evaluate() */
+/* global currentGame, sendMove -- the room page's picture of the game and its move (the kit's room-page.js), inside page.evaluate() */
 
 const { roomWith, waitForLanding } = kitHelpers;
 
@@ -100,17 +100,35 @@ async function writeToReading(players, answerOf = answerText) {
     for (let step = 0; step < 8; step++) await answerStep(players, step, answerOf);
 }
 
-// A player goes on from the reading to every story, by their own press
+// A player goes on from the reading to every story, by their own press: the
+// window of every story opens over their sheet
 async function showStories(player) {
     await player.page.click('#showStories');
-    await expect(player.page.locator('#storiesCard')).toBeVisible();
+    await expect(player.page.locator('#storiesModal')).toHaveClass(/\bshow\b/);
 }
 
-// Another round: the player presses it and says yes in the window
+// The window of every story closed with its cross: the room's screen under it
+async function closeStories(player) {
+    await player.page.click('#storiesModal .btn-close');
+    await expect(player.page.locator('#storiesModal')).toBeHidden();
+}
+
+// Another round, and back in the lobby. With the window of every story open,
+// from under its last story, the question inside the window - and then the
+// window is closed, as it stays open on its round when the round ends; else
+// from the reading sheet, the question in its own window
 async function confirmAnotherRound(player) {
-    await player.page.click('#anotherRound');
-    await expect(player.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
-    await player.page.click('#confirmNewRound');
+    const { page } = player;
+    if (await page.locator('#storiesModal').isVisible()) {
+        await page.click('#windowAnotherRound');
+        await page.click('#confirmWindowNewRound');
+        await expect.poll(() => roundStep(page)).toBeNull();
+        await closeStories(player);
+        return;
+    }
+    await page.click('#anotherRound');
+    await expect(page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
+    await page.click('#confirmNewRound');
 }
 
 // A player back in the started round by its link, from a new page of their
@@ -134,6 +152,33 @@ function seatRow(page, name) {
     });
 }
 
+// What the room sends: a player whose page keeps every message its room
+// sockets receive (secret.spec.js, history.spec.js read them)
+async function listeningPlayer(newPlayer, name) {
+    const player = await newPlayer(name);
+    player.received = [];
+    player.page.on('websocket', socket => socket.on('framereceived', frame => {
+        if (typeof frame.payload === 'string') player.received.push(frame.payload);
+    }));
+    return player;
+}
+
+// Every message of this event a listening player's page received, as data
+function messagesOf(player, event) {
+    // A page's ping on a long run is answered with a bare "pong"
+    return player.received.filter(payload => payload !== 'pong').map(payload => JSON.parse(payload))
+        .filter(message => message.event === event).map(message => message.data);
+}
+
+// The latest message of this event, or null
+function latestMessage(player, event) {
+    const messages = messagesOf(player, event);
+    return messages.length ? messages[messages.length - 1] : null;
+}
+
+// A move sent the way the room page sends it (the kit's sendMove), without a button
+const sendRoomMove = (player, event, data) => player.page.evaluate(([name, payload]) => sendMove(name, payload), [event, data]);
+
 module.exports = {
     test,
     expect,
@@ -152,7 +197,12 @@ module.exports = {
     answerStep,
     writeToReading,
     showStories,
+    closeStories,
     confirmAnotherRound,
     returnToRound,
     seatRow,
+    listeningPlayer,
+    messagesOf,
+    latestMessage,
+    sendRoomMove,
 };

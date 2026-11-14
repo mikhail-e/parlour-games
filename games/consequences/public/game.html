@@ -90,7 +90,8 @@
         <!-- The room's cards are the .container's children, each shown by
              game-room.js for its part of the game: the lobby (the invitation,
              the players, Start), the writing (the sheet in front of the player,
-             the table), the reading (the sheets, the table), every story -->
+             the table), the reading (the sheets, the table); every story is a
+             window (#storiesModal) -->
         <div class="game-card mb-3" id="inviteCard" hidden>
             <h6 class="sheet-title" data-i18n="inviteFriends">Invite Friends</h6>
             <!-- The link has a line of its own, the buttons share the next: a
@@ -119,6 +120,13 @@
                 <button type="button" class="btn btn-primary btn-lg" id="startRound" data-i18n="startRound">Start</button>
             </div>
             <p class="form-text text-center mt-2 mb-0" id="startHint" data-i18n="needAnotherPlayer">One more player is needed: send them the link</p>
+        </div>
+
+        <!-- The room's history in the lobby: a row for every round played,
+             each opening the window of every story on it (game-room.js) -->
+        <div class="game-card" id="roundsCard" hidden>
+            <h6 class="sheet-title" data-i18n="roundsPlayed">Rounds played</h6>
+            <ul class="rounds-list" id="roundsList"></ul>
         </div>
 
         <!-- The writing: the sheet the player answers on - their own, or the
@@ -175,15 +183,6 @@
              sheets they read for the absent (game-room.js draws them) -->
         <div class="game-card text-center" id="readingCard" hidden></div>
 
-        <!-- Every story, once the last sheet is open -->
-        <div class="game-card" id="storiesCard" hidden>
-            <h6 class="sheet-title" id="storiesTitle"></h6>
-            <div class="stories" id="storyList"></div>
-            <div class="d-grid mt-4">
-                <button type="button" class="btn btn-primary btn-lg" id="anotherRound" data-i18n="anotherRound">Another round</button>
-            </div>
-        </div>
-
         <!-- The table: every seat of the round, who is writing or reading, who
              is away and who answers or reads for them -->
         <div class="game-card" id="seatsCard" hidden>
@@ -226,7 +225,10 @@
         </div>
     </div>
 
-    <!-- A new round in the middle of one: its sheets are lost, so it asks first -->
+    <!-- A new round in the middle of one, or after every story: it asks first.
+         While writing the round's sheets are lost (red), while reading its
+         stories go into the history and another player may still be reading
+         (game-room.js shows the phase's text and button) -->
     <div class="modal fade" id="newRoundModal" tabindex="-1" aria-labelledby="newRoundModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered mobile-friendly-modal">
             <div class="modal-content">
@@ -235,11 +237,53 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p data-i18n="newRoundText">The sheets of this round will be lost. Start a new round?</p>
+                    <p id="newRoundLoses" data-i18n="newRoundText">The sheets of this round will be lost. Start a new round?</p>
+                    <p id="newRoundKeeps" data-i18n="newRoundKeepsStories" hidden>The stories of this round will stay in Every story. Someone may still be reading their sheet. Start a new round?</p>
                 </div>
                 <div class="modal-footer mobile-modal-footer">
                     <button type="button" class="btn btn-secondary mobile-modal-btn" data-bs-dismiss="modal" data-i18n="cancel">Cancel</button>
                     <button type="button" class="btn btn-danger mobile-modal-btn" id="confirmNewRound" data-i18n="confirmNewRound">Yes, a new round</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Every story of one round of the room: the round being read (its
+         «Every story») or one of the history (the lobby's rounds played).
+         Its title and the round's line say which; the buttons under the last
+         story page through the rounds, «Another round» is the round being
+         read's. Its question comes inside the window: Bootstrap's windows do
+         not open one over another (game-room.js draws it all) -->
+    <div class="modal fade" id="storiesModal" tabindex="-1" aria-labelledby="storiesTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg mobile-friendly-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="stories-window__heading">
+                        <h5 class="modal-title" id="storiesTitle" tabindex="-1"></h5>
+                        <p class="stories-window__round" id="storiesRound"></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-i18n-aria-label="close" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="storiesBody">
+                    <p class="alert alert-info stories-window__notice" id="newRoundStarted" role="status" data-i18n="newRoundStarted" hidden>A new round has started: close the window when you finish reading.</p>
+                    <div class="stories" id="storyList"></div>
+                    <div class="stories-window__end" id="storiesEnd">
+                        <div class="rounds-nav">
+                            <button type="button" class="btn btn-outline-primary" id="previousRound">
+                                <span class="icon icon--caret-left" aria-hidden="true"></span><span data-i18n="previousRound">Previous</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="nextRound">
+                                <span data-i18n="nextRound">Next</span><span class="icon icon--caret-right" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <!-- Not in a .d-grid: its display: grid !important would beat hidden -->
+                        <button type="button" class="btn btn-primary btn-lg w-100" id="windowAnotherRound" data-i18n="anotherRound" hidden>Another round</button>
+                    </div>
+                    <p id="windowNewRoundText" data-i18n="newRoundKeepsStories" hidden>The stories of this round will stay in Every story. Someone may still be reading their sheet. Start a new round?</p>
+                </div>
+                <div class="modal-footer mobile-modal-footer" id="windowNewRoundButtons" hidden>
+                    <button type="button" class="btn btn-secondary mobile-modal-btn" id="cancelWindowNewRound" data-i18n="cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary mobile-modal-btn" id="confirmWindowNewRound" data-i18n="confirmNewRound">Yes, a new round</button>
                 </div>
             </div>
         </div>

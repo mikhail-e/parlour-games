@@ -521,14 +521,15 @@
   overflow-wrap: anywhere;
 }
 
-/* Every story: one column on a phone, two from a tablet */
+/* Every story, in its window: one column, two where the window is wide
+   (Bootstrap's modal-lg is 800px from 992px of screen, 500px below it) */
 .stories {
   display: grid;
   grid-template-columns: 1fr;
   gap: 18px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
   .stories {
     grid-template-columns: 1fr 1fr;
   }
@@ -586,6 +587,134 @@
 
 @media (hover: hover) and (pointer: fine) {
   .story-send:hover {
+    background: var(--accent-tint);
+  }
+}
+
+/* ===== The room's history ===== */
+
+/* The game's own icons (Phosphor Bold; the kit's CLAUDE.md, Icons): the
+   window's rounds back and forth, a round played in the lobby */
+.icon--caret-left { /* caret-left */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M168.49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z'/%3E%3C/svg%3E"); }
+.icon--caret-right { /* caret-right */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z'/%3E%3C/svg%3E"); }
+
+/* The window of every story (game.html, #storiesModal): its title by the
+   round's set, the round's line under it - one title, never two */
+#storiesModal .modal-header {
+  align-items: flex-start;
+}
+
+.stories-window__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.stories-window__round {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* A new round has started while the window was open */
+.stories-window__notice {
+  margin-bottom: 16px;
+  box-shadow: none;
+}
+
+/* Under the last story, after a rule: the rounds back and forth (not pinned
+   to the window's foot: the owner's pick), and «Another round» */
+.stories-window__end {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--ink);
+}
+
+.stories-window__end > * + * {
+  margin-top: 12px;
+}
+
+.rounds-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rounds-nav .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.rounds-nav .icon {
+  margin: 0;
+}
+
+.rounds-nav .btn:disabled {
+  opacity: .35;
+}
+
+/* Another round slides in from the side the player went to */
+@media (prefers-reduced-motion: no-preference) {
+  .stories--from-right {
+    animation: stories-from-right .18s ease-out;
+  }
+
+  .stories--from-left {
+    animation: stories-from-left .18s ease-out;
+  }
+}
+
+@keyframes stories-from-right {
+  from { opacity: .2; transform: translateX(24px); }
+}
+
+@keyframes stories-from-left {
+  from { opacity: .2; transform: translateX(-24px); }
+}
+
+/* The rounds played, in the lobby: a row each, its number, its set */
+.rounds-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rounds-list li + li {
+  border-top: 1px dashed rgba(42, 29, 23, .3);
+}
+
+.rounds-list__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 4px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 1.05rem;
+  text-align: left;
+}
+
+.rounds-list__number {
+  min-width: 5.5em;
+  font-weight: 600;
+}
+
+.rounds-list__set {
+  flex: 1;
+  color: var(--ink-soft);
+}
+
+.rounds-list__row .icon {
+  margin: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rounds-list__row:hover {
     background: var(--accent-tint);
   }
 }

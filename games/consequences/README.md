@@ -1,6 +1,6 @@
 # Consequences
 
-The parlour story game, played remotely. Every player answers the same question on the sheet in front of them (who, with whom, when, where and others) and the sheet moves on; nobody sees the answers before theirs. The questions come in sets (classic, fairy tale, detective story and four more), and every round draws its own. At the end everyone reads out the story that came to them. Create a room, send the link to friends and family and play: no accounts, nothing to install.
+The parlour story game, played remotely. Every player answers the same question on the sheet in front of them (who, with whom, when, where and others) and the sheet moves on; nobody sees the answers before theirs. The questions come in sets (classic, fairy tale, detective story and four more), and every round draws its own. At the end everyone reads out the story that came to them. The stories of every round played stay in the room to read again. Create a room, send the link to friends and family and play: no accounts, nothing to install.
 
 **Play:** https://story.escapist.club/
 
