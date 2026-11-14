@@ -1,6 +1,7 @@
 // Tests for server-side input validation and character locking
 // These protect against malformed/hostile input from modified clients
-// and against late events (e.g. blur firing after the game started)
+// and against late events (e.g. blur firing after the game started). A
+// player's name and avatar are the kit's: packages/room-kit/tests/players.test.js
 
 const {
     createGame,
@@ -8,86 +9,10 @@ const {
     assignCharacter,
     startGame,
     restartGame,
-    sanitizePlayerName,
-    sanitizeAvatar,
     sanitizeCharacter
 } = require('../game-logic');
 
 describe('Input Validation', () => {
-    describe('sanitizePlayerName', () => {
-        test('accepts a normal name', () => {
-            expect(sanitizePlayerName('Alice')).toBe('Alice');
-        });
-
-        test('trims whitespace', () => {
-            expect(sanitizePlayerName('  Alice  ')).toBe('Alice');
-        });
-
-        test('rejects empty and whitespace-only names', () => {
-            expect(sanitizePlayerName('')).toBeNull();
-            expect(sanitizePlayerName('   ')).toBeNull();
-        });
-
-        test('rejects names longer than 128 characters', () => {
-            expect(sanitizePlayerName('A'.repeat(129))).toBeNull();
-            expect(sanitizePlayerName('A'.repeat(128))).toBe('A'.repeat(128));
-        });
-
-        test('counts an emoji as one character, not two', () => {
-            // '🦄'.length is 2 in JavaScript, but a person sees one character
-            const name = '🦄'.repeat(128);
-            expect(sanitizePlayerName(name)).toBe(name);
-            expect(sanitizePlayerName('🦄'.repeat(129))).toBeNull();
-        });
-
-        test('rejects non-string values', () => {
-            expect(sanitizePlayerName(null)).toBeNull();
-            expect(sanitizePlayerName(undefined)).toBeNull();
-            expect(sanitizePlayerName(123)).toBeNull();
-            expect(sanitizePlayerName({ name: 'Alice' })).toBeNull();
-        });
-    });
-
-    describe('sanitizeAvatar', () => {
-        test('accepts emoji avatars, including multi-codepoint ones', () => {
-            expect(sanitizeAvatar('😀')).toBe('😀');
-            expect(sanitizeAvatar('🐦‍⬛')).toBe('🐦‍⬛');
-        });
-
-        test('rejects empty, oversized and non-string avatars', () => {
-            expect(sanitizeAvatar('')).toBeNull();
-            expect(sanitizeAvatar('X'.repeat(11))).toBeNull();
-            expect(sanitizeAvatar(null)).toBeNull();
-            expect(sanitizeAvatar(42)).toBeNull();
-        });
-
-        test('accepts custom-avatar data URLs (jpeg, png, webp)', () => {
-            const jpeg = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
-            const png = 'data:image/png;base64,iVBORw0KGgo=';
-            const webp = 'data:image/webp;base64,UklGRg==';
-            expect(sanitizeAvatar(jpeg)).toBe(jpeg);
-            expect(sanitizeAvatar(png)).toBe(png);
-            expect(sanitizeAvatar(webp)).toBe(webp);
-        });
-
-        test('rejects data URLs that are not safe raster images', () => {
-            expect(sanitizeAvatar('data:text/html;base64,PHNjcmlwdD4=')).toBeNull();
-            expect(sanitizeAvatar('data:image/svg+xml;base64,AAAA')).toBeNull();
-            expect(sanitizeAvatar('javascript:alert(1)')).toBeNull();
-        });
-
-        test('rejects malformed or oversized data URLs', () => {
-            // Whitespace inside the base64 payload
-            expect(sanitizeAvatar('data:image/jpeg;base64,AB CD')).toBeNull();
-            // Characters outside the base64 alphabet
-            expect(sanitizeAvatar('data:image/jpeg;base64,!!!')).toBeNull();
-            // The pattern is case-strict - the client always emits lowercase
-            expect(sanitizeAvatar('DATA:image/jpeg;base64,AAAA')).toBeNull();
-            // Over the size limit
-            expect(sanitizeAvatar('data:image/jpeg;base64,' + 'A'.repeat(40000))).toBeNull();
-        });
-    });
-
     describe('sanitizeCharacter', () => {
         test('trims and keeps normal characters', () => {
             expect(sanitizeCharacter('  Batman  ')).toBe('Batman');
@@ -116,44 +41,6 @@ describe('Input Validation', () => {
         test('rejects non-string values', () => {
             expect(sanitizeCharacter(123)).toBeNull();
             expect(sanitizeCharacter({ evil: true })).toBeNull();
-        });
-    });
-
-    describe('addPlayerToGame validation', () => {
-        let games, gameId;
-
-        beforeEach(() => {
-            games = new Map();
-            gameId = createGame(games).gameId;
-        });
-
-        test('rejects invalid player names', () => {
-            const result = addPlayerToGame(games, gameId, '   ', '😀');
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Invalid player name');
-        });
-
-        test('rejects names longer than 128 characters', () => {
-            const result = addPlayerToGame(games, gameId, 'X'.repeat(200), '😀');
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Invalid player name');
-        });
-
-        test('accepts a name of exactly 128 characters', () => {
-            const result = addPlayerToGame(games, gameId, 'X'.repeat(128), '😀');
-            expect(result.success).toBe(true);
-        });
-
-        test('rejects invalid avatars', () => {
-            const result = addPlayerToGame(games, gameId, 'Alice', 'not-an-avatar');
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Invalid avatar');
-        });
-
-        test('trims the player name before storing', () => {
-            const result = addPlayerToGame(games, gameId, '  Alice  ', '😀');
-            expect(result.success).toBe(true);
-            expect(result.player.name).toBe('Alice');
         });
     });
 

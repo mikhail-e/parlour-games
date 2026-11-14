@@ -37,7 +37,7 @@ e2e.js                     # The guard of a game's browser tests and its players
 e2e-helpers.js             # The helpers of a game's browser tests that act through the kit's pages: the texts of its pages, the landing form, entering and leaving a room, the invitation, the socket
 e2e-check-tag.js           # The test of the tests' tag (EscapistCheck in the user agent), on its own server: a game's tests/e2e/check-tag.spec.js runs it on the game's config
 docs/testing.md            # The tests of the games on the kit: commands, the two kinds, Playwright, players and the guard, the kit's helpers, the rules of the suite, debugging (in Russian, like every docs/)
-tests/                     # Jest: the copy into a game, the two copies of the security headers, of the player ID's pattern and of the input limits, the players list, the service worker, the server's errors and their copies, debugLog, translations, the page code, the sign's check
+tests/                     # Jest: the copy into a game, the two copies of the security headers, of the player ID's pattern and of the input limits, room codes, the players list, the service worker, the server's errors and their copies, debugLog, translations, the page code, the sign's check
 eslint.mjs                 # The shared part of ESLint: the rules and one block per environment, the paths the same in the kit and in a game
 eslint.config.mjs          # ESLint of the kit itself, on eslint.mjs
 README.md                  # What the kit is and how a game takes it
