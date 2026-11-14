@@ -22,8 +22,8 @@
 
 ## 4. Повторы, которые удаляются
 
-- [ ] 4.1 whoami `language.spec.js`: «an unknown text key shows the key itself» и «an unknown language falls back to English» (design, решение 7), с ними `/* global i18n */`, если больше не нужен. Проверка: `npx playwright test tests/e2e/language.spec.js` зелёный, ESLint зелёный
-- [ ] 4.2 Consequences `reading.spec.js`: «two players: each reads the sheet the other finished» (design, решение 7). Проверка: в `tests/game-logic.test.js` есть `test.each([2, 3, 12])` на оба правила (лист идёт по кругу, игрок открывает чужой лист); `reading.spec.js` зелёный
+- [x] 4.1 whoami `language.spec.js`: «an unknown text key shows the key itself» и «an unknown language falls back to English» (design, решение 7), с ними `/* global i18n */`, если больше не нужен. Проверка: `npx playwright test tests/e2e/language.spec.js` зелёный, ESLint зелёный
+- [x] 4.2 Consequences `reading.spec.js`: «two players: each reads the sheet the other finished» (design, решение 7). Проверка: в `tests/game-logic.test.js` есть `test.each([2, 3, 12])` на оба правила (лист идёт по кругу, игрок открывает чужой лист); `reading.spec.js` зелёный
 
 ## 5. Проверка целиком
 
