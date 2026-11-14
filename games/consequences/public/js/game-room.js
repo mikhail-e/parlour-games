@@ -17,6 +17,8 @@
 // moves and a language change. It is emptied when its sheet changes - the next
 // step, another seat's sheet.
 /* global createIcon, shareOrCopy, AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
+// From the game's config.js
+/* global APP_STORAGE_PREFIX */
 // From the kit's room-page.js
 /* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
 
@@ -39,8 +41,13 @@ let answerSending = false;
 // or its reader would never see it. The screen may sleep after it
 let storiesSeen = false;
 // The window of every story: open or not, the round it shows (1 to the last
-// of windowRoundCount()), and whether it asks «Another round»'s question
-const storiesWindow = { open: false, number: 0, asking: false, drawn: null };
+// of windowRoundCount()), whether it asks «Another round»'s question, and
+// whether its coffee coupon shows (decided as it opens)
+const storiesWindow = { open: false, number: 0, asking: false, drawn: null, coffee: true };
+// The room where this browser last pressed the coffee coupon's plate: the
+// coupon stays hidden there for the rest of the room. A click is not a
+// payment, so the next room - the next game - shows it again
+const COFFEE_ROOM_KEY = `${APP_STORAGE_PREFIX}-coffee-room`;
 // The rounds of the room's history this page has got, by number: a round of
 // the history never changes. And the ones asked for, not answered yet
 const historyRounds = new Map();
@@ -535,8 +542,12 @@ function keepEndedRound(round, sets) {
     });
 }
 
+// A window opened anew: its coupon shows unless the plate was pressed in this
+// room. Pressed while the window is open, it stays till the window closes, so
+// nothing moves while the player is away on Buy Me a Coffee's tab
 function openStoriesWindow(number) {
-    Object.assign(storiesWindow, { open: true, number, asking: false, drawn: null });
+    const coffee = AppStorage.get(COFFEE_ROOM_KEY) !== currentGame.id;
+    Object.assign(storiesWindow, { open: true, number, asking: false, drawn: null, coffee });
     renderStoriesWindow();
     storiesModal.show();
 }
@@ -578,6 +589,7 @@ function renderStoriesWindow() {
     askForHistoryRound(number - 1);
 
     document.getElementById('storiesEnd').hidden = asking;
+    document.getElementById('coffeeCoupon').hidden = !storiesWindow.coffee;
     document.getElementById('previousRound').disabled = number <= 1;
     document.getElementById('nextRound').disabled = number >= count;
     document.getElementById('windowAnotherRound').hidden = !roundBeingRead() || number !== count;
@@ -728,6 +740,8 @@ function setUpRoomGame() {
         focusAnswerField();
     });
     document.getElementById('previousRound').addEventListener('click', () => showWindowRound(-1));
+    // The link opens Buy Me a Coffee as it is; the page only remembers the room
+    document.getElementById('coffeeLink').addEventListener('click', () => AppStorage.set(COFFEE_ROOM_KEY, currentGame.id));
     document.getElementById('nextRound').addEventListener('click', () => showWindowRound(1));
     document.getElementById('windowAnotherRound').addEventListener('click', () => {
         storiesWindow.asking = true;

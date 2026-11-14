@@ -67,6 +67,11 @@ const translations = {
         roundsPlayed: "Rounds played",
         roundNumber: "Round {n}",
 
+        // The coffee coupon at the end of the window of every story; its plate
+        // says "Buy me a coffee" in English in both languages, as the landing page's
+        intermission: "Intermission",
+        coffeeAsk: "Enjoyed it? Consequences is free and has no ads. You can support it with a cup of coffee.",
+
         // A new round in the middle of one: while writing its sheets are lost,
         // while reading its stories go into the history
         newRound: "New round",
@@ -307,6 +312,10 @@ const translations = {
         newRoundStarted: "Начался новый раунд: закройте окно, когда дочитаете.",
         roundsPlayed: "Сыгранные раунды",
         roundNumber: "Раунд {n}",
+
+        // The coffee coupon at the end of the window of every story
+        intermission: "Антракт",
+        coffeeAsk: "Понравилось? «Чепуха» бесплатна и без рекламы. Её можно поддержать чашкой кофе.",
 
         // A new round in the middle of one: while writing its sheets are lost,
         // while reading its stories go into the history

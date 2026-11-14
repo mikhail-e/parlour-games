@@ -278,6 +278,19 @@
                         </div>
                         <!-- Not in a .d-grid: its display: grid !important would beat hidden -->
                         <button type="button" class="btn btn-primary btn-lg w-100" id="windowAnotherRound" data-i18n="anotherRound" hidden>Another round</button>
+                        <!-- The game's one ask for support (the owner's pick): an
+                             intermission's buffet coupon, after the stories. Its plate is
+                             the kit's, on one line, English in both languages like the
+                             landing page's; the link tells Buy Me a Coffee nothing of the
+                             room's address (rel="noreferrer", _headers). Hidden for the rest
+                             of the room after a click on it (game-room.js) -->
+                        <div class="coffee-coupon" id="coffeeCoupon">
+                            <p class="coffee-coupon__title" data-i18n="intermission">Intermission</p>
+                            <p class="coffee-coupon__text" data-i18n="coffeeAsk">Enjoyed it? Consequences is free and has no ads. You can support it with a cup of coffee.</p>
+                            <a href="https://www.buymeacoffee.com/mikhail.e" target="_blank" rel="noopener noreferrer" class="bmc-button" id="coffeeLink" lang="en">
+                                <span class="bmc-button__main"><img src="/kit/img/bmc-cup.svg" alt="" class="bmc-button__cup">Buy me a coffee</span>
+                            </a>
+                        </div>
                     </div>
                     <p id="windowNewRoundText" data-i18n="newRoundKeepsStories" hidden>The stories of this round will stay in Every story. Someone may still be reading their sheet. Start a new round?</p>
                 </div>
