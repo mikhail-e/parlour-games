@@ -94,6 +94,73 @@ describe('starting a round', () => {
     });
 });
 
+describe('the set of questions', () => {
+    // A draw that lands at this point of [0, 1), as Math.random would
+    const drawAt = point => () => point;
+    // Every point a draw of `count` sets can land on, one in each set's share
+    const pointsOf = count => Array.from({ length: count }, (unused, index) => (index + 0.5) / count);
+
+    test('a round draws one of the seven sets, any of them, and the game keeps it as its last', () => {
+        const { QUESTION_SETS } = gameLogic;
+        expect(QUESTION_SETS).toHaveLength(7);
+        const drawn = pointsOf(7).map(point => {
+            const { games, game, ids } = lobbyOf(2);
+            expect(gameLogic.startRound(games, CODE, ids[0], drawAt(point))).toEqual({ success: true });
+            expect(game.lastQuestionSet).toBe(game.round.questionSet);
+            return game.round.questionSet;
+        });
+        expect(drawn).toEqual(QUESTION_SETS);
+    });
+
+    test.each([
+        ['another round after every story', (games, ids) => {
+            for (const id of ids) gameLogic.openSheet(games, CODE, id);
+        }],
+        ['a new round in the middle of the reading', () => {}],
+    ])('%s draws from the six others, never the last round\'s set', (when, finish) => {
+        for (const last of gameLogic.QUESTION_SETS) {
+            const others = gameLogic.QUESTION_SETS.filter(set => set !== last);
+            const drawn = pointsOf(6).map(point => {
+                const { games, game, ids } = readingOf(2);
+                game.round.questionSet = last;
+                game.lastQuestionSet = last;
+                finish(games, ids);
+                expect(gameLogic.newRound(games, CODE, ids[1]).success).toBe(true);
+                expect(gameLogic.startRound(games, CODE, ids[0], drawAt(point))).toEqual({ success: true });
+                return game.round.questionSet;
+            });
+            expect(drawn).toEqual(others);
+        }
+    });
+
+    test('a round broken off while writing counts as the last: the next one draws another set', () => {
+        const { games, game, ids } = lobbyOf(2);
+        gameLogic.startRound(games, CODE, ids[0], drawAt(0));
+        expect(game.round.questionSet).toBe('classic');
+        gameLogic.newRound(games, CODE, ids[0]);
+
+        gameLogic.startRound(games, CODE, ids[0], drawAt(0));
+        expect(game.round.questionSet).toBe('incident');
+    });
+
+    test('a game an earlier version saved has no last set, and draws from all seven', () => {
+        const { games, game, ids } = lobbyOf(2);
+        delete game.lastQuestionSet;
+        gameLogic.startRound(games, CODE, ids[0], drawAt(0.99));
+        expect(game.round.questionSet).toBe('journey');
+    });
+
+    test('a round an earlier version saved has no set: it goes on with the classic one', () => {
+        const { game } = roundOf(2);
+        delete game.round.questionSet;
+        delete game.lastQuestionSet;
+
+        const loaded = gameFromStorage(JSON.parse(JSON.stringify(gameToStorage(game))));
+        expect(gameLogic.roundView(loaded).questionSet).toBe('classic');
+        expect(gameLogic.serializeGame(loaded).round.questionSet).toBe('classic');
+    });
+});
+
 describe('the answers', () => {
     test('an answer goes on the sheet in front of the player, trimmed, with who wrote it', () => {
         const { games, game, ids } = roundOf(3);
@@ -656,7 +723,7 @@ describe('the round as the pages see it', () => {
         gameLogic.removePlayerFromGame(games, CODE, gleb);
 
         const view = gameLogic.roundView(game);
-        expect(view).toMatchObject({ step: 0, questionCount: 8, opened: 0, stories: null });
+        expect(view).toMatchObject({ questionSet: game.round.questionSet, step: 0, questionCount: 8, opened: 0, stories: null });
         expect(view.seats).toEqual([
             { playerId: anna, name: 'Anna', avatar: '🐱', absent: null, answered: true, answeredBy: anna, heldBy: null, sheet: null, openedBy: null },
             { playerId: boris, name: 'Boris', avatar: '🐱', absent: 'offline', answered: false, answeredBy: null, heldBy: anna, sheet: null, openedBy: null },

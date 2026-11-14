@@ -7,9 +7,11 @@
 // answer, and a short pause has passed, the sheets move on to the next seat,
 // all at once. After the eighth
 // question they move once more, and each seat reads the sheet that came to it
-// (step 8). The round in the game:
+// (step 8). Every sheet of a round asks the questions of one set, drawn at the
+// start (QUESTION_SETS). The round in the game:
 //
 //   game.round = {
+//     questionSet: name,           // the round's set of questions; a round an earlier version saved has none: 'classic'
 //     seats:    [playerId, ...],    // the circle: the list's players at the start, in its order
 //     sheets:   [[answer|null] x 8], // sheets[j][q] = { text, by }: by - who wrote it (themselves or for another)
 //     step:     0-7 the questions, 8 the reading
@@ -17,6 +19,7 @@
 //     openedBy: { [sheet number]: playerId },         // which sheets are open, and who opened them
 //     stepEndsAt: time | null,  // every sheet has this step's answer: when they move on
 //   }
+//   game.lastQuestionSet = name | null  // the set of the room's last round: the next one draws another
 
 // The players of the room - joining with the browser's secret, a leaver's
 // return to the round, newcomers waiting, online and offline, ghosts, the
@@ -28,6 +31,11 @@ const { touchGame } = players;
 
 // The questions of a sheet (their texts are the pages', in either language)
 const QUESTION_COUNT = 8;
+// The sets of questions a round draws from, by their names in the pages'
+// texts (<set>Name, <set>Question1-8 in translations.js; a test keeps the two
+// lists together). 'classic' is the one list the game had before the sets
+const QUESTION_SETS = ['classic', 'incident', 'heAndShe', 'fairyTale', 'detective', 'news', 'journey'];
+const CLASSIC = 'classic';
 // The step of the reading, after the last question
 const READING_STEP = QUESTION_COUNT;
 const MIN_PLAYERS = 2;
@@ -45,8 +53,9 @@ const {
     removeStaleDisconnectedPlayers,
     playersView
 } = players.roomPlayers({
-    // The round: none in the lobby
-    fields: () => ({ round: null }),
+    // The round: none in the lobby; the set of the last one, which the next
+    // round does not draw
+    fields: () => ({ round: null, lastQuestionSet: null }),
     // A leaver of the round keeps their seat: the others see whose it is
     snapshot: (game, player) => ({ name: player.name, avatar: player.avatar }),
     // A leaver puts down the absent players' sheets they held
@@ -85,8 +94,10 @@ function checkAnswer(text) {
 
 // Any player of the lobby starts a round with at least two players. Every
 // player of the list takes a seat, offline ones too: a phone that slept in the
-// lobby must not leave its owner out of the round
-function startRound(games, gameId, playerId) {
+// lobby must not leave its owner out of the round. The round draws its set of
+// questions from the sets but the last round's (`random` gives a number in
+// [0, 1), as Math.random does: a set is no secret)
+function startRound(games, gameId, playerId, random = Math.random) {
     const game = games.get(gameId);
     if (!game) return { success: false, error: 'Game not found' };
     if (!game.players.some(player => player.id === playerId)) {
@@ -96,7 +107,11 @@ function startRound(games, gameId, playerId) {
     if (game.players.length < MIN_PLAYERS) return { success: false, error: 'Need at least 2 players to start' };
 
     const seats = game.players.map(player => player.id);
+    const sets = QUESTION_SETS.filter(set => set !== game.lastQuestionSet);
+    const questionSet = sets[Math.floor(random() * sets.length)];
+    game.lastQuestionSet = questionSet;
     game.round = {
+        questionSet,
         seats,
         sheets: seats.map(() => Array(QUESTION_COUNT).fill(null)),
         step: 0,
@@ -326,8 +341,9 @@ function newRound(games, gameId, playerId) {
     return { success: true, endedJoinRequests };
 }
 
-// The round as every page gets it: the step, and for each seat whose it is,
-// whether it is here, whether its sheet has this step's answer and who wrote
+// The round as every page gets it: its set of questions, the step, and for
+// each seat whose it is, whether it is here, whether its sheet has this step's
+// answer and who wrote
 // it (the seat's player may change only their own: takeBackAnswer), who holds its
 // sheet, which sheet it reads and who opened that. **No answer's text**: the
 // answers are secrets until the last sheet is open, and then every story is
@@ -337,6 +353,7 @@ function roundView(game) {
     if (!round) return null;
     const reading = round.step === READING_STEP;
     return {
+        questionSet: round.questionSet || CLASSIC,
         step: round.step,
         questionCount: QUESTION_COUNT,
         seats: round.seats.map((playerId, seatIndex) => {
@@ -397,6 +414,7 @@ module.exports = {
     sheetAt,
     checkAnswer,
     QUESTION_COUNT,
+    QUESTION_SETS,
     MIN_PLAYERS,
     READING_STEP,
     MAX_ANSWER_LENGTH,

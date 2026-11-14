@@ -3,7 +3,9 @@
 // after the ghost time (an hour) - but only while somebody plays. And the
 // game's own: the pause after a step's last answer. These run on the local
 // server whose times are seconds (playwright.config.js)
-const { test, expect, text, createRoom, joinRoom, waitForPlayers, roomWith, startedRound, seatRow, answer, roundStep, waitForStep } = require('./helpers');
+const {
+    test, expect, text, createRoom, joinRoom, waitForPlayers, roomWith, startedRound, seatRow, answer, roundStep, waitForStep, questionOf,
+} = require('./helpers');
 
 test.skip(!!process.env.BASE_URL, 'needs the local server with short timers');
 test.skip(({ isMobile }) => isMobile, "the room's timers: one browser is enough");
@@ -83,7 +85,7 @@ test('after the last answer the sheets stay for the pause: the last writer can s
     await expect(boris.page.locator('#editAnswer')).toBeVisible();
 
     await waitForStep([anna, boris], 1);
-    await expect(boris.page.locator('#questionText')).toHaveText(text('question2'));
+    await expect(boris.page.locator('#questionText')).toHaveText(await questionOf(boris.page, 2));
     await expect(boris.page.locator('#answerText')).toHaveValue('');
 });
 
@@ -123,5 +125,5 @@ test('every page closed in the pause: back after it, the next question is open -
     await anna.page.goto(`/game/${code}`);
     await boris.page.goto(`/game/${code}`);
     await waitForStep([anna, boris], 1);
-    await expect(anna.page.locator('#questionText')).toHaveText(text('question2'));
+    await expect(anna.page.locator('#questionText')).toHaveText(await questionOf(anna.page, 2));
 });

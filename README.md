@@ -16,7 +16,7 @@ The classic guessing party game: every player gets a secret character chosen by 
 
 ![The sign and the round: a sheet in the middle of a round, five questions answered and the sixth being answered](games/consequences/public/img/og-image.jpg)
 
-The parlour story game: every player answers the same question on their sheet — who, with whom, when, where, what they were doing, how it ended, what people said, the moral — and passes the sheet on, nobody seeing the answers before; at the end everyone reads out the story that came to them.
+The parlour story game: every player answers the same question on their sheet (who, with whom, when, where and others) and passes the sheet on, nobody seeing the answers before. The questions come in sets (classic, fairy tale, detective story and four more), and every round draws its own. At the end everyone reads out the story that came to them.
 
 **Play:** https://story.escapist.club/ · **Code:** [`games/consequences/`](games/consequences/README.md)
 
