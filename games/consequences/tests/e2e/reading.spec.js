@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden, setText, questionOf,
+    showStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -301,6 +301,14 @@ test('a story is shared under the name of the round\'s set, with its text and an
         title: text('title'),
         text: `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${invitation}`,
     });
+
+    // In Russian the title is the set's Russian name
+    await anna.page.locator('.lang-toggle-btn').click();
+    await expect(anna.page.locator('.story-send').first()).toHaveText(text('shareStory', 'ru'));
+    await anna.page.locator('.story-send').first().click();
+    await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(2);
+    const [, inRussian] = await anna.page.evaluate(() => window.shareCalls);
+    expect(inRussian.text.startsWith(`${await sharedTitle(anna.page, 'ru')}\n\n`)).toBe(true);
 });
 
 test("an ad blocker's list of social widgets hides no story's Share, nor its icon", async ({ newPlayer }) => {
@@ -371,8 +379,9 @@ test('the question of Another round stays open through what happens in the room'
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
 });
 
-test('Another round, said yes to, takes everyone back to the lobby', async ({ newPlayer }) => {
+test('Another round, said yes to, takes everyone back to the lobby, and the next round draws another set', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const last = await setOf(players[0].page);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     await showStories(players[1]);
@@ -387,4 +396,25 @@ test('Another round, said yes to, takes everyone back to the lobby', async ({ ne
     await expect(players[1].page.locator('#newRoundModal')).toBeHidden();
     await startRound(players);
     await expect(players[0].page.locator('#questionText')).toHaveText(await questionOf(players[0].page, 1));
+    expect(await setOf(players[0].page)).not.toBe(last);
+});
+
+// The set names the reading's stories («The tales are ready», «Every tale»,
+// «Tale one»): the set, read off the sheet while writing, has no title of its own here
+test("the reading and every story are titled by the round's set's stories, with no second title for its name", async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const set = await setOf(anna.page);
+    await writeToReading([anna, boris]);
+
+    await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText([text(`${set}StoriesReady`)]);
+    await expect(anna.page.locator('#showStories')).toHaveText(text(`${set}AllStories`));
+    await ownSheet(anna.page).locator('.closed-sheet').click();
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+    await expect(anna.page.locator('#readingCard .sheet-title')).toHaveText([text(`${set}StoriesReady`)]);
+
+    await ownSheet(boris.page).locator('.closed-sheet').click();
+    await showStories(anna);
+    await expect(anna.page.locator('#storiesCard .sheet-title')).toHaveText([text(`${set}AllStories`)]);
+    await expect(anna.page.locator('#storyList .story-head').nth(0)).toContainText(text(`${set}StoryTitle1`));
+    await expect(anna.page.locator('#storyList .story-head').nth(1)).toContainText(text(`${set}StoryTitle2`));
 });
