@@ -61,7 +61,11 @@ describe('the lobby', () => {
 
         const seen = gameLogic.serializeGame(game);
         expect(seen.players.map(player => player.name)).toEqual(['Anna']);
-        expect(JSON.stringify(seen)).not.toContain('secret');
+        // Neither the secret nor its hash, under any name
+        const hash = game.secrets.get(idOf(0));
+        expect(hash).toEqual(expect.any(String));
+        expect(JSON.stringify(seen)).not.toContain(hash);
+        expect(JSON.stringify(seen)).not.toContain(secretOf(0));
     });
 });
 
@@ -216,7 +220,7 @@ describe('changing an answer', () => {
         expect(gameLogic.roundView(game).seats[0]).toMatchObject({ answered: false, answeredBy: null });
         expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b').allAnswered).toBe(false);
         expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').allAnswered).toBe(false);
-        expect(game.round.step).toBe(0);
+        expect(game.round.stepEndsAt).toBeNull();
 
         expect(gameLogic.writeAnswer(games, CODE, ids[0], 'second')).toEqual({ success: true, allAnswered: true });
         expect(game.round.sheets[0][0]).toEqual({ text: 'second', by: ids[0] });
@@ -268,7 +272,8 @@ describe('the steps', () => {
         const { games, game, ids } = roundOf(3);
         expect(gameLogic.writeAnswer(games, CODE, ids[0], 'a').allAnswered).toBe(false);
         expect(gameLogic.writeAnswer(games, CODE, ids[2], 'c').allAnswered).toBe(false);
-        expect(game.round.step).toBe(0);
+        expect(game.round.stepEndsAt).toBeNull();
+        expect(pauseRunsOut(game)).toBe(false);
 
         expect(gameLogic.writeAnswer(games, CODE, ids[1], 'b')).toEqual({ success: true, allAnswered: true });
         expect(pauseRunsOut(game)).toBe(true);
@@ -750,7 +755,7 @@ describe('the room\'s history', () => {
     });
 
     test('a game an earlier version saved, without a history, starts one with its next round', () => {
-        const { games, game, ids } = readingOf(2);
+        const { game, ids } = readingOf(2);
         // As the room's storage holds a game of the version before the history
         const stored = JSON.parse(JSON.stringify(gameToStorage(game)));
         delete stored.historySets;
@@ -760,7 +765,6 @@ describe('the room\'s history', () => {
         const reloaded = new Map([[CODE, loaded]]);
         expect(gameLogic.newRound(reloaded, CODE, ids[0]).history.number).toBe(1);
         expect(loaded.historySets).toEqual([game.round.questionSet]);
-        expect(games.get(CODE)).toBe(game);
     });
 });
 
