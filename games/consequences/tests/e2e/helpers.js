@@ -11,7 +11,7 @@ const path = require('path');
 const { test, expect } = require('@parlour-games/room-kit/e2e');
 const { pageTexts, ...kitHelpers } = require('@parlour-games/room-kit/e2e-helpers');
 // The sets a round draws from: their texts are the pages' (translations.js)
-const { QUESTION_SETS } = require('../../game-logic');
+const { QUESTION_SETS, QUESTION_COUNT } = require('../../game-logic');
 /* global currentGame, sendMove -- the room page's picture of the game and its move (the kit's room-page.js), inside page.evaluate() */
 
 const { roomWith, waitForLanding } = kitHelpers;
@@ -93,11 +93,6 @@ const answerText = (player, step) => `${player.name} ${step + 1}`;
 async function answerStep(players, step, answerOf = answerText) {
     for (const player of players) await answer(player, answerOf(player, step));
     await waitForStep(players, step + 1);
-}
-
-// The whole writing, every player answering every step: the round is at the reading
-async function writeToReading(players, answerOf = answerText) {
-    for (let step = 0; step < 8; step++) await answerStep(players, step, answerOf);
 }
 
 // A player goes on from the reading to every story, by their own press: the
@@ -187,11 +182,30 @@ const countingSent = (newPlayer, event) => async (name, options) => {
 // A move sent the way the room page sends it (the kit's sendMove), without a button
 const sendRoomMove = (player, event, data) => player.page.evaluate(([name, payload]) => sendMove(name, payload), [event, data]);
 
+// Every player answers the questions from step `from` to step `to`, by moves
+// sent the way the room page sends them, not through the answer field: for a
+// test whose subject comes after the writing (the field and its button are
+// writing.spec.js's). The answers are answerOf's, "Anna 3" unless a test says
+// otherwise
+async function writeByMoves(players, { from = 0, to = QUESTION_COUNT, answerOf = answerText } = {}) {
+    for (let step = from; step < to; step++) {
+        for (const player of players) await sendRoomMove(player, 'write-answer', { text: answerOf(player, step) });
+        await waitForStep(players, step + 1);
+    }
+}
+
+// The whole writing: the round is at the reading
+const writeToReading = (players, answerOf = answerText) => writeByMoves(players, { answerOf });
+
+// A room of these players, every one of them listening and in the lobby: { players, code }
+const listeningRoom = (newPlayer, names) => roomWith(name => listeningPlayer(newPlayer, name), names);
+
 module.exports = {
     test,
     expect,
     text,
     serverErrorText,
+    QUESTION_COUNT,
     ...kitHelpers,
     setOf,
     setText,
@@ -213,5 +227,7 @@ module.exports = {
     messagesOf,
     latestMessage,
     sendRoomMove,
+    writeByMoves,
+    listeningRoom,
     countingSent,
 };
