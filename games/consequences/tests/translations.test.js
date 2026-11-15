@@ -37,6 +37,13 @@ test('every set of questions the server draws has its texts in both languages: i
     }
 });
 
+// A shared story ends with an invitation: the game's name (declined in
+// Russian) and its site, which the page puts in for {site}
+test("a shared story's invitation names the game and its site", () => {
+    expect(translations.en.shareStoryInvitation).toContain(translations.en.title);
+    for (const language of ['en', 'ru']) expect(translations[language].shareStoryInvitation).toContain('{site}');
+});
+
 test('no texts of a set the server does not draw, and none of the one list before the sets', () => {
     const ofSets = new Set(QUESTION_SETS.flatMap(keysOfSet));
     // A text of a set: a set's name, question, heading or story title

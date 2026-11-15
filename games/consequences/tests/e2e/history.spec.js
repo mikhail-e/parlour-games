@@ -6,8 +6,8 @@
 // through the room page's own sendMove (the kit's room-page.js), and the
 // window and the lobby are used as a player does.
 const {
-    test, expect, text, createRoom, joinRoom, waitForPlayers, waitForStep, showStories, closeStories, questionOf,
-    listeningPlayer, messagesOf, latestMessage: latest, sendRoomMove: move,
+    test, expect, text, joinRoom, waitForPlayers, waitForStep, writeToReading, showStories, closeStories, questionOf,
+    listeningRoom, messagesOf, latestMessage: latest, sendRoomMove: move,
 } = require('./helpers');
 
 // Three rounds of eight steps: against production every step ends with its
@@ -15,16 +15,11 @@ const {
 // usual time of a test
 const ROUNDS_TAKE_TIME = 'three rounds, each step with its pause';
 
-// Every player answers every question, "<tag>-<name>-<step>": the round is at the reading
-async function writeByMoves(players, tag) {
-    for (let step = 0; step < 8; step++) {
-        for (const player of players) await move(player, 'write-answer', { text: `${tag}-${player.name}-${step}` });
-        await waitForStep(players, step + 1);
-    }
-}
+// The answers of a round tagged so: "<tag>-<name>-<step>"
+const tagged = tag => (player, step) => `${tag}-${player.name}-${step}`;
 
-// The answers of sheet j of a round writeByMoves wrote: at step s the sheet
-// lies in front of seat (j + s) mod N
+// The answers of sheet j of a tagged round: at step s the sheet lies in front
+// of seat (j + s) mod N
 const sheetAnswers = (players, tag, sheet) => Array.from({ length: 8 },
     (unused, step) => `${tag}-${players[(sheet + step) % players.length].name}-${step}`);
 
@@ -35,20 +30,10 @@ async function startedSet(players) {
     return latest(players[0], 'round-state').round.questionSet;
 }
 
-// A room of these players, every one of them listening and in the lobby: { players, code }
-async function listeningRoom(newPlayer, names) {
-    const players = [];
-    for (const name of names) players.push(await listeningPlayer(newPlayer, name));
-    const code = await createRoom(players[0]);
-    for (const player of players.slice(1)) await joinRoom(player, code);
-    for (const player of players) await waitForPlayers(player.page, players.length);
-    return { players, code };
-}
-
 // A round started and written to the reading: its set
 async function writtenRound(players, tag) {
     const set = await startedSet(players);
-    await writeByMoves(players, tag);
+    await writeToReading(players, tagged(tag));
     return set;
 }
 
@@ -87,66 +72,34 @@ async function expectWindowRound(page, set, number, count, lang = 'en') {
     await expect(page.locator('#storiesRound')).toHaveText(text('roundOf', lang, { n: number, count }));
 }
 
-test('the room keeps every round that reached the reading, and a page gets the one it asks for', async ({ newPlayer }, testInfo) => {
-    test.slow(true, ROUNDS_TAKE_TIME);
+// Which rounds the history keeps, and which numbers are a round of it, are
+// game-logic.test.js's; that a round ended while writing and the round on are
+// given to nobody, secret.spec.js's
+test('the room keeps a round that reached the reading, and a page gets it when it asks, alone', async ({ newPlayer }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'what the room sends: the device adds nothing');
-    const anna = await listeningPlayer(newPlayer, 'Anna');
-    const boris = await listeningPlayer(newPlayer, 'Boris');
-    const players = [anna, boris];
-    const code = await createRoom(anna);
-    await joinRoom(boris, code);
-    for (const player of players) await waitForPlayers(player.page, 2);
-    const historySets = player => latest(player, 'round-state')?.historySets;
+    const { players } = await listeningRoom(newPlayer, ['Anna', 'Boris']);
+    const [anna, boris] = players;
+    const set = await readRound(players, 'r1');
 
-    // Round 1: every sheet read, then "Another round"
-    const sets = [await startedSet(players)];
-    await writeByMoves(players, 'r1');
-    for (const player of players) await move(player, 'open-sheet');
-    await expect.poll(() => latest(anna, 'round-state')?.round?.stories?.length).toBe(2);
+    // "Another round": the round goes into the history, every page sees its set
     await move(boris, 'new-round');
-    for (const player of players) await expect.poll(() => historySets(player)).toEqual(sets);
+    for (const player of players) await expect.poll(() => latest(player, 'round-state')?.historySets).toEqual([set]);
 
-    // Round 2: "New round" in the middle of the reading, Boris's sheet not open
-    sets.push(await startedSet(players));
-    await writeByMoves(players, 'r2');
-    await move(anna, 'open-sheet');
-    await expect.poll(() => latest(boris, 'round-state')?.round?.opened).toBe(1);
-    await move(anna, 'new-round');
-    for (const player of players) await expect.poll(() => historySets(player)).toEqual(sets);
-
-    // Round 3: ended while writing - not kept
-    await startedSet(players);
-    for (const player of players) await move(player, 'write-answer', { text: `r3-${player.name}-0` });
-    await waitForStep(players, 1);
-    await move(anna, 'new-round');
-    await expect.poll(() => latest(anna, 'round-state')?.round).toBeNull();
-    expect(historySets(anna)).toEqual(sets);
-
-    // Boris asks for each round of the history: two players, so sheet j is read at seat j
+    // Boris asks for it: two players, so sheet j was read at seat j
     await move(boris, 'history-round', { number: 1 });
     await expect.poll(() => latest(boris, 'history-round')?.number).toBe(1);
     expect(latest(boris, 'history-round').round).toEqual({
-        questionSet: sets[0],
+        questionSet: set,
         stories: [0, 1].map(sheet => ({ answers: sheetAnswers(players, 'r1', sheet), readBy: players[sheet].name })),
     });
-    await move(boris, 'history-round', { number: 2 });
-    await expect.poll(() => latest(boris, 'history-round')?.number).toBe(2);
-    expect(latest(boris, 'history-round').round).toEqual({
-        questionSet: sets[1],
-        stories: [{ answers: sheetAnswers(players, 'r2', 0), readBy: 'Anna' }, { answers: sheetAnswers(players, 'r2', 1), readBy: null }],
-    });
-    // Only the asker's page gets it
-    expect(messagesOf(anna, 'history-round')).toEqual([]);
 
-    // A number outside the history, or not a number, is no round (the page logs the room's error)
-    boris.allowConsoleError(/Socket error: No such round/);
-    for (const number of [0, 3, '1']) {
-        const errors = messagesOf(boris, 'error').length;
-        await move(boris, 'history-round', { number });
-        await expect.poll(() => messagesOf(boris, 'error').length).toBe(errors + 1);
-        expect(latest(boris, 'error')).toBe('No such round');
-    }
-    expect(messagesOf(boris, 'history-round')).toHaveLength(2);
+    // Only the asker's page gets it. Anna asks for a number outside the
+    // history: no round, and the room's answer comes after anything it sent her
+    // before (the page logs the room's error)
+    anna.allowConsoleError(/Socket error: No such round/);
+    await move(anna, 'history-round', { number: 2 });
+    await expect.poll(() => latest(anna, 'error')).toBe('No such round');
+    expect(messagesOf(anna, 'history-round')).toEqual([]);
 });
 
 test('the window of every story opens on the round being read and pages back through the rounds of the room, each from its first story', async ({ newPlayer }, testInfo) => {

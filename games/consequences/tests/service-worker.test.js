@@ -16,20 +16,11 @@ function readIconAssets() {
     return [...match[1].matchAll(/'([^']+)'/g)].map(each => each[1]);
 }
 
+// That these files are served is the kit's siteTests and manifest.test.js's
 test('only the icons are cached: the favicon, the iPhone one and the manifest\'s', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(PUBLIC, 'manifest.json'), 'utf8'));
     expect(readIconAssets().sort()).toEqual(
         ['/favicon.ico', '/icons/apple-touch-icon.png', ...manifest.icons.map(icon => icon.src)].sort());
-});
-
-test('no HTML, CSS or JS is cached', () => {
-    expect(readIconAssets().filter(asset => /\.(html|css|js|json)$/.test(asset) || asset === '/')).toEqual([]);
-});
-
-test('every cached icon exists', () => {
-    for (const asset of readIconAssets()) {
-        expect(fs.existsSync(path.join(PUBLIC, asset))).toBe(true);
-    }
 });
 
 test("the worker is the kit's, given the game's cache and icons", () => {
