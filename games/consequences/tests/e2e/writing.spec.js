@@ -4,8 +4,8 @@
 // an absent player, a leaver's seat, a new round in the middle of one, and the
 // screen kept awake. That no page gets an answer's text is secret.spec.js's
 const {
-    test, expect, text, roomWith, waitForPlayers, createRoom, joinRoom, leaveGame, countSentEvents,
-    startedRound, startRound, answer, answerStep, waitForStep, returnToRound, seatRow, roundStep, setOf, setText, questionOf,
+    test, expect, text, roomWith, waitForPlayers, createRoom, joinRoom, leaveGame, countSentEvents, countingSent,
+    startedRound, startRound, answer, answerStep, waitForStep, returnToRound, seatRow, setOf, setText, questionOf,
 } = require('./helpers');
 
 /* global sendMove -- the room page's move (the kit's room-page.js), inside page.evaluate() */
@@ -124,10 +124,10 @@ test('after sending an answer the field closes, and the player sees who is still
     // The others see that she is done, and still have their own question
     await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusDone'));
     await expect(vera.page.locator('#answerForm')).toBeVisible();
-    expect(await roundStep(anna.page)).toBe(0);
 });
 
-test('Change the answer: the field opens again with the answer, the step waits for it, and the new one is in the story', async ({ newPlayer }) => {
+// That the room keeps the new answer is game-logic.test.js's
+test('Change the answer: the field opens again with the answer, and the step waits for it', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await answer(anna, 'Anna first');
     const edit = anna.page.getByRole('button', { name: text('editAnswer') });
@@ -138,22 +138,18 @@ test('Change the answer: the field opens again with the answer, the step waits f
     await expect(anna.page.locator('#answerText')).toHaveValue('Anna first');
     await expect(anna.page.locator('#answerText')).toBeFocused();
     await expect(edit).toBeHidden();
-    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusWriting'));
-    // Boris's answer does not end the step: it waits for Anna's again
+    // Boris's answer does not end the step: Anna's seat is blank again for
+    // both (the step's pause after it is room-timers.spec.js's)
     await answer(boris, 'Boris 1');
-    await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusDone'));
-    expect(await roundStep(anna.page)).toBe(0);
-    expect(await roundStep(boris.page)).toBe(0);
+    await expect(seatRow(boris.page, 'Boris')).toContainText(text('statusDone'));
+    await expect(seatRow(boris.page, 'Anna')).toContainText(text('statusWriting'));
     await anna.page.fill('#answerText', 'Anna changed');
     await anna.page.click('#saveAndPass');
     await waitForStep([anna, boris], 1);
-    // With two players Anna's own sheet comes back to her to read
-    for (let step = 1; step < 8; step++) await answerStep([anna, boris], step);
-    await anna.page.locator('#readingCard .closed-sheet').first().click();
-    await expect(anna.page.locator('#readingCard .story__answer').first()).toHaveText('Anna changed');
 });
 
-test('while they wait a player sees the answer they sent, as they wrote it, and only they do; a reload keeps it, the next question takes it away', async ({ newPlayer }) => {
+// That no other page gets its text is secret.spec.js's
+test('while they wait a player sees the answer they sent, as they wrote it; a reload keeps it, the next question takes it away', async ({ newPlayer }) => {
     const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
     await expect(anna.page.locator('#sentBlock')).toBeHidden();
 
@@ -163,8 +159,6 @@ test('while they wait a player sees the answer they sent, as they wrote it, and 
     await expect(sent).toBeVisible();
     expect(await sent.innerText()).toBe('A <b>pirate</b>\ngrandmother');
     await expect(anna.page.locator('#sentBlock')).toContainText(text('yourAnswer'), { ignoreCase: true });
-    await expect(boris.page.locator('#sentBlock')).toBeHidden();
-    await expect(boris.page.locator('#writingCard')).not.toContainText('pirate');
 
     await anna.page.reload();
     await expect(sent).toBeVisible();
@@ -417,16 +411,20 @@ test("the last answer of a step moves every sheet on to the next seat, and opens
     // Which sheet went where is read in the stories: reading.spec.js
 });
 
-test('a slow player online is waited for, and nobody may answer for them', async ({ newPlayer }) => {
+// That the step waits for a slow player online is game-logic.test.js's: here
+// the pause after a step's last answer is next to nothing, too short to see
+test('nobody may answer for a slow player who is online', async ({ newPlayer }) => {
     const { players: [anna, boris, vera] } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
 
     await answer(anna, 'Anna 1');
     await answer(boris, 'Boris 1');
 
+    // Both pages know both answers: either would show "Answer for" by now
+    await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusDone'));
+    await expect(seatRow(boris.page, 'Boris')).toContainText(text('statusDone'));
     await expect(seatRow(anna.page, 'Vera')).toContainText(text('statusWriting'));
     await expect(seatRow(anna.page, 'Vera').getByRole('button')).toHaveCount(0);
     await expect(seatRow(boris.page, 'Vera').getByRole('button')).toHaveCount(0);
-    expect(await roundStep(anna.page)).toBe(0);
     await answer(vera, 'Vera 1');
     await waitForStep([anna, boris, vera], 1);
 });
@@ -606,9 +604,9 @@ test('a player who left for good is answered for to the end of the round', async
     await expect(katya.page.locator('#readingCard')).toBeVisible();
 });
 
-test('New round in the middle of one asks first, then takes everyone back to the lobby, and the next round draws another set', async ({ newPlayer }) => {
-    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
-    const broken = await setOf(anna.page);
+// That the next round draws another set is game-logic.test.js's
+test('New round in the middle of one asks first, then takes everyone back to the lobby', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await startedRound(countingSent(newPlayer, 'new-round'), ['Anna', 'Boris']);
     await answerStep([anna, boris], 0);
     await answerStep([anna, boris], 1);
 
@@ -622,7 +620,6 @@ test('New round in the middle of one asks first, then takes everyone back to the
     await expect(anna.page.locator('#newRound')).toHaveClass(/\bbtn-outline-danger\b/);
     await anna.page.locator('#newRoundModal').getByRole('button', { name: text('cancel') }).click();
     await expect(anna.page.locator('#newRoundModal')).toBeHidden();
-    expect(await roundStep(anna.page)).toBe(2);
 
     await anna.page.click('#newRound');
     await anna.page.click('#confirmNewRound');
@@ -633,11 +630,11 @@ test('New round in the middle of one asks first, then takes everyone back to the
         await expect(player.page.locator('#writingCard')).toBeHidden();
         await expect(player.page.locator('#newRound')).toBeHidden();
     }
+    // The room's answer to the yes is back: the Cancel had sent nothing
+    expect(anna.sent()).toBe(1);
     // The next round starts with blank sheets
     await startRound([boris, anna]);
     await expect(anna.page.locator('#folds .fold')).toHaveCount(0);
-    // A round broken off counts as the last one: the next draws another set
-    expect(await setOf(anna.page)).not.toBe(broken);
 });
 
 test('the screen stays awake while the round is on, and may sleep in the lobby', async ({ newPlayer }) => {

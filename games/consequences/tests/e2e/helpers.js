@@ -174,6 +174,16 @@ function latestMessage(player, event) {
     return messages.length ? messages[messages.length - 1] : null;
 }
 
+// Players whose pages count the messages of this event they send to the room:
+// `player.sent()`. Counted from the first page on, so a test that reads it
+// after the room's answer to a later move knows every earlier one was counted
+// startedRound(countingSent(newPlayer, 'new-round'), names)
+const countingSent = (newPlayer, event) => async (name, options) => {
+    const player = await newPlayer(name, options);
+    player.sent = kitHelpers.countSentEvents(player.page, event);
+    return player;
+};
+
 // A move sent the way the room page sends it (the kit's sendMove), without a button
 const sendRoomMove = (player, event, data) => player.page.evaluate(([name, payload]) => sendMove(name, payload), [event, data]);
 
@@ -203,4 +213,5 @@ module.exports = {
     messagesOf,
     latestMessage,
     sendRoomMove,
+    countingSent,
 };

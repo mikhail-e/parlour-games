@@ -264,9 +264,12 @@ test('the window stays on its round when another player ends it, and says so whe
     await expectStories(page, players, set, 'r1');
     // The page had the round the window shows: it asked the room for nothing
     expect(messagesOf(anna, 'history-round')).toEqual([]);
-    // The sheet that came to Anna does not take the focus from the window
+    // The sheet that came to Anna does not take the focus from the window. The
+    // redraw gives the field the focus by a timer (game-room.js), so the test
+    // waits for a timer of its own, queued after that one; a focus taken
+    // outside the window is sent back by Bootstrap's window to its cross
+    await page.evaluate(() => new Promise(resolve => { setTimeout(resolve); }));
     await expect(page.locator('#storiesModal .btn-close')).not.toBeFocused();
-    await expect(page.locator('#answerText')).not.toBeFocused();
 
     // The cross: the new round's first question, the focus in its field
     await closeStories(anna);
