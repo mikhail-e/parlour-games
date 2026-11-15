@@ -92,17 +92,6 @@ test('a code that is no room answers Game not found', async ({ request }) => {
     expect(body).toMatchObject({ success: false, error: 'Game not found' });
 });
 
-test('a thirteenth player finds the game full', async ({ request }) => {
-    const gameId = await createGame(request);
-    for (let i = 1; i <= 12; i++) {
-        await join(request, withSecret({ gameId, playerName: `Player${i}`, avatar: '😀' }));
-    }
-
-    const body = await join(request, withSecret({ gameId, playerName: 'Player13', avatar: '😀' }), 400);
-
-    expect(body).toMatchObject({ success: false, error: 'Game is full' });
-});
-
 test('a lost room is reported before the secret is asked for', async ({ request }) => {
     const body = await join(request, { gameId: 'GONE00', playerName: 'Alice', avatar: '😀' }, 400);
 

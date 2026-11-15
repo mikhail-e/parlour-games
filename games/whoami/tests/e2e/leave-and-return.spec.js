@@ -5,8 +5,9 @@ const {
     holdRoomJoin, releaseRoomJoin, roomWith, listedNames,
 } = require('./helpers');
 
-// Leaving the lobby, in every tab, the last one out, and Copy Link: the kit's
-// tests (packages/room-kit/e2e-kit-tests.js)
+// The lobby's list and a reload, leaving, in every tab, the last one out, the
+// invitation (Copy Link, "Copied!", its buttons in Russian, an ad blocker), a
+// message over a window: the kit's tests (packages/room-kit/e2e-kit-tests.js)
 require('@parlour-games/room-kit/e2e-kit-tests').roomPageTests({ text });
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -56,18 +57,6 @@ test('a leaver returns to the started round with the same character, color and p
     await expect(bobsSticker()).toHaveClass(new RegExp(`\\b${colorBefore}\\b`));
     await expect(playerCard(bob.page, 'Bob').locator('.character-sticker.mystery')).toBeVisible();
     await expect(bob.page.locator('#restartGame')).toBeVisible();
-});
-
-test('reloading keeps the same player', async ({ newPlayer }) => {
-    const { players: [alice, bob] } = await roomWith(newPlayer, ['Alice', 'Bob']);
-    const id = await storedPlayerId(bob.page);
-    expect(id).toMatch(UUID_V4);
-
-    await bob.page.reload();
-
-    await waitForPlayers(bob.page, 2);
-    expect(await storedPlayerId(bob.page)).toBe(id);
-    await waitForPlayers(alice.page, 2);
 });
 
 test('reloading during a game keeps your place and your hidden character', async ({ newPlayer }) => {
