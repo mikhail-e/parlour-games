@@ -74,6 +74,9 @@ test('Copy Link copies where the clipboard is closed to the page', async ({ newP
     expect(await clipboardText(alice.page)).toMatch(new RegExp(`/game/${code}$`));
 });
 
+// The lobby's buttons in Russian and the lobby's invitation under an ad
+// blocker are the kit's tests (roomPageTests, run by leave-and-return.spec.js);
+// a started game's invitation is this game's.
 // Russian has the longer words. A computer's window from 768 px up (Bootstrap's
 // md) sets the buttons side by side, and 768 leaves them the least room
 const narrowestRow = isMobile => (isMobile ? [] : [768]);
@@ -85,14 +88,6 @@ async function russianWithoutWebShare(newPlayer, name) {
     await stubShare(player.page, 'unsupported');
     return player;
 }
-
-test('the lobby\'s invitation keeps its buttons\' labels on one line in Russian, "Copied!" included, the narrowest window too', async ({ newPlayer, isMobile }) => {
-    const alice = await russianWithoutWebShare(newPlayer, 'Alice');
-    await createRoom(alice);
-    const { page } = alice;
-
-    await expectCopyButtonsOnOneLine(page, [page.locator('#copyLink'), page.locator('#inviteButton')], narrowestRow(isMobile));
-});
 
 test('a started game\'s invitation keeps its buttons\' labels on one line in Russian, "Copied!" included, the narrowest window too', async ({ newPlayer, isMobile }) => {
     const { players: { Alice: alice } } = await startedGame(name => russianWithoutWebShare(newPlayer, name), ['Alice', 'Bob']);
@@ -156,20 +151,6 @@ test('a restart brings the lobby invitation back', async ({ newPlayer }) => {
     await expect(page.locator('#startGame')).toBeVisible();
     await expect(page.locator('#roomLink')).toBeVisible();
     await expect(page.locator('#gameInviteCard')).toBeHidden();
-});
-
-// An ad blocker's list of social widgets hides on every site what is named
-// after sharing: the invitation's names say nothing of it
-test("an ad blocker's list of social widgets hides nothing of the lobby's invitation: the link, Copy Link, Share and its icon", async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    await hideSocialWidgets(alice);
-    await createRoom(alice);
-    expect(await socialWidgetsHidden(alice.page)).toBe(true);
-
-    await expect(alice.page.getByRole('textbox', { name: text('shareLinkLabel') })).toBeVisible();
-    await expect(alice.page.getByRole('button', { name: text('copyLink') })).toBeVisible();
-    await expect(inviteButton(alice.page)).toBeVisible();
-    await expect(inviteButton(alice.page).locator('.icon')).toBeVisible();
 });
 
 test("an ad blocker's list of social widgets hides nothing of a started game's invitation", async ({ newPlayer }) => {

@@ -1,9 +1,11 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, seedStorage, waitForLanding, avatarTiles } = require('./helpers');
+const { test, expect, text, serverErrorText, seedStorage, waitForLanding, avatarTiles } = require('./helpers');
 
-// A room that is gone, the name and the avatar remembered, players of one
-// name, a photo: the kit's tests (packages/room-kit/e2e-kit-tests.js)
-require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text });
+// A room that is gone, a code or a link in lower case, a full room, a
+// player's ID from another browser, the name and the avatar remembered,
+// players of one name, a photo, the coffee plate: the kit's tests
+// (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text, serverErrorText });
 
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
 
@@ -166,35 +168,4 @@ test('a tampered saved avatar is ignored', async ({ newPlayer }) => {
 
     await expect(avatarTiles(alice.page)).toHaveCount(12);
     expect(await avatarValues(alice.page)).not.toContain('<b>x</b>');
-});
-
-test('the coffee button opens Buy Me a Coffee in a new tab', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Alice');
-    await page.goto('/');
-    const link = page.getByRole('link', { name: 'Buy me a coffee', exact: true });
-
-    await expect(link).toHaveAttribute('href', 'https://www.buymeacoffee.com/mikhail.e');
-    await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
-});
-
-// Like the sign, the coffee button is English on a Russian page too; its name
-// is the words it shows, so a voice command "Buy me a coffee" finds it
-test('the coffee button is English in both languages', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Алиса', { locale: 'ru-RU' });
-    await page.goto('/');
-    const link = page.getByRole('link', { name: 'Buy me a coffee', exact: true });
-
-    await expect(link).toHaveAttribute('lang', 'en');
-    await expect(link).toHaveAttribute('href', 'https://www.buymeacoffee.com/mikhail.e');
-});
-
-// A finger aimed at the language button must not land on the coffee link
-test('the coffee button stands apart from the language button', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Alice');
-    await page.goto('/');
-    const language = await page.locator('.lang-toggle-btn').boundingBox();
-    const coffee = await page.getByRole('link', { name: 'Buy me a coffee', exact: true }).boundingBox();
-
-    expect(coffee.y - (language.y + language.height)).toBeGreaterThanOrEqual(32);
 });

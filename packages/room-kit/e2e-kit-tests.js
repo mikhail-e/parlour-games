@@ -8,18 +8,25 @@
 // its own, and a test expects what the game's page shows. A test that only
 // asks the server and reads the answer runs in one project: the device
 // changes how a page is drawn, not what the server answers
+const crypto = require('crypto');
 const { test, expect } = require('./e2e');
 const {
     createRoom, joinRoom, roomWith, waitForLanding, waitForPlayers, playerCard, leaveGame, iconsOf, pngFile,
-    PAGE_STATUS_404, avatarTiles, sleep,
+    PAGE_STATUS_404, avatarTiles, sleep, listedNames, answerMessage, seedStorage, stubShare, expectCopyButtonsOnOneLine,
+    hideSocialWidgets, socialWidgetsHidden,
 } = require('./e2e-helpers');
+const { MAX_PLAYERS } = require('./shared/players');
+/* global showMessage -- the kit's notify.js, called in the page */
 
 const HTTP_ONLY = 'HTTP only: one browser is enough';
 const onlyOnDesktop = reason => test.skip(({ isMobile }) => isMobile, reason);
 
-// The landing page (landing.js): a room that is gone, the name and the avatar
-// remembered, players of one name, a photo for an avatar
-function landingPageTests({ text }) {
+// The landing page (landing.js) and the way into a room: a room that is gone,
+// a code or a link in lower case, a full room, a player's ID from another
+// browser, the name and the avatar remembered, players of one name, a photo
+// for an avatar, the coffee plate in the footer. serverErrorText is the
+// game's (its pageTexts), as text is
+function landingPageTests({ text, serverErrorText }) {
     test('a link to a room that does not exist leads home with a message', async ({ newPlayer }) => {
         const alice = await newPlayer('Alice');
 
@@ -27,6 +34,93 @@ function landingPageTests({ text }) {
 
         await expect(alice.page).toHaveURL(/\/\?error=room-not-found$/);
         await expect(alice.page.locator('.alert-danger')).toContainText(text('roomNotFound'));
+    });
+
+    test('a friend joins by the code typed in lower case', async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice');
+        const bob = await newPlayer('Bob');
+        const code = await createRoom(alice);
+        await bob.page.goto('/');
+        await waitForLanding(bob.page);
+
+        await bob.page.fill('#playerName', 'Bob');
+        await bob.page.fill('#roomCode', code.toLowerCase());
+        await bob.page.click('#joinBtn');
+
+        await expect(bob.page).toHaveURL(new RegExp(`/game/${code}$`));
+        for (const player of [alice, bob]) await waitForPlayers(player.page, 2);
+    });
+
+    test('a lower-case room link opens the room', async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice');
+        const bob = await newPlayer('Bob');
+        const code = await createRoom(alice);
+
+        await bob.page.goto(`/game/${code.toLowerCase()}`);
+        await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`, 'i'));
+        await waitForLanding(bob.page);
+        await bob.page.fill('#playerName', 'Bob');
+        await bob.page.click('#joinBtn');
+
+        await expect(bob.page).toHaveURL(new RegExp(`/game/${code}$`));
+        for (const player of [alice, bob]) await waitForPlayers(player.page, 2);
+    });
+
+    test('a lower-case link in a tab that is already in the room keeps the player there', async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice');
+        const bob = await newPlayer('Bob');
+        const code = await createRoom(alice);
+        await joinRoom(bob, code);
+
+        await bob.page.goto(`/game/${code.toLowerCase()}`);
+
+        await expect(bob.page.locator('#roomCode')).toHaveText(code);
+        await waitForPlayers(bob.page, 2);
+        await expect(bob.page.locator('#roomLink')).toHaveValue(new RegExp(`/game/${code}$`));
+    });
+
+    // The others join over the API, each a browser of its own (an ID and a
+    // secret); the last comes through the page and is told the room is full
+    test('a player over the limit finds the room full', async ({ newPlayer, request }) => {
+        const alice = await newPlayer('Alice');
+        const carol = await newPlayer('Carol');
+        const code = await createRoom(alice);
+        for (let index = 2; index <= MAX_PLAYERS; index++) {
+            const answer = await request.post('/api/join-game', {
+                data: { gameId: code, playerName: `Player${index}`, avatar: '😀', playerId: crypto.randomUUID(), playerSecret: crypto.randomUUID() },
+            });
+            expect(answer.status()).toBe(200);
+        }
+        await waitForPlayers(alice.page, MAX_PLAYERS);
+        await carol.page.goto(`/game/${code}`);
+        await waitForLanding(carol.page);
+        // The refused join is an HTTP 400, which the browser reports in the console
+        carol.allowConsoleError(/the server responded with a status of 400/);
+
+        await carol.page.fill('#playerName', 'Carol');
+        await carol.page.click('#joinBtn');
+
+        await answerMessage(carol.page, serverErrorText('Game is full'));
+        await expect(carol.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
+        await waitForPlayers(alice.page, MAX_PLAYERS);
+    });
+
+    test("another browser with a player's ID is refused: that player plays in another browser", async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice');
+        const code = await createRoom(alice);
+        const alicesId = await alice.page.evaluate(() => localStorage.getItem('playerId'));
+        const stranger = await newPlayer('Stranger');
+        await seedStorage(stranger, { playerId: alicesId });
+        stranger.allowConsoleError(/the server responded with a status of 400/);
+
+        await stranger.page.goto(`/?join=${code}`);
+        await waitForLanding(stranger.page);
+        await stranger.page.fill('#playerName', 'Stranger');
+        await stranger.page.click('#joinBtn');
+
+        await answerMessage(stranger.page, serverErrorText('This player is playing in another browser'));
+        await expect(stranger.page).not.toHaveURL(/\/game\//);
+        expect(await listedNames(alice.page)).toEqual(['Alice']);
     });
 
     test('the name and the avatar are remembered after creating a room', async ({ newPlayer }) => {
@@ -82,11 +176,54 @@ function landingPageTests({ text }) {
             await expect(playerCard(page, 'Alice').locator('img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
         }
     });
+
+    // Like a game's sign, the plate is English on a Russian page too; its name
+    // is the words it shows, so a voice command "Buy me a coffee" finds it
+    test('the coffee plate opens Buy Me a Coffee in a new tab, English in both languages', async ({ newPlayer }) => {
+        const { page } = await newPlayer('Аня', { locale: 'ru-RU' });
+        await page.goto('/');
+        const link = page.getByRole('link', { name: 'Buy me a coffee', exact: true });
+
+        await expect(link).toHaveAttribute('href', /^https:\/\/www\.buymeacoffee\.com\/[\w.]+$/);
+        await expect(link).toHaveAttribute('target', '_blank');
+        await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
+        await expect(link).toHaveAttribute('lang', 'en');
+    });
+
+    // A finger aimed at the language button must not land on the coffee link
+    test('the coffee plate stands apart from the language button', async ({ newPlayer }) => {
+        const { page } = await newPlayer('Alice');
+        await page.goto('/');
+        const language = await page.locator('.lang-toggle-btn').boundingBox();
+        const coffee = await page.getByRole('link', { name: 'Buy me a coffee', exact: true }).boundingBox();
+
+        expect(coffee.y - (language.y + language.height)).toBeGreaterThanOrEqual(32);
+    });
 }
 
-// The room page (room-page.js, invite.js): leaving, in every tab and last,
-// and the invitation's Copy Link
+// The room page (room-page.js, invite.js, notify.js): the lobby's list and a
+// reload, leaving, in every tab and last, the invitation (Copy Link and
+// "Copied!", its buttons in Russian, an ad blocker), a message over a window
 function roomPageTests({ text }) {
+    test('the lobby lists the players in the order they came, the same on every screen', async ({ newPlayer }) => {
+        const { players } = await roomWith(newPlayer, ['Alice', 'Bob', 'Carol']);
+
+        for (const player of players) expect(await listedNames(player.page)).toEqual(['Alice', 'Bob', 'Carol']);
+    });
+
+    test('a reload keeps the player at their place, with the same ID, without a double', async ({ newPlayer }) => {
+        const { players: [alice, bob] } = await roomWith(newPlayer, ['Alice', 'Bob', 'Carol']);
+        const storedId = page => page.evaluate(() => localStorage.getItem('playerId'));
+        const id = await storedId(bob.page);
+
+        await bob.page.reload();
+
+        await waitForPlayers(bob.page, 3);
+        expect(await listedNames(bob.page)).toEqual(['Alice', 'Bob', 'Carol']);
+        expect(await storedId(bob.page)).toBe(id);
+        await waitForPlayers(alice.page, 3);
+    });
+
     test('leaving the lobby goes home with the code and the name filled in, and the others see who left', async ({ newPlayer }) => {
         const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
 
@@ -135,6 +272,66 @@ function roomPageTests({ text }) {
 
         await expect(alice.page.locator('#copyLink')).toHaveText(text('copiedSuccess'));
         expect(await alice.page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/game/${code}$`));
+    });
+
+    test('"Copied!" goes by itself, a second press included, and the button is back with its icon and a label that follows the language', async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice', { locale: 'en-GB' });
+        await alice.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await createRoom(alice);
+        const button = alice.page.locator('#copyLink');
+
+        await button.click();
+        await expect(button.locator('.icon--check')).toBeVisible();
+        await button.click();
+
+        await expect(button).toHaveText(text('copyLink', 'en'));
+        await expect(button.locator('.icon--copy')).toBeVisible();
+        await alice.page.locator('.lang-toggle-btn').click();
+        await expect(button).toHaveText(text('copyLink', 'ru'));
+    });
+
+    // Russian has the longer words. A computer's window from 768 px up
+    // (Bootstrap's md) sets the buttons side by side, and 768 leaves them the
+    // least room
+    test('the lobby\'s invitation keeps its buttons\' labels on one line in Russian, "Copied!" included, the narrowest window too', async ({ newPlayer, isMobile }) => {
+        const alice = await newPlayer('Alice', { locale: 'ru-RU' });
+        await alice.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await stubShare(alice.page, 'unsupported');
+        await createRoom(alice);
+        const { page } = alice;
+
+        await expectCopyButtonsOnOneLine(page, [page.locator('#copyLink'), page.locator('#inviteButton')], isMobile ? [] : [768]);
+    });
+
+    // An ad blocker's list of social widgets hides on every site what is named
+    // after sharing: the invitation's names say nothing of it (CLAUDE.md, Rules)
+    test("an ad blocker's list of social widgets hides nothing of the lobby's invitation: the link, Copy Link, Share and its icon", async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice');
+        await hideSocialWidgets(alice);
+        await createRoom(alice);
+        expect(await socialWidgetsHidden(alice.page)).toBe(true);
+
+        await expect(alice.page.getByRole('textbox', { name: text('shareLinkLabel') })).toBeVisible();
+        await expect(alice.page.getByRole('button', { name: text('copyLink') })).toBeVisible();
+        const share = alice.page.getByRole('button', { name: text('share') });
+        await expect(share).toBeVisible();
+        await expect(share.locator('.icon')).toBeVisible();
+    });
+
+    test('a message goes over an open window, as text and once, and Escape closes it alone', async ({ newPlayer }) => {
+        const alice = await newPlayer('Alice');
+        await createRoom(alice);
+        const { page } = alice;
+        await page.click('#leaveGame');
+        await expect(page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
+
+        await page.evaluate(() => { showMessage('<b>One</b>'); showMessage('<b>One</b>'); showMessage('Two'); });
+
+        await answerMessage(page, '<b>One</b>');
+        await expect(page.locator('.message-window p')).toHaveText('Two');
+        await page.keyboard.press('Escape');
+        await expect(page.locator('.message-window')).toHaveCount(0);
+        await expect(page.locator('#leaveModal')).toHaveClass(/\bshow\b/);
     });
 }
 

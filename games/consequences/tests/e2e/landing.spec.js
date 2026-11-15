@@ -1,12 +1,12 @@
-// The landing page and the way into a room (spec consequences/room): the
-// sign, creating a room, joining by its code or its link, the name and the
-// avatar, a full room. The form is the kit's landing.js on this page's markup
-const crypto = require('crypto');
-const { test, expect, text, answerMessage, serverErrorText, createRoom, waitForLanding, waitForPlayers } = require('./helpers');
+// The landing page (spec consequences/room): the game's sign. The form and
+// the way into a room are the kit's landing.js on this page's markup
+const { test, expect, text, serverErrorText } = require('./helpers');
 
-// A room that is gone, the name and the avatar remembered, players of one
-// name, a photo: the kit's tests (packages/room-kit/e2e-kit-tests.js)
-require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text });
+// A room that is gone, a code or a link in lower case, a full room, a
+// player's ID from another browser, the name and the avatar remembered,
+// players of one name, a photo, the coffee plate: the kit's tests
+// (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text, serverErrorText });
 
 test('the sign is one picture named Consequences, English on a Russian page too', async ({ newPlayer }) => {
     const { page } = await newPlayer('Аня', { locale: 'ru-RU' });
@@ -17,92 +17,4 @@ test('the sign is one picture named Consequences, English on a Russian page too'
     await expect(page.locator('.brand-sign__name')).toHaveText('CONSEQUENCES');
     await expect(page).toHaveTitle(text('title', 'ru'));
     await expect(page.locator('.tagline')).toHaveText(text('subtitle', 'ru'));
-});
-
-test('a new room: its code in the header, its creator the only player', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-
-    const code = await createRoom(alice);
-
-    expect(code).toMatch(/^[A-Z0-9]{6}$/);
-    await expect(alice.page.locator('#roomCode')).toHaveText(code);
-    await waitForPlayers(alice.page, 1);
-});
-
-test('a friend joins by the code typed in lower case', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-    await bob.page.goto('/');
-    await waitForLanding(bob.page);
-
-    await bob.page.fill('#playerName', 'Bob');
-    await bob.page.fill('#roomCode', code.toLowerCase());
-    await bob.page.click('#joinBtn');
-
-    await expect(bob.page).toHaveURL(new RegExp(`/game/${code}$`));
-    for (const player of [alice, bob]) await waitForPlayers(player.page, 2);
-});
-
-test('a room link opened in a new tab leads home with the code ready, and Join enters the room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-
-    await bob.page.goto(`/game/${code}`);
-
-    await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await expect(bob.page.locator('#roomCode')).toHaveValue(code);
-    await waitForLanding(bob.page);
-    await bob.page.fill('#playerName', 'Bob');
-    await bob.page.click('#joinBtn');
-    await expect(bob.page).toHaveURL(new RegExp(`/game/${code}$`));
-    for (const player of [alice, bob]) await waitForPlayers(player.page, 2);
-});
-
-// Eleven friends join over the API, each a browser of its own (an ID and a
-// secret); the thirteenth comes through the page and is told the room is full
-test('a thirteenth player finds the room full', async ({ newPlayer, request }) => {
-    const alice = await newPlayer('Alice');
-    const carol = await newPlayer('Carol');
-    const code = await createRoom(alice);
-    for (let i = 2; i <= 12; i++) {
-        const answer = await request.post('/api/join-game', {
-            data: { gameId: code, playerName: `Player${i}`, avatar: '😀', playerId: crypto.randomUUID(), playerSecret: crypto.randomUUID() },
-        });
-        expect(answer.status()).toBe(200);
-    }
-    await waitForPlayers(alice.page, 12);
-    await carol.page.goto(`/game/${code}`);
-    await waitForLanding(carol.page);
-    // The refused join is an HTTP 400, which the browser reports in the console
-    carol.allowConsoleError(/the server responded with a status of 400/);
-
-    await carol.page.fill('#playerName', 'Carol');
-    await carol.page.click('#joinBtn');
-
-    await answerMessage(carol.page, serverErrorText('Game is full'));
-    await expect(carol.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await waitForPlayers(alice.page, 12);
-});
-
-test('the coffee plate opens Buy Me a Coffee in a new tab, English in both languages', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Аня', { locale: 'ru-RU' });
-    await page.goto('/');
-    const link = page.getByRole('link', { name: 'Buy me a coffee', exact: true });
-
-    await expect(link).toHaveAttribute('href', 'https://www.buymeacoffee.com/mikhail.e');
-    await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
-    await expect(link).toHaveAttribute('lang', 'en');
-});
-
-// A finger aimed at the language button must not land on the coffee link
-test('the coffee plate stands apart from the language button', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Alice');
-    await page.goto('/');
-    const language = await page.locator('.lang-toggle-btn').boundingBox();
-    const coffee = await page.getByRole('link', { name: 'Buy me a coffee', exact: true }).boundingBox();
-
-    expect(coffee.y - (language.y + language.height)).toBeGreaterThanOrEqual(32);
 });
