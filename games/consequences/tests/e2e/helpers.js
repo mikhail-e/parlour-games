@@ -54,6 +54,17 @@ function questionOf(page, number, lang = 'en') {
     return setText(page, `Question${number}`, lang);
 }
 
+// The eight questions of a set, in order, in a language: the ones over the
+// answers of its stories
+const questionsOfSet = (set, lang = 'en') => Array.from({ length: QUESTION_COUNT },
+    (unused, index) => text(`${set}Question${index + 1}`, lang));
+
+// The lines of a shared story of a set: each answer after its question
+const storyLines = (set, answers, lang = 'en') => {
+    const questions = questionsOfSet(set, lang);
+    return answers.map((answer, index) => `${questions[index]} ${answer}`);
+};
+
 // The round's step as the page knows it: 0-7 a question, 8 the reading,
 // null in the lobby. Read from the page, so a check holds in any language
 function roundStep(page) {
@@ -210,6 +221,8 @@ module.exports = {
     setOf,
     setText,
     questionOf,
+    questionsOfSet,
+    storyLines,
     roundStep,
     waitForStep,
     startRound,

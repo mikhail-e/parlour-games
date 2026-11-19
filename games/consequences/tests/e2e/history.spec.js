@@ -6,7 +6,7 @@
 // through the room page's own sendMove (the kit's room-page.js), and the
 // window and the lobby are used as a player does.
 const {
-    test, expect, text, joinRoom, waitForPlayers, waitForStep, writeToReading, showStories, closeStories, questionOf,
+    test, expect, text, joinRoom, waitForPlayers, waitForStep, writeToReading, showStories, closeStories, questionOf, questionsOfSet, storyLines,
     listeningRoom, messagesOf, latestMessage: latest, sendRoomMove: move,
 } = require('./helpers');
 
@@ -52,7 +52,8 @@ async function endRound(players) {
 }
 
 // The stories of a round in the window: two players, so sheet j was read at
-// seat j; `readers` false where a sheet was never opened
+// seat j; `readers` false where a sheet was never opened. Each answer is under
+// its question of the round's own set
 async function expectStories(page, players, set, tag, readers = [true, true], lang = 'en') {
     const stories = page.locator('#storyList .sheet');
     await expect(stories).toHaveCount(players.length);
@@ -62,6 +63,7 @@ async function expectStories(page, players, set, tag, readers = [true, true], la
         if (read) await expect(head).toContainText(text('storyReadBy', lang, { name: players[sheet].name }));
         else await expect(head.locator('small')).toHaveCount(0);
         await expect(stories.nth(sheet).locator('.story__answer')).toHaveText(sheetAnswers(players, tag, sheet));
+        await expect(stories.nth(sheet).locator('.story__question')).toHaveText(questionsOfSet(set, lang));
     }
 }
 
@@ -180,7 +182,8 @@ test("a story of a past round is shared under its own round's set, and the windo
     await page.locator('#storyList .story-send').first().click();
     await expect.poll(() => page.evaluate(() => window.shareCalls.length)).toBe(1);
     const [shared] = await page.evaluate(() => window.shareCalls);
-    expect(shared.text.startsWith(`★ ${text(`${sets[0]}Name`).toUpperCase()} ★\n\n${sheetAnswers(players, 'r1', 0).join('\n')}\n\n`)).toBe(true);
+    const lines = storyLines(sets[0], sheetAnswers(players, 'r1', 0));
+    expect(shared.text.startsWith(`★ ${text(`${sets[0]}Name`).toUpperCase()} ★\n\n${lines.join('\n')}\n\n`)).toBe(true);
 
     // In Russian: the language button is the room's, under the window
     await closeStories(anna);
