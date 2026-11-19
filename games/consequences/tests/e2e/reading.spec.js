@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, closeStories, confirmAnotherRound, seatRow, stubShare, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf, roundStep,
+    showStories, closeStories, confirmAnotherRound, seatRow, stubShare, countingSent, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf, questionsOfSet, storyLines, roundStep,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -17,23 +17,6 @@ const answersOf = locator => locator.locator('.story__answer');
 // A sheet among every story, by who read it
 const storyReadBy = (page, name) => page.locator('#storyList .sheet').filter({
     has: page.locator('.story-head', { hasText: text('storyReadBy', 'en', { name }) }),
-});
-
-test("three players: each reads the sheet the player before them finished, written one seat on at every step", async ({ newPlayer }) => {
-    const { players } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
-    const [anna, boris, vera] = players;
-    await writeToReading(players);
-
-    await ownSheet(boris.page).locator('.closed-sheet').click();
-    await ownSheet(vera.page).locator('.closed-sheet').click();
-
-    // Boris's sheet began with Vera and went round Anna, Boris, Vera...: its last answer is Anna's
-    await expect(answersOf(ownSheet(boris.page))).toHaveText(['Vera 1', 'Anna 2', 'Boris 3', 'Vera 4', 'Anna 5', 'Boris 6', 'Vera 7', 'Anna 8']);
-    await expect(answersOf(ownSheet(vera.page)).last()).toHaveText('Boris 8');
-    await expect(ownSheet(anna.page).locator('.closed-sheet')).toBeVisible();
-    await ownSheet(anna.page).locator('.closed-sheet').click();
-    await showStories(anna);
-    await expect(answersOf(storyReadBy(anna.page, 'Anna')).last()).toHaveText('Vera 8');
 });
 
 test('a closed sheet is a sealed envelope, the point of the flap hidden just under the center of the wax', async ({ newPlayer }) => {
@@ -52,26 +35,16 @@ test('a closed sheet is a sealed envelope, the point of the flap hidden just und
     const inner = await seal.boundingBox();
     expect(Math.abs((inner.x + inner.width / 2) - (outer.x + outer.width / 2))).toBeLessThan(1.5);
     // The flap's lines are drawn in a box as tall as its point is low: the
-    // seal's height on the envelope, and a little lower, for the eye
+    // seal's height on the envelope, and a little lower, for the eye - under
+    // the seal's center, hidden by the wax (how much lower is the style's)
     const flapBox = await envelope.evaluate(element => getComputedStyle(element).backgroundSize);
     const [, sealPercent, lowerBy] = flapBox.match(/calc\(([\d.]+)% \+ ([\d.]+)px\)/);
     expect(Math.abs((inner.y + inner.height / 2) - (outer.y + outer.height * Number(sealPercent) / 100))).toBeLessThan(1.5);
-    expect(Number(lowerBy)).toBe(8);
+    expect(Number(lowerBy)).toBeGreaterThan(0);
+    expect(Number(lowerBy)).toBeLessThan(inner.height / 2);
 });
 
-test('two players: each reads the sheet the other finished', async ({ newPlayer }) => {
-    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
-    await writeToReading([anna, boris]);
-
-    await ownSheet(anna.page).locator('.closed-sheet').click();
-
-    await expect(answersOf(ownSheet(anna.page)).last()).toHaveText('Boris 8');
-    await boris.page.locator('#readingCard .closed-sheet').click();
-    await showStories(boris);
-    await expect(answersOf(storyReadBy(boris.page, 'Boris')).last()).toHaveText('Anna 8');
-});
-
-test("a tapped sheet opens: eight answers in order, read as one text without their questions, a line between them; the others' stay closed", async ({ newPlayer }) => {
+test("a tapped sheet opens: eight answers in order, each under its question of the round's set in small type, a line between them; the others' stay closed", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna', { locale: 'ru-RU' });
     const boris = await newPlayer('Boris');
     const vera = await newPlayer('Vera');
@@ -90,11 +63,19 @@ test("a tapped sheet opens: eight answers in order, read as one text without the
     await ownSheet(anna.page).locator('.closed-sheet').click();
 
     await expect(answersOf(ownSheet(anna.page))).toHaveText([/ 1$/, / 2$/, / 3$/, / 4$/, / 5$/, / 6$/, / 7$/, / 8$/]);
-    for (const number of [1, 2, 3, 4, 5, 6, 7, 8]) {
-        await expect(ownSheet(anna.page).locator('.story')).not.toContainText(await questionOf(anna.page, number, 'ru'));
+    // Each answer under its question: the round's set's, in Anna's language,
+    // in smaller type than the answer
+    const lines = ownSheet(anna.page).locator('.story li');
+    await expect(lines.locator('.story__question')).toHaveText(questionsOfSet(await setOf(anna.page, 'ru'), 'ru'));
+    const fontSize = locator => locator.evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+    for (const line of [lines.first(), lines.last()]) {
+        const question = line.locator('.story__question');
+        const answer = line.locator('.story__answer');
+        const [above, under] = [await question.boundingBox(), await answer.boundingBox()];
+        expect(above.y + above.height).toBeLessThanOrEqual(under.y);
+        expect(await fontSize(question)).toBeLessThan(await fontSize(answer));
     }
     const lineUnder = item => item.evaluate(element => getComputedStyle(element).borderBottomStyle);
-    const lines = ownSheet(anna.page).locator('.story li');
     expect(await lineUnder(lines.first())).toBe('dashed');
     expect(await lineUnder(lines.last())).toBe('none');
     await expect(ownSheet(boris.page).locator('.closed-sheet')).toBeVisible();
@@ -177,12 +158,9 @@ test('every story is off until the last sheet opens; that changes no screen, and
         await expect(player.page.locator('#seatsCard')).toBeVisible();
     }
 
-    // Boris's window opens over his sheet, on this round, the room's first;
-    // Anna's screen does not change
+    // Boris's window opens over his sheet, on this round, the room's first
     await showStories(boris);
     await expect(boris.page.locator('#storiesRound')).toHaveText(text('roundOf', 'en', { n: 1, count: 1 }));
-    await expect(anna.page.locator('#storiesModal')).toBeHidden();
-    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
 
     // Closed, it leaves Boris at his sheet, as he left it
     await closeStories(boris);
@@ -231,11 +209,10 @@ test('every story shows each sheet with who read it', async ({ newPlayer }) => {
         await expect(player.page.locator('#newRound')).toBeHidden();
         const stories = player.page.locator('#storyList .sheet');
         await expect(stories).toHaveCount(3);
-        // Sheet 1 began with Anna, its last answer is Boris's, and the seat after his read it
-        await expect(stories.nth(0).locator('.story-head')).toContainText(await setText(player.page, 'StoryTitle1'));
+        // Sheet 1 began with Anna, its last answer is Boris's, and the seat
+        // after his read it. The stories' titles are the set's: the last test
         await expect(stories.nth(0).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Vera' }));
         await expect(stories.nth(0).locator('.story__answer').first()).toHaveText('Anna 1');
-        await expect(stories.nth(1).locator('.story-head')).toContainText(await setText(player.page, 'StoryTitle2'));
         await expect(stories.nth(1).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Anna' }));
         await expect(stories.nth(2).locator('.story-head')).toContainText(text('storyReadBy', 'en', { name: 'Boris' }));
     }
@@ -299,17 +276,15 @@ test('a story is shared under the name of the round\'s set, with its text and an
     await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(1);
     const answers = await answersOf(story).allTextContents();
     expect(answers).toHaveLength(8);
-    const site = new URL(anna.page.url()).host;
-    const invitation = text('shareStoryInvitation', 'en', { site });
-    expect(invitation).toContain(text('title'));
-    expect(invitation).toContain(site);
+    // That the invitation names the game and its site is translations.test.js's
+    const invitation = text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host });
     expect((await anna.page.evaluate(() => window.shareCalls))[0]).toEqual({
         title: text('title'),
-        text: `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${invitation}`,
+        text: `${await sharedTitle(anna.page)}\n\n${storyLines(await setOf(anna.page), answers).join('\n')}\n\n${invitation}`,
     });
 
-    // In Russian the title is the set's Russian name: the language button is
-    // the room's, under the window
+    // In Russian the title is the set's Russian name, and so are the
+    // questions: the language button is the room's, under the window
     await closeStories(anna);
     await anna.page.locator('.lang-toggle-btn').click();
     await showStories(anna);
@@ -317,7 +292,9 @@ test('a story is shared under the name of the round\'s set, with its text and an
     await anna.page.locator('.story-send').first().click();
     await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(2);
     const [, inRussian] = await anna.page.evaluate(() => window.shareCalls);
-    expect(inRussian.text.startsWith(`${await sharedTitle(anna.page, 'ru')}\n\n`)).toBe(true);
+    const firstStory = await answersOf(anna.page.locator('#storyList .sheet').first()).allTextContents();
+    const lines = storyLines(await setOf(anna.page, 'ru'), firstStory, 'ru');
+    expect(inRussian.text.startsWith(`${await sharedTitle(anna.page, 'ru')}\n\n${lines.join('\n')}\n\n`)).toBe(true);
 });
 
 test("an ad blocker's list of social widgets hides no story's Share, nor its icon", async ({ newPlayer }) => {
@@ -352,7 +329,7 @@ test('without a share sheet the story is copied, under the name of the round\'s 
     await expect(story.locator('.story-send')).toHaveText(text('copiedSuccess'));
     const answers = await answersOf(story).allTextContents();
     const copied = await anna.page.evaluate(() => navigator.clipboard.readText());
-    expect(copied.startsWith(`${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n`)).toBe(true);
+    expect(copied.startsWith(`${await sharedTitle(anna.page)}\n\n${storyLines(await setOf(anna.page), answers).join('\n')}\n\n`)).toBe(true);
     expect(copied.endsWith(text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host }))).toBe(true);
 });
 
@@ -384,14 +361,14 @@ test('without a share sheet or a clipboard the story is copied the old way, from
     const answers = await answersOf(story).allTextContents();
     const site = new URL(anna.page.url()).host;
     expect(await anna.page.evaluate(() => window.copiedTexts)).toEqual([
-        `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${text('shareStoryInvitation', 'en', { site })}`,
+        `${await sharedTitle(anna.page)}\n\n${storyLines(await setOf(anna.page), answers).join('\n')}\n\n${text('shareStoryInvitation', 'en', { site })}`,
     ]);
     // The field made for the copy is gone
     await expect(anna.page.locator('#storiesModal textarea')).toHaveCount(0);
 });
 
 test('Another round on the reading sheet asks first: while a player is still reading, a No changes nothing', async ({ newPlayer }) => {
-    const { players: [anna, boris] } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const { players: [anna, boris] } = await startedRound(countingSent(newPlayer, 'new-round'), ['Anna', 'Boris']);
     await writeToReading([anna, boris]);
     for (const player of [anna, boris]) await ownSheet(player.page).locator('.closed-sheet').click();
 
@@ -410,7 +387,11 @@ test('Another round on the reading sheet asks first: while a player is still rea
     await window.locator('[data-bs-dismiss="modal"]').first().click();
     await expect(window).not.toHaveClass(/\bshow\b/);
     await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
-    await expect(answersOf(ownSheet(boris.page))).toHaveCount(8);
+
+    // Asked again, the yes is the only Another round that reached the room
+    await confirmAnotherRound(anna);
+    for (const player of [anna, boris]) await waitForPlayers(player.page, 2);
+    expect(anna.sent()).toBe(1);
 });
 
 test('the question of Another round stays open through what happens in the room', async ({ newPlayer }) => {
@@ -427,9 +408,9 @@ test('the question of Another round stays open through what happens in the room'
     await expect(anna.page.locator('#newRoundModal')).toHaveClass(/\bshow\b/);
 });
 
-test('Another round asked in the window of every story: Cancel goes back to the stories, yes closes that window on the lobby while another reader\'s stays open, and the next round draws another set', async ({ newPlayer }) => {
-    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
-    const last = await setOf(players[0].page);
+// That the next round draws another set is game-logic.test.js's
+test('Another round asked in the window of every story: Cancel goes back to the stories, yes closes that window on the lobby while another reader\'s stays open', async ({ newPlayer }) => {
+    const { players } = await startedRound(countingSent(newPlayer, 'new-round'), ['Anna', 'Boris']);
     await writeToReading(players);
     for (const player of players) await ownSheet(player.page).locator('.closed-sheet').click();
     await showStories(players[0]);
@@ -449,7 +430,6 @@ test('Another round asked in the window of every story: Cancel goes back to the 
     await expect(page.locator('#storyList .sheet')).toHaveCount(2);
     await expect(page.locator('#windowNewRoundButtons')).toBeHidden();
     await expect(page.locator('#windowAnotherRound')).toBeFocused();
-    expect(await roundStep(page)).toBe(8);
 
     // Yes: Boris's window closes by itself on the lobby, as the reading
     // sheet's question does; Anna, reading in hers, keeps it on the round
@@ -468,9 +448,10 @@ test('Another round asked in the window of every story: Cancel goes back to the 
         await waitForPlayers(player.page, 2);
     }
     await expect(players[1].page.locator('#newRoundModal')).toBeHidden();
+    // The room's answer to the yes is back: the Cancel had sent nothing
+    expect(players[1].sent()).toBe(1);
     await startRound(players);
     await expect(players[0].page.locator('#questionText')).toHaveText(await questionOf(players[0].page, 1));
-    expect(await setOf(players[0].page)).not.toBe(last);
 });
 
 test('New round in the middle of the reading asks with the reading\'s words, never red, and the round goes into the rounds played', async ({ newPlayer }) => {

@@ -22,11 +22,13 @@ const {
     ROOM_EMPTY_MS,
     MAX_DISCONNECTED_MS
 } = require('../shared/players');
+const { isValidPlayerId } = require('../shared/identity');
 
 const { createGame, addPlayerToGame, removePlayerFromGame, removeStaleDisconnectedPlayers } = roomPlayers();
 
 const ID = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const SECRET = n => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`;
+const PHOTO = 'data:image/png;base64,AAAA';
 
 let games;
 let gameId;
@@ -88,11 +90,22 @@ describe('joining', () => {
         expect(JSON.stringify(gameToStorage(game))).not.toContain(SECRET(1));
     });
 
-    test('a reload is the same player, not a new one', () => {
+    test('a reload is the same player, with the avatar it brings; another ID is somebody else', () => {
         join(1, 'Ann');
-        const again = join(1, 'Ann');
-        expect(again).toMatchObject({ success: true, isNewPlayer: false });
+        jest.advanceTimersByTime(1);
+        const again = addPlayerToGame(games, gameId, 'Ann', PHOTO, ID(1), SECRET(1));
+        expect(again).toMatchObject({ success: true, isNewPlayer: false, player: { avatar: PHOTO } });
         expect(game.players).toHaveLength(1);
+
+        expect(join(2, 'Ann').isNewPlayer).toBe(true);
+        expect(game.players.map(p => [p.id, p.avatar])).toEqual([[ID(1), PHOTO], [ID(2), '🎭']]);
+    });
+
+    test('a join without a valid ID gets an ID of its own', () => {
+        const result = addPlayerToGame(games, gameId, 'Ann', '🎭', 'not-an-id', SECRET(1));
+        expect(result.isNewPlayer).toBe(true);
+        expect(result.player.id).not.toBe('not-an-id');
+        expect(isValidPlayerId(result.player.id)).toBe(true);
     });
 
     test("another browser cannot take a player's place", () => {
@@ -112,6 +125,8 @@ describe('joining', () => {
         expect(addPlayerToGame(games, gameId, '   ', '🎭', ID(1), SECRET(1))).toEqual({ success: false, error: 'Invalid player name' });
         expect(addPlayerToGame(games, gameId, 'Ann', 'not an emoji at all', ID(1), SECRET(1))).toEqual({ success: false, error: 'Invalid avatar' });
         expect(addPlayerToGame(games, 'NOPE00', 'Ann', '🎭', ID(1), SECRET(1))).toEqual({ success: false, error: 'Game not found' });
+        expect(game.players).toEqual([]);
+        expect(addPlayerToGame(games, gameId, '  Ann  ', '🎭', ID(1), SECRET(1)).player.name).toBe('Ann');
     });
 
     test('the room is full at twelve', () => {
@@ -155,11 +170,13 @@ describe('leaving', () => {
         expect(game.recentlyLeft.has(ID(2))).toBe(false);
     });
 
-    test('a newcomer to a round waits; one without a valid ID is turned away', () => {
+    test('a newcomer to a round waits; one without a valid ID is turned away; a player of the round reloads into it', () => {
         game.state = 'started';
         expect(join(4)).toEqual({ success: false, waitingForApproval: true });
         expect(addPlayerToGame(games, gameId, 'Dan', '🎭', 'not-an-id', SECRET(4))).toEqual({ success: false, error: 'Game has already started' });
         expect(game.players).toHaveLength(3);
+        expect(game.joinRequests.size).toBe(0);
+        expect(join(1, 'Ann')).toMatchObject({ success: true, isNewPlayer: false });
     });
 
     test('the last one out takes the game with them', () => {
@@ -300,6 +317,9 @@ describe('newcomers waiting for a round', () => {
 
     test('whoever may simply join is told to join again', () => {
         expect(ask(1)).toEqual({ success: false, retryJoin: true });
+        removePlayerFromGame(games, gameId, ID(2));
+        expect(ask(2)).toEqual({ success: false, retryJoin: true }); // a leaver of this round
+        expect(game.joinRequests.size).toBe(0);
         game.state = 'waiting';
         expect(ask(3)).toEqual({ success: false, retryJoin: true });
     });
@@ -317,6 +337,7 @@ describe('newcomers waiting for a round', () => {
         expect(ask(MAX_PLAYERS + 1)).toEqual({ success: false, error: 'Game is full' });
         expect(join(MAX_PLAYERS + 1)).toEqual({ success: false, error: 'Game is full' });
         expect(ask(3).success).toBe(true); // already waiting
+        expect(join(3)).toEqual({ success: false, waitingForApproval: true }); // and still waits
     });
 
     test('a newcomer who goes away withdraws', () => {
@@ -326,9 +347,9 @@ describe('newcomers waiting for a round', () => {
         expect(listJoinRequests(game)).toEqual([]);
     });
 
-    test('the last player out ends the requests', () => {
+    test('the last player out ends the requests; an ordinary leave does not', () => {
         ask(3);
-        removePlayerFromGame(games, gameId, ID(1));
+        expect(removePlayerFromGame(games, gameId, ID(1)).endedJoinRequests).toEqual([]);
         const last = removePlayerFromGame(games, gameId, ID(2));
         expect(last.endedJoinRequests).toEqual([ID(3)]);
     });
@@ -361,15 +382,40 @@ describe('the limits of a name and an avatar', () => {
     test('a name is trimmed and counted by character', () => {
         expect(sanitizePlayerName('  Ann  ')).toBe('Ann');
         expect(sanitizePlayerName('😀'.repeat(MAX_NAME_LENGTH))).toBe('😀'.repeat(MAX_NAME_LENGTH));
+        expect(sanitizePlayerName('😀'.repeat(MAX_NAME_LENGTH + 1))).toBeNull();
         expect(sanitizePlayerName('a'.repeat(MAX_NAME_LENGTH + 1))).toBeNull();
-        expect(sanitizePlayerName(42)).toBeNull();
+        for (const notAName of ['', '   ', 42, null, { name: 'Ann' }]) {
+            expect(sanitizePlayerName(notAName)).toBeNull();
+        }
     });
 
     test('an avatar is an emoji or a small photo of a safe kind', () => {
         expect(sanitizeAvatar(' 🎭 ')).toBe('🎭');
-        expect(sanitizeAvatar('data:image/png;base64,AAAA')).toBe('data:image/png;base64,AAAA');
-        expect(isCustomAvatar('data:text/html;base64,AAAA')).toBe(false);
-        expect(isCustomAvatar('data:image/png;base64,' + 'A'.repeat(MAX_CUSTOM_AVATAR_LENGTH))).toBe(false);
-        expect(sanitizeAvatar('javascript:alert(1)')).toBeNull();
+        expect(sanitizeAvatar('🐦‍⬛')).toBe('🐦‍⬛'); // several code points, one emoji
+        for (const type of ['png', 'jpeg', 'webp']) {
+            expect(sanitizeAvatar(`data:image/${type};base64,AAAA`)).toBe(`data:image/${type};base64,AAAA`);
+        }
+        expect(isCustomAvatar('🎭')).toBe(false);
+        for (const notAnAvatar of ['', 'X'.repeat(11), 42, null, 'javascript:alert(1)']) {
+            expect(sanitizeAvatar(notAnAvatar)).toBeNull();
+        }
+    });
+
+    // A page shows the photo as an image: anything else must never pass
+    test('a photo is a small raster image in plain base64, and nothing else', () => {
+        const prefix = 'data:image/jpeg;base64,';
+        for (const forged of [
+            'data:text/html;base64,AAAA',
+            'data:image/svg+xml;base64,AAAA', // an SVG may carry a script
+            prefix + 'AB CD',                 // a space inside
+            prefix + '!!!',                   // outside base64
+            'DATA:image/jpeg;base64,AAAA',    // the page always writes lower case
+            null,
+        ]) {
+            expect(isCustomAvatar(forged)).toBe(false);
+        }
+        const atLimit = prefix + 'A'.repeat(MAX_CUSTOM_AVATAR_LENGTH - prefix.length);
+        expect(isCustomAvatar(atLimit)).toBe(true);
+        expect(isCustomAvatar(atLimit + 'A')).toBe(false);
     });
 });

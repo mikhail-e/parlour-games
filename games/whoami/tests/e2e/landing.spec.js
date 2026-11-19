@@ -1,7 +1,12 @@
 // The landing page: avatars, the Join and Create buttons, remembered choices
-const { test, expect, text, seedStorage, createRoom, joinRoom, waitForLanding } = require('./helpers');
+const { test, expect, text, serverErrorText, seedStorage, waitForLanding, avatarTiles } = require('./helpers');
 
-const avatarTiles = page => page.locator('#avatarSelector .avatar-option');
+// A room that is gone, a code or a link in lower case, a full room, a
+// player's ID from another browser, the name and the avatar remembered,
+// players of one name, a photo, the coffee plate: the kit's tests
+// (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').landingPageTests({ text, serverErrorText });
+
 const avatarValues = page => avatarTiles(page).evaluateAll(tiles => tiles.map(tile => tile.dataset.avatar));
 
 test('twelve avatars, the first one selected', async ({ newPlayer }) => {
@@ -155,37 +160,6 @@ test('a name longer than the limit is cut', async ({ newPlayer }) => {
     await expect(page.locator('#playerName')).toHaveValue('a'.repeat(128));
 });
 
-test('the name and the avatar are remembered after creating a room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    await alice.page.goto('/');
-    const chosen = await avatarTiles(alice.page).nth(4).getAttribute('data-avatar');
-    await avatarTiles(alice.page).nth(4).click();
-
-    await createRoom(alice);
-    await alice.page.goto('/');
-
-    await expect(alice.page.locator('#playerName')).toHaveValue('Alice');
-    await expect(avatarTiles(alice.page).first()).toHaveAttribute('data-avatar', chosen);
-    await expect(avatarTiles(alice.page).first()).toHaveClass(/selected/);
-});
-
-test('the name and the avatar are remembered after joining a room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-    await bob.page.goto(`/game/${code}`);
-    await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    const chosen = await avatarTiles(bob.page).nth(7).getAttribute('data-avatar');
-    await avatarTiles(bob.page).nth(7).click();
-
-    await joinRoom(bob, code);
-    await bob.page.goto('/');
-
-    await expect(bob.page.locator('#playerName')).toHaveValue('Bob');
-    await expect(avatarTiles(bob.page).first()).toHaveAttribute('data-avatar', chosen);
-    await expect(avatarTiles(bob.page).first()).toHaveClass(/selected/);
-});
-
 test('a tampered saved avatar is ignored', async ({ newPlayer }) => {
     const alice = await newPlayer('Alice');
     await seedStorage(alice, { 'whoami-player-avatar': JSON.stringify('<b>x</b>') });
@@ -194,35 +168,4 @@ test('a tampered saved avatar is ignored', async ({ newPlayer }) => {
 
     await expect(avatarTiles(alice.page)).toHaveCount(12);
     expect(await avatarValues(alice.page)).not.toContain('<b>x</b>');
-});
-
-test('the coffee button opens Buy Me a Coffee in a new tab', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Alice');
-    await page.goto('/');
-    const link = page.getByRole('link', { name: 'Buy me a coffee', exact: true });
-
-    await expect(link).toHaveAttribute('href', 'https://www.buymeacoffee.com/mikhail.e');
-    await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
-});
-
-// Like the sign, the coffee button is English on a Russian page too; its name
-// is the words it shows, so a voice command "Buy me a coffee" finds it
-test('the coffee button is English in both languages', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Алиса', { locale: 'ru-RU' });
-    await page.goto('/');
-    const link = page.getByRole('link', { name: 'Buy me a coffee', exact: true });
-
-    await expect(link).toHaveAttribute('lang', 'en');
-    await expect(link).toHaveAttribute('href', 'https://www.buymeacoffee.com/mikhail.e');
-});
-
-// A finger aimed at the language button must not land on the coffee link
-test('the coffee button stands apart from the language button', async ({ newPlayer }) => {
-    const { page } = await newPlayer('Alice');
-    await page.goto('/');
-    const language = await page.locator('.lang-toggle-btn').boundingBox();
-    const coffee = await page.getByRole('link', { name: 'Buy me a coffee', exact: true }).boundingBox();
-
-    expect(coffee.y - (language.y + language.height)).toBeGreaterThanOrEqual(32);
 });

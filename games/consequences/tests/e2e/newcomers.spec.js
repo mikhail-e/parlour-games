@@ -3,7 +3,7 @@
 // in without a tap, and a newcomer who gives up. The waiting screen and the
 // request are the kit's; letting in at the next round is the game's
 const {
-    test, expect, text, askToJoin, waitForPlayers, startedRound, writeToReading, showStories, confirmAnotherRound, seatRow,
+    test, expect, text, askToJoin, waitForPlayers, startedRound, seatRow,
 } = require('./helpers');
 
 const waitingLine = page => page.locator('#waitingNewcomers');
@@ -28,15 +28,15 @@ test('a newcomer to a round waits for the next one, and the players see who wait
     await expect(seatRow(anna.page, 'Dasha')).toHaveCount(0);
 });
 
-test('Another round lets the waiting newcomer into the lobby without a tap', async ({ newPlayer }) => {
+// The room lets the newcomers in with any new round, in the middle of one or
+// after every story (game-logic.js's newRound, game-logic.test.js)
+test('a new round lets the waiting newcomer into the lobby without a tap', async ({ newPlayer }) => {
     const { players, code } = await startedRound(newPlayer, ['Anna', 'Boris']);
     const dasha = await newPlayer('Dasha');
     await askToJoin(dasha, code);
-    await writeToReading(players);
-    for (const player of players) await player.page.locator('#readingCard .closed-sheet').first().click();
-    await showStories(players[0]);
 
-    await confirmAnotherRound(players[0]);
+    await players[0].page.click('#newRound');
+    await players[0].page.click('#confirmNewRound');
 
     await expect(dasha.page.locator('#waitingSheet')).toBeHidden();
     for (const player of [...players, dasha]) {

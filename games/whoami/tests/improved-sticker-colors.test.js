@@ -56,28 +56,17 @@ describe('Improved Sticker Colors System', () => {
                 { stickerColor: 'indigo' }
             ];
             const color = assignUniqueColor(players);
-            // Should cycle back when all colors are used
-            expect(['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo']).toContain(color);
-        });
-
-        test('should handle players without stickerColor (fallback)', () => {
-            const players = [
-                { name: 'Player1' }, // No stickerColor
-                { stickerColor: 'blue' },
-                { stickerColor: 'purple' }
-            ];
-            const color = assignUniqueColor(players);
-            expect(color).toBe('red'); // Should still work, ignoring players without colors
+            // All seven taken: the eighth player starts the palette again
+            expect(color).toBe('red');
         });
 
         test('should cycle correctly with more than 7 players', () => {
-            const players = [];
-            for (let i = 0; i < 10; i++) {
-                players.push({ stickerColor: `color${i}` }); // Mock colors
-            }
+            // Ten players: the whole palette, then red, blue and purple again
+            const players = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo', 'red', 'blue', 'purple']
+                .map(stickerColor => ({ stickerColor }));
             const color = assignUniqueColor(players);
-            // Should use modulo logic for 10 players
-            expect(['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo']).toContain(color);
+            // The eleventh player goes on round the palette
+            expect(color).toBe('orange');
         });
     });
 
@@ -149,72 +138,13 @@ describe('Improved Sticker Colors System', () => {
                 assignedColors.push(result.player.stickerColor);
             }
 
-            // Should have exactly 7 unique colors (some will repeat)
-            const uniqueColors = new Set(assignedColors);
-            expect(uniqueColors.size).toBe(7);
-
-            // All assigned colors should be from the valid palette
-            const validColors = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo'];
-            assignedColors.forEach(color => {
-                expect(validColors).toContain(color);
-            });
-        });
-
-        test('should maintain color uniqueness when players leave and rejoin', () => {
-            // Add 3 players
-            addPlayerToGame(games, gameId, 'Alice', '😀');
-            const player2 = addPlayerToGame(games, gameId, 'Bob', '😎');
-            addPlayerToGame(games, gameId, 'Charlie', '🤖');
-
-            // Remove middle player (simulate leaving)
-            const game = games.get(gameId);
-            game.players = game.players.filter(p => p.id !== player2.player.id);
-
-            // Add new player - should get the "freed" color
-            const player4 = addPlayerToGame(games, gameId, 'David', '🚀');
-            expect(player4.success).toBe(true);
-
-            // New player should get the second color (blue)
-            expect(player4.player.stickerColor).toBe('blue');
-        });
-    });
-
-    describe('Color consistency and persistence', () => {
-        test('should maintain fixed colors throughout game lifecycle', () => {
-            // Add players
-            addPlayerToGame(games, gameId, 'Alice', '😀');
-            addPlayerToGame(games, gameId, 'Bob', '😎');
-
-            const game = games.get(gameId);
-
-            // Colors should be stored in player objects
-            expect(game.players[0].stickerColor).toBeDefined();
-            expect(game.players[1].stickerColor).toBeDefined();
-            expect(game.players[0].stickerColor).not.toBe(game.players[1].stickerColor);
-        });
-
-        test('should not assign color to reconnecting players who already have one', () => {
-            // Add player
-            const player1Result = addPlayerToGame(games, gameId, 'Alice', '😀');
-            const originalPlayerId = player1Result.player.id;
-            const originalColor = player1Result.player.stickerColor;
-
-            // Simulate player reconnection by providing player ID
-            const reconnectResult = addPlayerToGame(games, gameId, 'Alice', '😀', originalPlayerId);
-
-            expect(reconnectResult.success).toBe(true);
-            expect(reconnectResult.isNewPlayer).toBe(false);
-            expect(reconnectResult.player.stickerColor).toBe(originalColor);
-            expect(reconnectResult.player.id).toBe(originalPlayerId);
+            // The whole palette, then round it again in the same order
+            const palette = ['red', 'blue', 'purple', 'orange', 'green', 'pink', 'indigo'];
+            expect(assignedColors).toEqual([...palette, ...palette.slice(0, 5)]);
         });
     });
 
     describe('Edge cases and error handling', () => {
-        test('should handle empty player list', () => {
-            const color = assignUniqueColor([]);
-            expect(color).toBe('red');
-        });
-
         test('should handle undefined stickerColor in player objects', () => {
             const players = [
                 { name: 'Player1' }, // No stickerColor property

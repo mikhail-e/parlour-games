@@ -2,51 +2,16 @@
 // one player
 const {
     test, expect, text, seedStorage, createRoom, joinRoom, playerCard, waitForPlayers, startedGame, leaveGame,
-    holdRoomJoin, releaseRoomJoin, roomWith,
+    holdRoomJoin, releaseRoomJoin, roomWith, listedNames,
 } = require('./helpers');
+
+// The lobby's list and a reload, leaving, in every tab, the last one out, the
+// invitation (Copy Link, "Copied!", its buttons in Russian, an ad blocker), a
+// message over a window: the kit's tests (packages/room-kit/e2e-kit-tests.js)
+require('@parlour-games/room-kit/e2e-kit-tests').roomPageTests({ text });
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const storedPlayerId = page => page.evaluate(() => localStorage.getItem('playerId'));
-const listedNames = page => page.locator('.player-name').evaluateAll(names =>
-    names.map(name => name.firstChild.textContent));
-
-test('leaving goes home with the code and the name filled in', async ({ newPlayer }) => {
-    const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
-
-    await leaveGame(bob);
-
-    await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await expect(bob.page.locator('#playerName')).toHaveValue('Bob');
-    await expect(bob.page.locator('#roomCode')).toHaveValue(code);
-    await waitForPlayers(alice.page, 1);
-    await expect(alice.page.locator('.alert.position-fixed')).toContainText(
-        text('playerLeftNotification', 'en', { playerName: 'Bob' }));
-});
-
-test('the last player to leave deletes the room', async ({ newPlayer }) => {
-    const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
-
-    await leaveGame(bob);
-    await waitForPlayers(alice.page, 1);
-    await leaveGame(alice);
-
-    await expect(alice.page).toHaveURL(/\/$/);
-    await alice.page.goto(`/game/${code}`);
-    await expect(alice.page).toHaveURL(/\/\?error=room-not-found$/);
-});
-
-test('Leave in one tab takes the player out of the room in every tab', async ({ newPlayer }) => {
-    const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
-    // A second tab of the same browser is the same player
-    const secondTab = { name: 'Alice', page: await alice.context.newPage() };
-    await joinRoom(secondTab, code);
-    await waitForPlayers(bob.page, 2);
-
-    await leaveGame(alice);
-
-    await expect(secondTab.page).toHaveURL(new RegExp(`/\\?join=${code}$`));
-    await waitForPlayers(bob.page, 1);
-});
 
 test('a tab whose connection joins just after its player left goes home too', async ({ newPlayer }) => {
     const { players: [alice, bob], code } = await roomWith(newPlayer, ['Alice', 'Bob']);
@@ -92,18 +57,6 @@ test('a leaver returns to the started round with the same character, color and p
     await expect(bobsSticker()).toHaveClass(new RegExp(`\\b${colorBefore}\\b`));
     await expect(playerCard(bob.page, 'Bob').locator('.character-sticker.mystery')).toBeVisible();
     await expect(bob.page.locator('#restartGame')).toBeVisible();
-});
-
-test('reloading keeps the same player', async ({ newPlayer }) => {
-    const { players: [alice, bob] } = await roomWith(newPlayer, ['Alice', 'Bob']);
-    const id = await storedPlayerId(bob.page);
-    expect(id).toMatch(UUID_V4);
-
-    await bob.page.reload();
-
-    await waitForPlayers(bob.page, 2);
-    expect(await storedPlayerId(bob.page)).toBe(id);
-    await waitForPlayers(alice.page, 2);
 });
 
 test('reloading during a game keeps your place and your hidden character', async ({ newPlayer }) => {

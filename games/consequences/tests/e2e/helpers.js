@@ -11,7 +11,7 @@ const path = require('path');
 const { test, expect } = require('@parlour-games/room-kit/e2e');
 const { pageTexts, ...kitHelpers } = require('@parlour-games/room-kit/e2e-helpers');
 // The sets a round draws from: their texts are the pages' (translations.js)
-const { QUESTION_SETS } = require('../../game-logic');
+const { QUESTION_SETS, QUESTION_COUNT } = require('../../game-logic');
 /* global currentGame, sendMove -- the room page's picture of the game and its move (the kit's room-page.js), inside page.evaluate() */
 
 const { roomWith, waitForLanding } = kitHelpers;
@@ -54,6 +54,17 @@ function questionOf(page, number, lang = 'en') {
     return setText(page, `Question${number}`, lang);
 }
 
+// The eight questions of a set, in order, in a language: the ones over the
+// answers of its stories
+const questionsOfSet = (set, lang = 'en') => Array.from({ length: QUESTION_COUNT },
+    (unused, index) => text(`${set}Question${index + 1}`, lang));
+
+// The lines of a shared story of a set: each answer after its question
+const storyLines = (set, answers, lang = 'en') => {
+    const questions = questionsOfSet(set, lang);
+    return answers.map((answer, index) => `${questions[index]} ${answer}`);
+};
+
 // The round's step as the page knows it: 0-7 a question, 8 the reading,
 // null in the lobby. Read from the page, so a check holds in any language
 function roundStep(page) {
@@ -93,11 +104,6 @@ const answerText = (player, step) => `${player.name} ${step + 1}`;
 async function answerStep(players, step, answerOf = answerText) {
     for (const player of players) await answer(player, answerOf(player, step));
     await waitForStep(players, step + 1);
-}
-
-// The whole writing, every player answering every step: the round is at the reading
-async function writeToReading(players, answerOf = answerText) {
-    for (let step = 0; step < 8; step++) await answerStep(players, step, answerOf);
 }
 
 // A player goes on from the reading to every story, by their own press: the
@@ -174,18 +180,49 @@ function latestMessage(player, event) {
     return messages.length ? messages[messages.length - 1] : null;
 }
 
+// Players whose pages count the messages of this event they send to the room:
+// `player.sent()`. Counted from the first page on, so a test that reads it
+// after the room's answer to a later move knows every earlier one was counted
+// startedRound(countingSent(newPlayer, 'new-round'), names)
+const countingSent = (newPlayer, event) => async (name, options) => {
+    const player = await newPlayer(name, options);
+    player.sent = kitHelpers.countSentEvents(player.page, event);
+    return player;
+};
+
 // A move sent the way the room page sends it (the kit's sendMove), without a button
 const sendRoomMove = (player, event, data) => player.page.evaluate(([name, payload]) => sendMove(name, payload), [event, data]);
+
+// Every player answers the questions from step `from` to step `to`, by moves
+// sent the way the room page sends them, not through the answer field: for a
+// test whose subject comes after the writing (the field and its button are
+// writing.spec.js's). The answers are answerOf's, "Anna 3" unless a test says
+// otherwise
+async function writeByMoves(players, { from = 0, to = QUESTION_COUNT, answerOf = answerText } = {}) {
+    for (let step = from; step < to; step++) {
+        for (const player of players) await sendRoomMove(player, 'write-answer', { text: answerOf(player, step) });
+        await waitForStep(players, step + 1);
+    }
+}
+
+// The whole writing: the round is at the reading
+const writeToReading = (players, answerOf = answerText) => writeByMoves(players, { answerOf });
+
+// A room of these players, every one of them listening and in the lobby: { players, code }
+const listeningRoom = (newPlayer, names) => roomWith(name => listeningPlayer(newPlayer, name), names);
 
 module.exports = {
     test,
     expect,
     text,
     serverErrorText,
+    QUESTION_COUNT,
     ...kitHelpers,
     setOf,
     setText,
     questionOf,
+    questionsOfSet,
+    storyLines,
     roundStep,
     waitForStep,
     startRound,
@@ -203,4 +240,7 @@ module.exports = {
     messagesOf,
     latestMessage,
     sendRoomMove,
+    writeByMoves,
+    listeningRoom,
+    countingSent,
 };

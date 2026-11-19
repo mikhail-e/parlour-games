@@ -2,25 +2,8 @@
 // the Start Game button
 const {
     test, expect, text, createRoom, joinRoom, playerCard, waitForPlayers, assignCharacter, countSentEvents, roomWith,
-    startGame, revealOwnCharacter, leaveGame, waitForLanding,
+    startGame, revealOwnCharacter, leaveGame,
 } = require('./helpers');
-
-// The names in the list, without the "(You)" label of the viewer's own card
-const listedNames = page => page.locator('.player-name').evaluateAll(names =>
-    names.map(name => name.firstChild.textContent));
-
-test('both players see both cards in join order', async ({ newPlayer }) => {
-    const { players: [alice, bob] } = await roomWith(newPlayer, ['Alice', 'Bob']);
-
-    expect(await listedNames(alice.page)).toEqual(['Alice', 'Bob']);
-    expect(await listedNames(bob.page)).toEqual(['Alice', 'Bob']);
-});
-
-test('two players may have the same name', async ({ newPlayer }) => {
-    const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Sam', 'Sam']);
-
-    await expect(playerCard(alice.page, 'Sam')).toHaveCount(2);
-});
 
 test('no + on your own card', async ({ newPlayer }) => {
     const { players: [alice] } = await roomWith(newPlayer, ['Alice', 'Bob']);
@@ -232,35 +215,6 @@ test('a name and a character with HTML stay text in notifications too', async ({
     await expect(notification.last()).toContainText(text('playerLeftNotification', 'en', { playerName: '<b>Bob</b>' }));
     await expect(notification.locator('b, img')).toHaveCount(0);
     // An alert from onerror would fail the test through the guard
-});
-
-test('a lower-case room link opens the room', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-
-    await bob.page.goto(`/game/${code.toLowerCase()}`);
-    await expect(bob.page).toHaveURL(new RegExp(`/\\?join=${code}$`, 'i'));
-    await waitForLanding(bob.page);
-    await bob.page.fill('#playerName', 'Bob');
-    await bob.page.click('#joinBtn');
-
-    await expect(bob.page).toHaveURL(new RegExp(`/game/${code}$`));
-    await waitForPlayers(alice.page, 2);
-    await waitForPlayers(bob.page, 2);
-});
-
-test('a lower-case link in a tab that is already in the room keeps the player there', async ({ newPlayer }) => {
-    const alice = await newPlayer('Alice');
-    const bob = await newPlayer('Bob');
-    const code = await createRoom(alice);
-    await joinRoom(bob, code);
-
-    await bob.page.goto(`/game/${code.toLowerCase()}`);
-
-    await expect(bob.page.locator('#roomCode')).toHaveText(code);
-    await waitForPlayers(bob.page, 2);
-    await expect(bob.page.locator('#roomLink')).toHaveValue(new RegExp(`/game/${code}$`));
 });
 
 test('a player who joins during an edit appears once the edit ends', async ({ newPlayer }) => {
