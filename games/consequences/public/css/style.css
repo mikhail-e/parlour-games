@@ -644,7 +644,10 @@ body.in-round .room-ticket #roomCode {
   text-align: center;
 }
 
-/* An open sheet: the story, its answers one under another with a line between */
+/* An open sheet: the story, its answers one under another with a line
+   between, each under its question in small type in the game's color, as
+   the question was on the sheet while writing (the owner's pick from a page
+   of variants) */
 .story {
   margin: 0;
   padding: 0;
@@ -659,6 +662,15 @@ body.in-round .room-ticket #roomCode {
 
 .story li:last-child {
   border-bottom: 0;
+}
+
+.story__question {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--accent);
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .story__answer {
@@ -696,6 +708,10 @@ body.in-round .room-ticket #roomCode {
 .stories .story li {
   padding-top: 5px;
   padding-bottom: 6px;
+}
+
+.stories .story__question {
+  font-size: .78rem;
 }
 
 .stories .story__answer {

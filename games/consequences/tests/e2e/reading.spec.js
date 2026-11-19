@@ -5,7 +5,7 @@
 // seat wrote what
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
-    showStories, closeStories, confirmAnotherRound, seatRow, stubShare, countingSent, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf, roundStep,
+    showStories, closeStories, confirmAnotherRound, seatRow, stubShare, countingSent, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf, questionsOfSet, storyLines, roundStep,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -44,7 +44,7 @@ test('a closed sheet is a sealed envelope, the point of the flap hidden just und
     expect(Number(lowerBy)).toBeLessThan(inner.height / 2);
 });
 
-test("a tapped sheet opens: eight answers in order, read as one text without their questions, a line between them; the others' stay closed", async ({ newPlayer }) => {
+test("a tapped sheet opens: eight answers in order, each under its question of the round's set in small type, a line between them; the others' stay closed", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna', { locale: 'ru-RU' });
     const boris = await newPlayer('Boris');
     const vera = await newPlayer('Vera');
@@ -63,11 +63,19 @@ test("a tapped sheet opens: eight answers in order, read as one text without the
     await ownSheet(anna.page).locator('.closed-sheet').click();
 
     await expect(answersOf(ownSheet(anna.page))).toHaveText([/ 1$/, / 2$/, / 3$/, / 4$/, / 5$/, / 6$/, / 7$/, / 8$/]);
-    for (const number of [1, 2, 3, 4, 5, 6, 7, 8]) {
-        await expect(ownSheet(anna.page).locator('.story')).not.toContainText(await questionOf(anna.page, number, 'ru'));
+    // Each answer under its question: the round's set's, in Anna's language,
+    // in smaller type than the answer
+    const lines = ownSheet(anna.page).locator('.story li');
+    await expect(lines.locator('.story__question')).toHaveText(questionsOfSet(await setOf(anna.page, 'ru'), 'ru'));
+    const fontSize = locator => locator.evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+    for (const line of [lines.first(), lines.last()]) {
+        const question = line.locator('.story__question');
+        const answer = line.locator('.story__answer');
+        const [above, under] = [await question.boundingBox(), await answer.boundingBox()];
+        expect(above.y + above.height).toBeLessThanOrEqual(under.y);
+        expect(await fontSize(question)).toBeLessThan(await fontSize(answer));
     }
     const lineUnder = item => item.evaluate(element => getComputedStyle(element).borderBottomStyle);
-    const lines = ownSheet(anna.page).locator('.story li');
     expect(await lineUnder(lines.first())).toBe('dashed');
     expect(await lineUnder(lines.last())).toBe('none');
     await expect(ownSheet(boris.page).locator('.closed-sheet')).toBeVisible();
@@ -272,11 +280,11 @@ test('a story is shared under the name of the round\'s set, with its text and an
     const invitation = text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host });
     expect((await anna.page.evaluate(() => window.shareCalls))[0]).toEqual({
         title: text('title'),
-        text: `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${invitation}`,
+        text: `${await sharedTitle(anna.page)}\n\n${storyLines(await setOf(anna.page), answers).join('\n')}\n\n${invitation}`,
     });
 
-    // In Russian the title is the set's Russian name: the language button is
-    // the room's, under the window
+    // In Russian the title is the set's Russian name, and so are the
+    // questions: the language button is the room's, under the window
     await closeStories(anna);
     await anna.page.locator('.lang-toggle-btn').click();
     await showStories(anna);
@@ -284,7 +292,9 @@ test('a story is shared under the name of the round\'s set, with its text and an
     await anna.page.locator('.story-send').first().click();
     await expect.poll(() => anna.page.evaluate(() => window.shareCalls.length)).toBe(2);
     const [, inRussian] = await anna.page.evaluate(() => window.shareCalls);
-    expect(inRussian.text.startsWith(`${await sharedTitle(anna.page, 'ru')}\n\n`)).toBe(true);
+    const firstStory = await answersOf(anna.page.locator('#storyList .sheet').first()).allTextContents();
+    const lines = storyLines(await setOf(anna.page, 'ru'), firstStory, 'ru');
+    expect(inRussian.text.startsWith(`${await sharedTitle(anna.page, 'ru')}\n\n${lines.join('\n')}\n\n`)).toBe(true);
 });
 
 test("an ad blocker's list of social widgets hides no story's Share, nor its icon", async ({ newPlayer }) => {
@@ -319,7 +329,7 @@ test('without a share sheet the story is copied, under the name of the round\'s 
     await expect(story.locator('.story-send')).toHaveText(text('copiedSuccess'));
     const answers = await answersOf(story).allTextContents();
     const copied = await anna.page.evaluate(() => navigator.clipboard.readText());
-    expect(copied.startsWith(`${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n`)).toBe(true);
+    expect(copied.startsWith(`${await sharedTitle(anna.page)}\n\n${storyLines(await setOf(anna.page), answers).join('\n')}\n\n`)).toBe(true);
     expect(copied.endsWith(text('shareStoryInvitation', 'en', { site: new URL(anna.page.url()).host }))).toBe(true);
 });
 
@@ -351,7 +361,7 @@ test('without a share sheet or a clipboard the story is copied the old way, from
     const answers = await answersOf(story).allTextContents();
     const site = new URL(anna.page.url()).host;
     expect(await anna.page.evaluate(() => window.copiedTexts)).toEqual([
-        `${await sharedTitle(anna.page)}\n\n${answers.join('\n')}\n\n${text('shareStoryInvitation', 'en', { site })}`,
+        `${await sharedTitle(anna.page)}\n\n${storyLines(await setOf(anna.page), answers).join('\n')}\n\n${text('shareStoryInvitation', 'en', { site })}`,
     ]);
     // The field made for the copy is gone
     await expect(anna.page.locator('#storiesModal textarea')).toHaveCount(0);

@@ -5,7 +5,7 @@
 // the kit's (landing.spec.js checks the game's title and subtitle)
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startRound, answer, answerStep, writeToReading, showStories, seatRow,
-    setOf, questionOf, QUESTION_COUNT,
+    setOf, questionOf, questionsOfSet, QUESTION_COUNT,
 } = require('./helpers');
 
 // Anna plays in Russian, Boris in English
@@ -62,7 +62,16 @@ test('the switch draws the reading and every story again in the other language',
     await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 0, count: 2 }));
     await expect(seatRow(anna.page, 'Boris')).toContainText(text('statusClosed', 'en'));
     await anna.page.locator('#readingCard .closed-sheet').click();
-    await expect(anna.page.locator('#readingCard .story__answer').first()).toBeVisible();
+    const questions = anna.page.locator('#readingCard .story__question');
+    await expect(questions).toHaveText(questionsOfSet(set, 'en'));
+
+    // The open sheet switched back: its questions in Russian, its answers the same
+    const answers = anna.page.locator('#readingCard .story__answer');
+    const written = await answers.allTextContents();
+    await anna.page.locator('.lang-toggle-btn').click();
+    await expect(questions).toHaveText(questionsOfSet(set, 'ru'));
+    await expect(answers).toHaveText(written);
+    await anna.page.locator('.lang-toggle-btn').click();
 
     await boris.page.locator('#readingCard .closed-sheet').click();
     await showStories(anna);

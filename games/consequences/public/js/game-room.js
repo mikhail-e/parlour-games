@@ -101,6 +101,11 @@ function sayOfSet(round, key, placeholders = {}) {
     return say(`${(round && round.questionSet) || 'classic'}${key}`, placeholders);
 }
 
+// Question `number` (1-8) of the round's set, in the page's language
+function setQuestion(round, number) {
+    return sayOfSet(round, `Question${number}`);
+}
+
 function isMe(playerId) {
     return Boolean(currentPlayer) && playerId === currentPlayer.id;
 }
@@ -339,7 +344,7 @@ function renderWriting(round) {
     edit.disabled = takingBack === step;
     if (target) {
         document.getElementById('questionNumber').textContent = say('questionOf', { number: step + 1, count: questionCount });
-        document.getElementById('questionText').textContent = sayOfSet(round, `Question${step + 1}`);
+        document.getElementById('questionText').textContent = setQuestion(round, step + 1);
         updateAnswerField();
     }
 }
@@ -363,7 +368,7 @@ function sentAnswerAt(step) {
 // The answered questions of the sheet, a pleat each: the question, never the answer
 function renderFolds(round, count) {
     document.getElementById('folds').replaceChildren(...Array.from({ length: count },
-        (_, index) => element('div', 'fold', `${index + 1}. ${sayOfSet(round, `Question${index + 1}`)}`)));
+        (_, index) => element('div', 'fold', `${index + 1}. ${setQuestion(round, index + 1)}`)));
 }
 
 // Under the sent answer: who answers (or answered) for this player at this
@@ -421,7 +426,7 @@ function renderReading(round) {
     for (const seat of round.seats) {
         if (seat === mine) continue;
         if (isMe(seat.heldBy)) parts.push(takenSheet(seat));
-        else if (isMe(seat.openedBy)) parts.push(sheetSection(say('sheetOfPlayer', { name: seat.name }), openSheet(seat.sheet)));
+        else if (isMe(seat.openedBy)) parts.push(sheetSection(say('sheetOfPlayer', { name: seat.name }), openSheet(round, seat.sheet)));
     }
     parts.push(element('p', 'opened-count', say('openedCount', { opened: round.opened, count: round.seats.length })));
     parts.push(storiesButton(round));
@@ -503,7 +508,7 @@ function sheetSection(title, ...content) {
 
 function ownSheet(round, mine) {
     if (isMe(mine.openedBy)) {
-        return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('readThisAloud')), openSheet(mine.sheet));
+        return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('readThisAloud')), openSheet(round, mine.sheet));
     }
     const reader = mine.openedBy || mine.heldBy;
     if (reader) return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('yourSheetReadBy', { name: nameOf(round, reader) })));
@@ -528,22 +533,24 @@ function closedSheet(onOpen) {
 }
 
 // An open sheet: its answers come with `sheet`, right after it opens
-function openSheet(sheetNumber) {
+function openSheet(round, sheetNumber) {
     const answers = openSheets.get(sheetNumber);
     if (!answers) return null;
     const sheet = element('div', 'sheet');
-    sheet.append(storyList(answers));
+    sheet.append(storyList(round, answers));
     return sheet;
 }
 
-// The story: the answers in order, read as one text, without their questions
-function storyList(answers) {
+// The story: the answers in order with a line between them, each under its
+// question in small type (the owner's pick from a page of variants): the
+// question of the round's set, in the page's language
+function storyList(round, answers) {
     const list = element('ol', 'story');
-    for (const answer of answers) {
+    answers.forEach((answer, index) => {
         const item = element('li');
-        item.append(element('span', 'story__answer', answer || ''));
+        item.append(element('span', 'story__question', setQuestion(round, index + 1)), element('span', 'story__answer', answer || ''));
         list.append(item);
-    }
+    });
     return list;
 }
 
@@ -678,19 +685,21 @@ function storySheets(shown) {
         share.type = 'button';
         share.append(createIcon('export'), element('span', '', say('shareStory')));
         share.addEventListener('click', () => shareStory(share, shown, story.answers));
-        sheet.append(head, storyList(story.answers), share);
+        sheet.append(head, storyList(shown, story.answers), share);
         return sheet;
     });
 }
 
 // A story for friends: the round's set as its title - capitals between two
 // stars, like the sheets' titles: a shared text is plain, and bold is every
-// messenger's own markup -, its text, then an invitation with the game's name
-// and its site. The address is inside the text, not in the share sheet's
-// `url`: some apps keep only one of the two
+// messenger's own markup -, its answers a line each after their questions
+// («Кто? Бабушка Зина»: the owner's decision), then an invitation with the
+// game's name and its site. The address is inside the text, not in the share
+// sheet's `url`: some apps keep only one of the two
 function shareStory(button, round, answers) {
     const title = `★ ${sayOfSet(round, 'Name').toUpperCase()} ★`;
-    const text = `${title}\n\n${answers.join('\n')}\n\n${say('shareStoryInvitation', { site: window.location.host })}`;
+    const lines = answers.map((answer, index) => `${setQuestion(round, index + 1)} ${answer || ''}`);
+    const text = `${title}\n\n${lines.join('\n')}\n\n${say('shareStoryInvitation', { site: window.location.host })}`;
     shareOrCopy(button, { title: say('title'), text }, text);
 }
 
