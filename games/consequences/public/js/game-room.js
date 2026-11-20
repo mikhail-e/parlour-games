@@ -19,6 +19,8 @@
 // moves and a language change. It is emptied when its sheet changes - the next
 // step, another seat's sheet.
 /* global createIcon, shareOrCopy, AppStorage, getText, keepScreenAwake, MAX_ANSWER_LENGTH, MIN_PLAYERS */
+// From the game's sound.js
+/* global callPlayerBack, soundIsOn, setSoundOn */
 // From the game's config.js
 /* global APP_STORAGE_PREFIX */
 // From the kit's room-page.js
@@ -69,6 +71,11 @@ let sentAnswer = AppStorage.session.get('sentAnswer');
 // The step whose answer the player asked to take back: the field opening on
 // it gets the answer back
 let takingBack = null;
+
+// The step of the round this page last drew for its player's seat: null in
+// the lobby or without a seat, undefined before the first drawing. A new one,
+// the next question or the reading, calls the player back (callIfNewStep)
+let seenStep;
 
 let newRoundModal = null;
 let storiesModal = null;
@@ -235,6 +242,27 @@ function renderRoom() {
     // A phone that sleeps loses the room: awake while the round is on, until
     // this page has opened every story
     keepScreenAwake(Boolean(round) && !storiesSeen);
+    callIfNewStep(round);
+}
+
+// A new question or the reading has come to the player's seat: the sound
+// calls them back if they look away (sound.js). The page is drawn anew on
+// every change - a language, another player's move - and only a new step
+// calls; the first drawing after the page opens (a reload) only remembers it,
+// and the lobby forgets it, so the next round's first question calls
+function callIfNewStep(round) {
+    const step = round && seatOf(round, currentPlayer.id) ? round.step : null;
+    if (seenStep !== undefined && step !== null && step !== seenStep) callPlayerBack();
+    seenStep = step;
+}
+
+// The sound's switch says whether the sound is on, in the page's language:
+// a bell, struck through when it is off
+function renderSoundSwitch() {
+    const soundSwitch = document.getElementById('soundSwitch');
+    const on = soundIsOn();
+    soundSwitch.replaceChildren(on ? createIcon('bell') : createIcon('bell-off'), element('span', null, say(on ? 'soundOn' : 'soundOff')));
+    soundSwitch.title = say('soundTitle');
 }
 
 // «New round» and its question by the round's phase: while writing the
@@ -753,6 +781,17 @@ function seatRow(round, seat, reading, free) {
 // The game's buttons and windows, once
 function setUpRoomGame() {
     document.getElementById('startRound').addEventListener('click', () => sendMove('start-round'));
+
+    // The sound's switch, first in the kit's language switcher (i18n.js has
+    // drawn it by now): the choice is this browser's (sound.js)
+    const soundSwitch = button('btn btn-sm curtain-btn sound-switch', '', () => {
+        setSoundOn(!soundIsOn());
+        renderSoundSwitch();
+    });
+    soundSwitch.id = 'soundSwitch';
+    document.querySelector('.language-switcher').prepend(soundSwitch);
+    renderSoundSwitch();
+    document.addEventListener('languagechanged', renderSoundSwitch);
 
     document.getElementById('answerForm').addEventListener('submit', sendAnswer);
     document.getElementById('answerText').addEventListener('input', updateAnswerField);
