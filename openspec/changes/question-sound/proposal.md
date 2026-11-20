@@ -31,4 +31,6 @@
 - `games/consequences/public/js/translations.js`: тексты выключателя на двух языках.
 - Браузерные тесты Consequences: новый `tests/e2e/sound.spec.js`.
 - `games/consequences/CLAUDE.md`, `docs/testing.md`: решение владельца и как устроен звук.
-- Ни сервер, ни общий пакет игр `packages/room-kit/` (звук есть только у Consequences), ни whoami не затрагиваются: выпуск только Consequences (минорная версия). Политика безопасности (CSP) не меняется: звук из Web Audio не загружает ничего.
+- `packages/room-kit/public/kit/css/playbill.css`: вид кнопки языка получает второй класс, `.curtain-btn`, для кнопки игры рядом с ней (звук есть только у Consequences, сам звук в кит не идёт).
+- Сервер не меняется. Политика безопасности (CSP) не меняется: звук из Web Audio не загружает ничего.
+- Выпуск: Consequences, минорная версия; whoami вместе с ним, патч-версия: правка кита попадает на прод каждой игры, и по правилу выпуска нескольких игр (`docs/release.md`) каждая выходит под новым номером, хотя вид whoami не меняется.
