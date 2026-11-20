@@ -211,6 +211,39 @@ const writeToReading = (players, answerOf = answerText) => writeByMoves(players,
 // A room of these players, every one of them listening and in the lobby: { players, code }
 const listeningRoom = (newPlayer, names) => roomWith(name => listeningPlayer(newPlayer, name), names);
 
+// The sound (sound.js). A test hears nothing: a player's page counts the
+// tones it asks the browser for, and every note of a sound is a tone made in
+// the same moment, so tones made apart are sounds apart. And the page can be
+// told the player looks away: Playwright keeps every page visible and in
+// focus. `soundPlayer` is newPlayer's stand-in: soundPlayer(newPlayer, 'Anna')
+async function soundPlayer(newPlayer, name, options) {
+    const player = await newPlayer(name, options);
+    await player.context.addInitScript(() => {
+        window.toneTimes = [];
+        const createTone = BaseAudioContext.prototype.createOscillator;
+        BaseAudioContext.prototype.createOscillator = function createOscillator() {
+            window.toneTimes.push(performance.now());
+            return createTone.call(this);
+        };
+        let looking = 'here';
+        window.lookAt = where => { looking = where; };
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (looking === 'tab' ? 'hidden' : 'visible') });
+        document.hasFocus = () => looking === 'here';
+    });
+    return player;
+}
+
+// How many sounds the page has played since it opened
+const soundsPlayed = page => page.evaluate(() => window.toneTimes.filter((time, index, times) => index === 0 || time - times[index - 1] > 50).length);
+
+// Where the player looks: 'here' at the game; 'tab' at another tab (the
+// game's is hidden); 'window' at another window in focus, the game's on the screen
+const lookAt = (player, where) => player.page.evaluate(place => window.lookAt(place), where);
+
+// A tap on the page where nothing is: a browser lets a page sound only after
+// a tap or a key on it, and a player in the lobby may have touched nothing yet
+const tapPage = player => player.page.mouse.click(2, 2);
+
 module.exports = {
     test,
     expect,
@@ -243,4 +276,8 @@ module.exports = {
     writeByMoves,
     listeningRoom,
     countingSent,
+    soundPlayer,
+    soundsPlayed,
+    lookAt,
+    tapPage,
 };
