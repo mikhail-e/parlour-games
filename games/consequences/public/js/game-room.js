@@ -147,6 +147,22 @@ function button(className, text, onClick) {
     return node;
 }
 
+// Puts a part of the screen drawn anew into its place, keeping each old part
+// equal to the new one at the same place (isEqualNode): another player's move
+// redraws the screen while a player presses a button or has the focus on it,
+// and a part taken out of the page loses both - the press never counts (the
+// consequences/room spec). The screen is still drawn whole from the room; an
+// unchanged part only stays where it is. An equal part keeps its old handler,
+// so a part's markup says all its buttons act on (a seat's data-player-id)
+function redrawChildren(container, parts) {
+    parts.forEach((part, index) => {
+        const old = container.children[index];
+        if (!old) container.append(part);
+        else if (!old.isEqualNode(part)) old.replaceWith(part);
+    });
+    while (container.children.length > parts.length) container.lastElementChild.remove();
+}
+
 startRoomPage({
     render: renderRoom,
     setUp: setUpRoomGame,
@@ -298,7 +314,7 @@ function renderLobby() {
 // The rounds played, in order: each row opens the window of every story on
 // its round. Their sets' names in the page's language
 function renderRoundsPlayed() {
-    document.getElementById('roundsList').replaceChildren(...historySets().map((questionSet, index) => {
+    redrawChildren(document.getElementById('roundsList'), historySets().map((questionSet, index) => {
         const row = button('rounds-list__row', undefined, () => openStoriesWindow(index + 1));
         const icon = createIcon('caret-right');
         row.append(element('span', 'rounds-list__number', say('roundNumber', { n: index + 1 })),
@@ -465,7 +481,7 @@ function renderReading(round) {
         parts.push(anotherRoundButton());
         if (showCoffee()) parts.push(coffeeCoupon());
     }
-    document.getElementById('readingCard').replaceChildren(...parts);
+    redrawChildren(document.getElementById('readingCard'), parts);
 }
 
 // «Every story»: there from the start of the reading, off until the last sheet
@@ -546,11 +562,14 @@ function ownSheet(round, mine) {
     return sheetSection(say('yourSheet'), element('p', 'lead-on-sheet', say('readAloud')), closedSheet(() => sendMove('open-sheet', {})));
 }
 
-// An absent player's sheet this player took: closed until tapped, or back on the table
+// An absent player's sheet this player took: closed until tapped, or back on
+// the table. Whose it is is in the markup too: two players may have one name
 function takenSheet(seat) {
-    return sheetSection(say('sheetOfPlayer', { name: seat.name }),
+    const section = sheetSection(say('sheetOfPlayer', { name: seat.name }),
         closedSheet(() => sendMove('open-sheet', { for: seat.playerId })),
         button('btn btn-outline-primary', say('giveSheetBack'), () => sendMove('return-sheet', { playerId: seat.playerId })));
+    section.dataset.playerId = seat.playerId;
+    return section;
 }
 
 // A closed sheet: a sealed envelope to tap
@@ -741,7 +760,7 @@ function renderSeats(round, reading) {
     document.getElementById('seatsTitle').textContent = reading ? say('sheets') : sayOfSet(round, 'TellingTheStory');
     const mine = seatOf(round, currentPlayer.id);
     const free = Boolean(mine) && !heldSeat(round) && (reading || mine.answered);
-    document.getElementById('seatList').replaceChildren(...round.seats.map(seat => seatRow(round, seat, reading, free)));
+    redrawChildren(document.getElementById('seatList'), round.seats.map(seat => seatRow(round, seat, reading, free)));
 
     const newcomers = document.getElementById('waitingNewcomers');
     const names = [...waitingNewcomers.values()].map(request => request.name);
