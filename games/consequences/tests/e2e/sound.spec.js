@@ -91,3 +91,65 @@ test('a reload and the others\' moves inside a step play nothing: only the step\
     await waitForStep([anna, boris, vera], 1);
     expect(await soundsPlayed(anna.page)).toBe(1);
 });
+
+test('the sound\'s switch: on at first; off, it says so with its bell struck through, and a new question plays nothing; on again, the sound plays once; the choice outlives a reload', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await soundRoom(newPlayer, ['Anna', 'Boris']);
+    const soundSwitch = anna.page.locator('#soundSwitch');
+    await expect(soundSwitch).toHaveText(text('soundOn'));
+    await expect(soundSwitch.locator('.icon--bell')).toBeVisible();
+    await startRound([anna, boris]);
+
+    await soundSwitch.click();
+    await expect(soundSwitch).toHaveText(text('soundOff'));
+    await expect(soundSwitch.locator('.icon--bell-off')).toBeVisible();
+    await answer(anna, answerText(anna, 0));
+    await lookAt(anna, 'tab');
+    await answer(boris, answerText(boris, 0));
+    await waitForStep([anna, boris], 1);
+    expect(await soundsPlayed(anna.page)).toBe(0);
+
+    await lookAt(anna, 'here');
+    await anna.page.reload();
+    await expect(soundSwitch).toHaveText(text('soundOff'));
+
+    await soundSwitch.click();
+    await expect(soundSwitch).toHaveText(text('soundOn'));
+    await expect.poll(() => soundsPlayed(anna.page)).toBe(1);
+    await answer(anna, answerText(anna, 1));
+    await lookAt(anna, 'tab');
+    await answer(boris, answerText(boris, 1));
+    await waitForStep([anna, boris], 2);
+    expect(await soundsPlayed(anna.page)).toBe(2);
+});
+
+test('the sound asks no permission and loads nothing: no request of the browser\'s permissions, no file of sound, nothing from another site', async ({ newPlayer }) => {
+    const { players: [anna, boris] } = await soundRoom(newPlayer, ['Anna', 'Boris']);
+    const requests = [];
+    anna.page.on('request', request => requests.push(request));
+    await anna.page.evaluate(() => {
+        window.permissionAsks = [];
+        const watch = (owner, name) => {
+            if (!owner || !owner[name]) return;
+            const original = owner[name].bind(owner);
+            owner[name] = (...args) => {
+                window.permissionAsks.push(name);
+                return original(...args);
+            };
+        };
+        watch(window.Notification, 'requestPermission');
+        watch(navigator.permissions, 'query');
+        watch(navigator.mediaDevices, 'getUserMedia');
+    });
+
+    await startRound([anna, boris]);
+    await answer(anna, answerText(anna, 0));
+    await lookAt(anna, 'tab');
+    await answer(boris, answerText(boris, 0));
+    await waitForStep([anna, boris], 1);
+    expect(await soundsPlayed(anna.page)).toBe(1);
+
+    expect(await anna.page.evaluate(() => window.permissionAsks)).toEqual([]);
+    const origin = new URL(anna.page.url()).origin;
+    expect(requests.filter(request => request.resourceType() === 'media').map(request => request.url())).toEqual([]);
+    expect(requests.map(request => request.url()).filter(url => !url.startsWith(origin) && !url.startsWith(origin.replace(/^http/, 'ws')))).toEqual([]);
+});

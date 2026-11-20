@@ -387,7 +387,10 @@ body.waiting-for-admission .container > .game-card:not(#waitingSheet) {
   z-index: 10;
 }
 
-.lang-toggle-btn {
+/* A button on the curtain: the language button, and a game's own next to it
+   in the same look (.curtain-btn; Consequences: the sound's switch) */
+.lang-toggle-btn,
+.curtain-btn {
   --bs-btn-color: var(--on-page);
   --bs-btn-bg: transparent;
   --bs-btn-border-color: var(--on-page);
