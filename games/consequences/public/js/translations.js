@@ -81,6 +81,12 @@ const translations = {
         newRoundKeepsStories: "The stories of this round will stay in Every story. Someone may still be reading their sheet. Start a new round?",
         confirmNewRound: "Yes, a new round",
 
+        // The sound that calls a player back when a new question or the reading
+        // comes and they look away (sound.js): its switch, next to the language button
+        soundOn: "Sound: on",
+        soundOff: "Sound: off",
+        soundTitle: "A sound when a new question or the reading comes while you look away from the game",
+
         // The sets of questions (game-logic.js lists them): each set's name,
         // its eight questions and the round's headings in its words - the
         // sheets' titles while writing and reading, every story and each one
@@ -326,6 +332,11 @@ const translations = {
         newRoundText: "Листы этого раунда пропадут. Начать новый раунд?",
         newRoundKeepsStories: "Истории этого раунда останутся во «Всех историях». Кто-то, может быть, ещё читает свой лист. Начать новый раунд?",
         confirmNewRound: "Да, новый раунд",
+
+        // The sound that calls a player back
+        soundOn: "Звук: вкл",
+        soundOff: "Звук: выкл",
+        soundTitle: "Звук, когда пришёл новый вопрос или началось чтение, а вы не смотрите на игру",
 
         // The sets of questions (game-logic.js lists them): each set's name,
         // its eight questions and the round's headings in its words - the

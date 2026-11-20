@@ -756,6 +756,21 @@ body.in-round .room-ticket #roomCode {
   }
 }
 
+/* ===== The sound ===== */
+
+/* The switch of the sound that calls a player back (sound.js, game-room.js):
+   first in the kit's language switcher at the end of the page, in the
+   language button's look (the kit's .curtain-btn), there in the lobby too;
+   its bell is struck through when the sound is off (the owner's pick from a
+   page of variants) */
+.sound-switch {
+  margin-right: 8px;
+}
+
+/* The game's own icons (Phosphor Bold): the sound on and off */
+.icon--bell { /* bell-simple */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M225.29,165.93C216.61,151,212,129.57,212,104a84,84,0,0,0-168,0c0,25.58-4.59,47-13.27,61.93A20.08,20.08,0,0,0,30.66,186,19.77,19.77,0,0,0,48,196H208a19.77,19.77,0,0,0,17.31-10A20.08,20.08,0,0,0,225.29,165.93ZM54.66,172C63.51,154,68,131.14,68,104a60,60,0,0,1,120,0c0,27.13,4.48,50,13.33,68ZM172,224a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,224Z'/%3E%3C/svg%3E"); }
+.icon--bell-off { /* bell-simple-slash */ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='currentColor'%3E%3Cpath d='M216.88,207.93l-160-176A12,12,0,1,0,39.12,48.07l14.8,16.29A83.58,83.58,0,0,0,44,104c0,25.58-4.59,47-13.27,61.93A20.08,20.08,0,0,0,30.68,186,19.75,19.75,0,0,0,48,196H173.6l25.52,28.07a12,12,0,0,0,17.76-16.14ZM54.68,172C63.52,154,68,131.14,68,104a59.84,59.84,0,0,1,3.52-20.29L151.78,172ZM172,224a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,224ZM88.89,42.35a12,12,0,0,1,6.37-15.73A84,84,0,0,1,212,104c0,18.68,2.38,34.93,7.07,48.28a12,12,0,1,1-22.64,8C190.83,144.32,188,125.4,188,104a60,60,0,0,0-83.38-55.28A12,12,0,0,1,88.89,42.35Z'/%3E%3C/svg%3E"); }
+
 /* ===== The room's history ===== */
 
 /* The game's own icons (Phosphor Bold; the kit's CLAUDE.md, Icons): the
