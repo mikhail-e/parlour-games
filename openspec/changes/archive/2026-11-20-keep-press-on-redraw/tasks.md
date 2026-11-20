@@ -17,7 +17,7 @@
 ## 4. Проверка целиком
 
 - [x] 4.1 `npm test` в корне зелёный
-- [ ] 4.2 После выкладки: `/api/version` Consequences новый; `npm run test:e2e:prod -w games/consequences` зелёный
+- [x] 4.2 После выкладки: `/api/version` Consequences новый; `npm run test:e2e:prod -w games/consequences` зелёный. Сделано: прод отдаёт 1.9.0, проверка прода зелёная
 
 ## Workflow follow-up
 
