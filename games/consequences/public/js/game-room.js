@@ -102,8 +102,9 @@ function say(key, placeholders = {}) {
 }
 
 // A text of the round's set of questions (translations.js): its name, a
-// question, a heading in its words. A round an earlier version started has no
-// set and goes on with the classic one, as the room says too (game-logic.js)
+// question, a question's hint, a heading in its words. A round an earlier
+// version started has no set and goes on with the classic one, as the room
+// says too (game-logic.js)
 function sayOfSet(round, key, placeholders = {}) {
     return say(`${(round && round.questionSet) || 'classic'}${key}`, placeholders);
 }
@@ -373,6 +374,8 @@ function renderWriting(round) {
     if (target) {
         document.getElementById('questionNumber').textContent = say('questionOf', { number: step + 1, count: questionCount });
         document.getElementById('questionText').textContent = setQuestion(round, step + 1);
+        // Under the question being answered, what its answer is in the story
+        document.getElementById('questionHint').textContent = sayOfSet(round, `Hint${step + 1}`);
         updateAnswerField();
     }
 }

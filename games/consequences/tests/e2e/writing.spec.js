@@ -5,7 +5,7 @@
 // screen kept awake. That no page gets an answer's text is secret.spec.js's
 const {
     test, expect, text, roomWith, waitForPlayers, createRoom, joinRoom, leaveGame, countSentEvents, countingSent,
-    startedRound, startRound, answer, answerStep, waitForStep, returnToRound, seatRow, setOf, setText, questionOf,
+    startedRound, startRound, answer, answerStep, waitForStep, returnToRound, seatRow, setOf, setText, questionOf, hintOf,
     QUESTION_COUNT, writeByMoves,
 } = require('./helpers');
 const { MAX_ANSWER_LENGTH } = require('../../game-logic');
@@ -27,13 +27,14 @@ test('Start waits for a second player and says so', async ({ newPlayer }) => {
     await expect(anna.page.locator('#startHint')).toBeHidden();
 });
 
-test('Start gives every player the first question, "Who?"', async ({ newPlayer }) => {
+test('Start gives every player the first question, "Who?", with its hint under it', async ({ newPlayer }) => {
     const { players } = await roomWith(newPlayer, ['Anna', 'Boris', 'Vera']);
 
     await players[1].page.click('#startRound');
 
     for (const player of players) {
         await expect(player.page.locator('#questionText')).toHaveText(await questionOf(player.page, 1));
+        await expect(player.page.locator('#questionHint')).toHaveText(await hintOf(player.page, 1));
         await expect(player.page.locator('#questionNumber')).toHaveText(text('questionOf', 'en', { number: 1, count: QUESTION_COUNT }));
         await expect(player.page.locator('#stepLabel')).toHaveText(text('stepOf', 'en', { step: 1, count: QUESTION_COUNT }));
         // No lobby in a round: the invitation and the list give way to the sheet and the table
@@ -45,7 +46,7 @@ test('Start gives every player the first question, "Who?"', async ({ newPlayer }
 
 // The round's set of questions names the sheet, and the table tells its story
 // in its words («Telling the tale»). The language button's redraw is language.spec.js's
-test("each player sees the round in their page's language, one set for the table: the set's name the sheet's only title, the question, the pleats without their answers, the table telling the set's story", async ({ newPlayer }) => {
+test("each player sees the round in their page's language, one set for the table: the set's name the sheet's only title, the question with its hint, the pleats without their answers, the table telling the set's story", async ({ newPlayer }) => {
     const anna = await newPlayer('Anna', { locale: 'ru-RU' });
     const boris = await newPlayer('Boris', { locale: 'en-GB' });
     await joinRoom(boris, await createRoom(anna));
@@ -60,9 +61,10 @@ test("each player sees the round in their page's language, one set for the table
     for (const [player, lang] of [[anna, 'ru'], [boris, 'en']]) {
         await expect(player.page.locator('#writingCard .sheet-title')).toHaveText([text(`${set}Name`, lang)]);
         await expect(player.page.locator('#questionText')).toHaveText(text(`${set}Question2`, lang));
+        await expect(player.page.locator('#questionHint')).toHaveText(text(`${set}Hint2`, lang));
         await expect(player.page.locator('#questionNumber')).toHaveText(text('questionOf', lang, { number: 2, count: QUESTION_COUNT }));
         // The answered question is folded: its number and question only, never
-        // its answer, nor a mark on it
+        // its answer, its hint, nor a mark on it
         await expect(player.page.locator('#folds .fold')).toHaveText([`1. ${text(`${set}Question1`, lang)}`]);
         await expect(player.page.locator('#seatsTitle')).toHaveText(text(`${set}TellingTheStory`, lang));
     }
@@ -299,7 +301,7 @@ test('on a computer Enter sends the answer, Shift + Enter breaks a line in it, a
     await expect(anna.page.locator('#readingCard .story__answer').first()).toHaveJSProperty('innerText', 'Anna\nand her cat');
 });
 
-test("on a phone Enter breaks a line, and the square at the field's right sends the answer", async ({ newPlayer, isMobile }) => {
+test("on a phone Enter breaks a line, and the square at the field's right sends the answer; the hint stands between the question and the field", async ({ newPlayer, isMobile }) => {
     test.skip(!isMobile, "a computer's keys: the test before");
     const anna = await newPlayer('Anna');
     const sentAnswers = countSentEvents(anna.page, 'write-answer');
@@ -322,6 +324,10 @@ test("on a phone Enter breaks a line, and the square at the field's right sends 
     const [fieldBox, sendBox] = [await field.boundingBox(), await send.boundingBox()];
     expect(sendBox.x).toBeGreaterThanOrEqual(fieldBox.x + fieldBox.width);
     expect(Math.abs(sendBox.y + sendBox.height - (fieldBox.y + fieldBox.height))).toBeLessThan(2);
+    // The hint: under the question, over the field, a row of its own
+    const [questionBox, hintBox] = [await anna.page.locator('#questionText').boundingBox(), await anna.page.locator('#questionHint').boundingBox()];
+    expect(hintBox.y).toBeGreaterThanOrEqual(questionBox.y + questionBox.height);
+    expect(hintBox.y + hintBox.height).toBeLessThanOrEqual(fieldBox.y);
 
     await send.click();
 
@@ -437,7 +443,7 @@ test('nobody may answer for a slow player who is online', async ({ newPlayer }) 
     await waitForStep([anna, boris, vera], 1);
 });
 
-test("Katya answers for Petya: she gets his sheet with this step's question, the others see who writes for him", async ({ newPlayer }) => {
+test("Katya answers for Petya: she gets his sheet with this step's question and its hint, the others see who writes for him", async ({ newPlayer }) => {
     const { players: [katya, masha, petya] } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
     await petya.page.close();
 
@@ -454,6 +460,7 @@ test("Katya answers for Petya: she gets his sheet with this step's question, the
     const titleBottom = (await katya.page.locator('#setTitle').boundingBox()).y;
     expect((await katya.page.locator('#writingTitle').boundingBox()).y).toBeGreaterThan(titleBottom);
     await expect(katya.page.locator('#questionText')).toHaveText(await questionOf(katya.page, 1));
+    await expect(katya.page.locator('#questionHint')).toHaveText(await hintOf(katya.page, 1));
     await expect(katya.page.locator('#answerText')).toHaveValue('');
     await expect(seatRow(masha.page, 'Petya')).toContainText(text('statusAnsweringFor', 'en', { name: 'Katya' }));
 
