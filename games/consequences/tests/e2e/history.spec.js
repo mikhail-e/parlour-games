@@ -7,7 +7,7 @@
 // window and the lobby are used as a player does.
 const {
     test, expect, text, joinRoom, waitForPlayers, waitForStep, writeToReading, showStories, closeStories, questionOf, questionsOfSet, storyLines,
-    listeningRoom, messagesOf, latestMessage: latest, sendRoomMove: move,
+    listeningRoom, messagesOf, latestMessage: latest, sendRoomMove: move, holdMouseOn,
 } = require('./helpers');
 
 // Three rounds of eight steps: against production every step ends with its
@@ -286,4 +286,25 @@ test("the lobby lists the rounds played, each opening the window on its round, a
     await move(anna, 'start-round');
     await waitForStep([...players, vera], 0);
     for (const player of [...players, vera]) await expect(player.page.locator('#roundsCard')).toBeHidden();
+});
+
+// A newcomer's join redraws the lobby while a player presses a round (the
+// consequences/room spec, a press during another's move). A computer's mouse:
+// a tap on a phone is hit-tested when it ends, and Chromium keeps it
+test("a press on a round played opens the window though a newcomer's join redraws the lobby in the middle of it", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, "a computer's mouse: a phone's tap keeps");
+    const { players, code } = await listeningRoom(newPlayer, ['Anna', 'Boris']);
+    const [anna] = players;
+    const set = await readRound(players, 'r1');
+    await endRound(players);
+    const row = anna.page.locator('#roundsList .rounds-list__row').first();
+    await expect(row).toBeVisible();
+
+    const letGo = await holdMouseOn(anna.page, row);
+    const vera = await newPlayer('Vera');
+    await joinRoom(vera, code);
+    await waitForPlayers(anna.page, 3);
+    await letGo();
+
+    await expectWindowRound(anna.page, set, 1, 1);
 });
