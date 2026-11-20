@@ -11,12 +11,14 @@ const { QUESTION_SETS, QUESTION_COUNT } = require('../game-logic');
 
 const GAME = path.join(__dirname, '..');
 
-// The texts of a set of questions: its name, its questions, and the round's
-// headings in its words - every story of the fullest room among them
+// The texts of a set of questions: its name, its questions, the hint under
+// each, and the round's headings in its words - every story of the fullest
+// room among them
 function keysOfSet(set) {
     return [
         `${set}Name`,
         ...Array.from({ length: QUESTION_COUNT }, (unused, index) => `${set}Question${index + 1}`),
+        ...Array.from({ length: QUESTION_COUNT }, (unused, index) => `${set}Hint${index + 1}`),
         `${set}TellingTheStory`, `${set}StoriesReady`, `${set}AllStories`,
         ...Array.from({ length: MAX_PLAYERS }, (unused, index) => `${set}StoryTitle${index + 1}`),
     ];
@@ -27,7 +29,7 @@ test('the texts are in both languages, and every server error has a Russian copy
         ['game-logic.js', 'worker/index.js', 'worker/room.js'].map(file => path.join(GAME, file)))).toEqual([]);
 });
 
-test('every set of questions the server draws has its texts in both languages: its name, its questions, its headings, a title for every story of the fullest room', () => {
+test('every set of questions the server draws has its texts in both languages: its name, its questions and their hints, its headings, a title for every story of the fullest room', () => {
     for (const language of ['en', 'ru']) {
         for (const set of QUESTION_SETS) {
             for (const key of keysOfSet(set)) {
@@ -46,8 +48,8 @@ test("a shared story's invitation names the game and its site", () => {
 
 test('no texts of a set the server does not draw, and none of the one list before the sets', () => {
     const ofSets = new Set(QUESTION_SETS.flatMap(keysOfSet));
-    // A text of a set: a set's name, question, heading or story title
-    const setText = /(?:name|question\d+|tellingTheStory|storiesReady|allStories|storyTitle\d+)$/i;
+    // A text of a set: a set's name, question, hint, heading or story title
+    const setText = /(?:name|question\d+|hint\d+|tellingTheStory|storiesReady|allStories|storyTitle\d+)$/i;
     for (const language of ['en', 'ru']) {
         const stray = Object.keys(translations[language])
             .filter(key => setText.test(key) && !ofSets.has(key));

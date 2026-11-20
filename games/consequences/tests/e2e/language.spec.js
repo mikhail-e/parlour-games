@@ -33,6 +33,7 @@ test('the switch draws the writing again in the other language, and the answer b
     await expect(anna.page.locator('#stepLabel')).toHaveText(text('stepOf', 'en', { step: 2, count: QUESTION_COUNT }));
     await expect(anna.page.locator('#questionNumber')).toHaveText(text('questionOf', 'en', { number: 2, count: QUESTION_COUNT }));
     await expect(anna.page.locator('#questionText')).toHaveText(text(`${set}Question2`, 'en'));
+    await expect(anna.page.locator('#questionHint')).toHaveText(text(`${set}Hint2`, 'en'));
     await expect(anna.page.locator('#folds .fold')).toContainText(`1. ${text(`${set}Question1`, 'en')}`);
     await expect(anna.page.locator('#seatsTitle')).toHaveText(text(`${set}TellingTheStory`, 'en'));
     await expect(seatRow(anna.page, 'Anna')).toContainText(`Anna (${text('you', 'en')})`);
