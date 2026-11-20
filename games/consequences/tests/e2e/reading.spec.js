@@ -6,6 +6,7 @@
 const {
     test, expect, text, createRoom, joinRoom, waitForPlayers, startedRound, startRound, writeToReading, returnToRound,
     showStories, closeStories, confirmAnotherRound, seatRow, stubShare, countingSent, hideSocialWidgets, socialWidgetsHidden, setOf, setText, questionOf, questionsOfSet, storyLines, roundStep,
+    holdMouseOn,
 } = require('./helpers');
 
 /* global currentGame -- the room page's picture of the room (the kit's room-page.js), inside page.evaluate() */
@@ -85,6 +86,42 @@ test("a tapped sheet opens: eight answers in order, each under its question of t
     await expect(seatRow(boris.page, 'Vera')).toContainText(text('statusClosed'));
 });
 
+// Another player's move redraws the reading card while the player presses the
+// envelope (the consequences/room spec, a press and the focus during another's
+// move). A computer's mouse and keyboard: a tap on a phone is hit-tested when
+// it ends, and Chromium keeps it
+const MOUSE_AND_KEYS = "a computer's mouse and keyboard: a phone's tap keeps";
+
+test("a press on the envelope opens the sheet though another player's move redraws the page in the middle of it", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const [anna, boris] = players;
+    await writeToReading(players);
+
+    const letGo = await holdMouseOn(anna.page, ownSheet(anna.page).locator('.closed-sheet'));
+    await ownSheet(boris.page).locator('.closed-sheet').click();
+    await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 1, count: 2 }));
+    await letGo();
+
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+});
+
+test("the focus stays on the envelope through another player's move, and Enter opens the sheet", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players } = await startedRound(newPlayer, ['Anna', 'Boris']);
+    const [anna, boris] = players;
+    await writeToReading(players);
+    const envelope = ownSheet(anna.page).locator('.closed-sheet');
+    await envelope.focus();
+
+    await ownSheet(boris.page).locator('.closed-sheet').click();
+    await expect(anna.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 1, count: 2 }));
+    await expect(envelope).toBeFocused();
+    await anna.page.keyboard.press('Enter');
+
+    await expect(answersOf(ownSheet(anna.page))).toHaveCount(8);
+});
+
 test('an open sheet is open again after a reload, with the same answers', async ({ newPlayer }) => {
     const { players } = await startedRound(newPlayer, ['Anna', 'Boris', 'Vera']);
     const [anna] = players;
@@ -119,6 +156,24 @@ test("Katya reads for Petya: she gets his sheet closed and opens it, the others 
     // Her own sheet is still hers to open
     await expect(ownSheet(katya.page).locator('.closed-sheet')).toBeVisible();
     await expect(masha.page.locator('#readingCard .opened-count')).toHaveText(text('openedCount', 'en', { opened: 1, count: 3 }));
+});
+
+test('a press on "Read for Petya" takes his sheet though another player opens hers in the middle of it', async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players } = await startedRound(newPlayer, ['Katya', 'Masha', 'Petya']);
+    const [katya, masha, petya] = players;
+    await writeToReading(players);
+    await petya.page.close();
+    await expect(seatRow(katya.page, 'Petya')).toContainText(text('statusOffline'));
+
+    const letGo = await holdMouseOn(katya.page, readFor(katya.page, 'Petya'));
+    await ownSheet(masha.page).locator('.closed-sheet').click();
+    await expect(seatRow(katya.page, 'Masha')).toContainText(text('statusOpen'));
+    await letGo();
+
+    const petyasSheet = katya.page.locator('#readingCard .reading-sheet').filter({ hasText: text('sheetOfPlayer', 'en', { name: 'Petya' }) });
+    await expect(petyasSheet.locator('.closed-sheet')).toBeVisible();
+    await expect(seatRow(masha.page, 'Petya')).toContainText(text('statusReadBy', 'en', { name: 'Katya' }));
 });
 
 test('Petya back before anyone took his sheet opens it himself; "Read for Petya" is gone', async ({ newPlayer }) => {
