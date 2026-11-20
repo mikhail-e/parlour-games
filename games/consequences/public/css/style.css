@@ -296,6 +296,16 @@ body.in-round .room-ticket #roomCode {
   line-height: 1.1;
 }
 
+/* The question's hint, a line of its own under it in plain ink (the owner's
+   pick B from a page of variants): pulled up to the question, so it reads as
+   a part of it, not a new paragraph */
+.sheet__question-hint {
+  margin: -6px 0 12px;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
 /* The answer's field grows with its text (game-room.js sets its height). Its
    paper is the kit's field's, the same with the focus as without */
 .sheet textarea {
@@ -368,19 +378,24 @@ body.in-round .room-ticket #roomCode {
     grid-row: 2;
   }
 
+  /* A row of its own: in the field's row the square would leave the field */
+  #answerForm > .sheet__question-hint {
+    grid-row: 3;
+  }
+
   #answerForm > #answerText {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 4;
   }
 
   #answerForm > .answer-send {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 4;
     align-self: end;
   }
 
   #answerForm > .sheet__under {
-    grid-row: 4;
+    grid-row: 5;
   }
 
   #saveAndPass {

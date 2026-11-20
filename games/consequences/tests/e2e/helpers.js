@@ -54,6 +54,11 @@ function questionOf(page, number, lang = 'en') {
     return setText(page, `Question${number}`, lang);
 }
 
+// The hint under the round's question with this number (1-8)
+function hintOf(page, number, lang = 'en') {
+    return setText(page, `Hint${number}`, lang);
+}
+
 // The eight questions of a set, in order, in a language: the ones over the
 // answers of its stories
 const questionsOfSet = (set, lang = 'en') => Array.from({ length: QUESTION_COUNT },
@@ -254,6 +259,7 @@ module.exports = {
     setOf,
     setText,
     questionOf,
+    hintOf,
     questionsOfSet,
     storyLines,
     roundStep,
