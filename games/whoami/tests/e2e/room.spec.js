@@ -2,7 +2,7 @@
 // the Start Game button
 const {
     test, expect, text, createRoom, joinRoom, playerCard, waitForPlayers, assignCharacter, countSentEvents, roomWith,
-    startGame, revealOwnCharacter, leaveGame,
+    startGame, revealOwnCharacter, leaveGame, holdMouseOn,
 } = require('./helpers');
 
 test('no + on your own card', async ({ newPlayer }) => {
@@ -229,4 +229,68 @@ test('a player who joins during an edit appears once the edit ends', async ({ ne
 
     await waitForPlayers(alice.page, 3);
     await expect(playerCard(alice.page, 'Carol')).toBeVisible();
+});
+
+// Another player's move redraws the players list while Alice presses on it:
+// the press and the focus must survive it (the whoami/room spec). Carol gives
+// Alice a character, so Alice's own card changes and Bob's stays as it was
+const MOUSE_AND_KEYS = "a computer's mouse and keyboard: a phone's tap keeps";
+
+async function carolGivesAliceACharacter(alice, carol) {
+    await assignCharacter(carol, 'Alice', 'Napoleon');
+    await expect(playerCard(alice.page, 'Alice').locator('.character-sticker.mystery')).toBeVisible();
+}
+
+test("a press on Assign character opens the field though another player's move redraws the list in the middle of it", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players: [alice, , carol] } = await roomWith(newPlayer, ['Alice', 'Bob', 'Carol']);
+    const bobOnAlice = playerCard(alice.page, 'Bob');
+
+    const letGo = await holdMouseOn(alice.page, bobOnAlice.locator('.add-character-btn'));
+    await carolGivesAliceACharacter(alice, carol);
+    await letGo();
+
+    await expect(bobOnAlice.locator('.character-input')).toBeFocused();
+});
+
+test("the focus on Assign character stays through another player's move, and Enter presses it", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players: [alice, , carol] } = await roomWith(newPlayer, ['Alice', 'Bob', 'Carol']);
+    const bobOnAlice = playerCard(alice.page, 'Bob');
+    await bobOnAlice.locator('.add-character-btn').focus();
+
+    await carolGivesAliceACharacter(alice, carol);
+    await expect(bobOnAlice.locator('.add-character-btn')).toBeFocused();
+    await alice.page.keyboard.press('Enter');
+
+    await expect(bobOnAlice.locator('.character-input')).toBeFocused();
+});
+
+test("a press on another player's tag opens it for editing though another player's move redraws the list in the middle of it", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players: [alice, , carol] } = await roomWith(newPlayer, ['Alice', 'Bob', 'Carol']);
+    await assignCharacter(alice, 'Bob', 'Cleopatra');
+    const bobOnAlice = playerCard(alice.page, 'Bob');
+
+    const letGo = await holdMouseOn(alice.page, bobOnAlice.locator('.character-sticker'));
+    await carolGivesAliceACharacter(alice, carol);
+    await letGo();
+
+    await expect(bobOnAlice.locator('.character-input')).toHaveValue('Cleopatra');
+});
+
+// The card Alice pressed on is the one that changed: the button is gone, and
+// her press lands on nothing, the tag that took its place included
+test('a press on Assign character opens nothing when another player gave that player a character first', async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, MOUSE_AND_KEYS);
+    const { players: [alice, , carol] } = await roomWith(newPlayer, ['Alice', 'Bob', 'Carol']);
+    const bobOnAlice = playerCard(alice.page, 'Bob');
+
+    const letGo = await holdMouseOn(alice.page, bobOnAlice.locator('.add-character-btn'));
+    await assignCharacter(carol, 'Bob', 'Gandalf');
+    await expect(bobOnAlice.locator('.character-sticker')).toHaveText('Gandalf');
+    await letGo();
+
+    await expect(bobOnAlice.locator('.character-input')).toHaveCount(0);
+    await expect(bobOnAlice.locator('.character-sticker')).toHaveText('Gandalf');
 });

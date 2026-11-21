@@ -353,6 +353,17 @@ async function axeViolations(page, only) {
         `${violation.id}: ${violation.nodes.map(node => node.target.join(' ')).join(', ')}`);
 }
 
+// The mouse pressed on a button and held there: gives the letting go. Between
+// the two another player's move may redraw the page under it. The button is
+// scrolled into sight first: a mouse presses only what the window shows
+async function holdMouseOn(page, locator) {
+    await locator.scrollIntoViewIfNeeded();
+    const box = await locator.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    return () => page.mouse.up();
+}
+
 // A pause, for the tests of the room's timers only: time is what they test.
 // Every other test waits for a condition (docs/testing.md, rule 3)
 function sleep(ms) {
@@ -383,6 +394,7 @@ module.exports = {
     holdRoomJoin,
     releaseRoomJoin,
     countSentEvents,
+    holdMouseOn,
     axeViolations,
     sleep,
 };

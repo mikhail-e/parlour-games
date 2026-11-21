@@ -1,6 +1,6 @@
 // The started game: the mystery sticker, revealing your character, restarting
 const {
-    test, expect, text, playerCard, startedGame, revealOwnCharacter, createRoom, joinRoom, assignCharacter, startGame,
+    test, expect, text, playerCard, startedGame, revealOwnCharacter, createRoom, joinRoom, assignCharacter, startGame, holdMouseOn,
 } = require('./helpers');
 
 const notifications = page => page.locator('.alert.position-fixed');
@@ -69,6 +69,20 @@ test('Cancel in the reveal window reveals nothing', async ({ newPlayer }) => {
     await expect(playerCard(alice.page, 'Bob').locator('.character-sticker.revealed')).toBeVisible();
     expect(await playerCard(bob.page, 'Alice').locator('.character-sticker.revealed').count()).toBe(0);
     expect(await playerCard(alice.page, 'Alice').locator('.character-sticker.mystery').count()).toBe(1);
+});
+
+// Bob's reveal redraws the players list while Alice presses her envelope: her
+// card did not change, so the press must still open the window (the whoami/room spec)
+test("a press on your envelope opens the reveal window though another player's reveal redraws the list in the middle of it", async ({ newPlayer, isMobile }) => {
+    test.skip(isMobile, "a computer's mouse: a phone's tap keeps");
+    const { players: { Alice: alice, Bob: bob } } = await startedGame(newPlayer, ['Alice', 'Bob']);
+
+    const letGo = await holdMouseOn(alice.page, playerCard(alice.page, 'Alice').locator('.character-sticker.mystery'));
+    await revealOwnCharacter(bob);
+    await expect(playerCard(alice.page, 'Bob').locator('.character-sticker.revealed')).toBeVisible();
+    await letGo();
+
+    await expect(alice.page.locator('#revealModal')).toHaveClass(/\bshow\b/);
 });
 
 test('revealing shows your character and tells everyone', async ({ newPlayer }) => {
