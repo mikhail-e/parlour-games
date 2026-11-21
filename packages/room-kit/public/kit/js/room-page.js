@@ -7,7 +7,7 @@
 // startRoomPage(). The page's markup is the game's (game.html); this script
 // finds its parts by their ids and classes - the list is in the kit's
 // CLAUDE.md (The room page).
-/* exported socket, currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
+/* exported socket, currentGame, currentPlayer, sendMove, renderAvatar, redrawChildren, startRoomPage */
 /* global debugLog, getText, serverErrorText, showNotification, showMessage, handleApiError, AppStorage, PLAYER_ID, PLAYER_SECRET,
    isCustomAvatar, keepScreenAwake, RoomSocket, setUpInvitation */
 
@@ -332,6 +332,22 @@ function renderAvatar(element, avatar) {
     } else {
         element.textContent = avatar;
     }
+}
+
+// Puts the parts of a container drawn anew into their places, keeping each
+// old part equal to the new one at the same place (isEqualNode): another
+// player's move redraws the room while a player presses a button or has the
+// focus on it, and a part taken out of the page loses both - the press never
+// counts. The game still draws the part whole from the room; an unchanged part
+// only stays where it is. An equal part keeps its old handlers, so a part's
+// markup says all its buttons act on (whose it is: a data-player-id)
+function redrawChildren(container, parts) {
+    parts.forEach((part, index) => {
+        const old = container.children[index];
+        if (!old) container.append(part);
+        else if (!old.isEqualNode(part)) old.replaceWith(part);
+    });
+    while (container.children.length > parts.length) container.lastElementChild.remove();
 }
 
 // The newcomer's waiting screen (#waitingSheet, with #waitingAvatar and

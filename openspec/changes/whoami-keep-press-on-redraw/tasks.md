@@ -3,11 +3,11 @@
 ## 1. Начало
 
 - [x] 1.1 Сбой воспроизведён на локальном сервере вне репозитория (2026-11-21): мышь теряет нажатие на «Задать персонажа» и на своём конверте, клавиатура теряет фокус, касание в Chromium нет; набросок исправления, вставленный в страницу, чинит мышь и клавиатуру. Проверка: записано в design.md
-- [ ] 1.2 Ветка `feature/whoami-keep-press-on-redraw` от `develop`, первый коммит: этот change. Проверка: `openspec validate whoami-keep-press-on-redraw --strict` проходит, `git status` чистый
+- [x] 1.2 Ветка `feature/whoami-keep-press-on-redraw` от `develop`, первый коммит: этот change. Проверка: `openspec validate whoami-keep-press-on-redraw --strict` проходит, `git status` чистый
 
 ## 2. Общий код в ките
 
-- [ ] 2.1 `redrawChildren` переезжает из `games/consequences/public/js/game-room.js` в `packages/room-kit/public/kit/js/room-page.js` (design, решение 1), с комментарием о правиле разметки; Consequences берёт его из кита. `holdMouseOn` переезжает из `games/consequences/tests/e2e/helpers.js` в `packages/room-kit/e2e-helpers.js` (решение 3). Документы: CLAUDE.md кита (страница комнаты), CLAUDE.md Consequences (помощник теперь китовый), `docs/testing.md` кита и Consequences. Без длинного тире в новых строках. Проверка: `npm test -w packages/room-kit` зелёный; `npm run lint` Consequences зелёный; `reading.spec.js` и `history.spec.js` Consequences зелёные на телефоне и компьютере
+- [x] 2.1 `redrawChildren` переезжает из `games/consequences/public/js/game-room.js` в `packages/room-kit/public/kit/js/room-page.js` (design, решение 1), с комментарием о правиле разметки; Consequences берёт его из кита. `holdMouseOn` переезжает из `games/consequences/tests/e2e/helpers.js` в `packages/room-kit/e2e-helpers.js` (решение 3). Документы: CLAUDE.md кита (страница комнаты), CLAUDE.md Consequences (помощник теперь китовый), `docs/testing.md` кита и Consequences. Без длинного тире в новых строках. Проверка: `npm test -w packages/room-kit` зелёный; `npm run lint` Consequences зелёный; `reading.spec.js` и `history.spec.js` Consequences зелёные на телефоне и компьютере
 
 ## 3. Тесты whoami, которые падают
 
