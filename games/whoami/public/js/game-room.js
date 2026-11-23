@@ -5,7 +5,7 @@
 // newcomers who ask to join a started round.
 /* global debugLog, MAX_CHARACTER_LENGTH, getText, showNotification, keepScreenAwake */
 // From the kit's room-page.js
-/* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
+/* global currentGame, currentPlayer, sendMove, renderAvatar, redrawChildren, startRoomPage */
 
 let revealModal = null;
 let restartModal = null;
@@ -302,11 +302,14 @@ function updatePlayersList() {
         return;
     }
 
-    // Simple approach: complete rebuild only when safe
-    playerListEl.innerHTML = '';
-
-    // Simple player rendering
-    currentGame.players.forEach(player => {
+    // The whole list is drawn anew, then the kit's redrawChildren keeps in
+    // place each card equal to the one drawn before: another player's move
+    // must not take out of the page the button or tag a player is pressing,
+    // or has the focus on (the whoami/room spec). A card kept keeps its old
+    // handlers, so a card's markup says all they act on: whose card it is
+    // (data-player-id), the character a tag shows, whether the game is on (a
+    // tag's and an envelope's title)
+    const cards = currentGame.players.map(player => {
         const playerCard = document.createElement('div');
         playerCard.className = 'player-card';
         playerCard.dataset.playerId = player.id;
@@ -418,8 +421,9 @@ function updatePlayersList() {
         }
         // Current player with no character in the lobby - show nothing (clean look)
 
-        playerListEl.appendChild(playerCard);
+        return playerCard;
     });
+    redrawChildren(playerListEl, cards);
 
     // No character is being typed now: a request that waited for it may show
     showNextJoinRequest();

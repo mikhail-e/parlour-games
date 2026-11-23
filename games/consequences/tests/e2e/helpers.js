@@ -70,17 +70,6 @@ const storyLines = (set, answers, lang = 'en') => {
     return answers.map((answer, index) => `${questions[index]} ${answer}`);
 };
 
-// The mouse pressed on a button and held there: gives the letting go. Between
-// the two another player's move may redraw the page under it. The button is
-// scrolled into sight first: a mouse presses only what the window shows
-async function holdMouseOn(page, locator) {
-    await locator.scrollIntoViewIfNeeded();
-    const box = await locator.boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    return () => page.mouse.up();
-}
-
 // The round's step as the page knows it: 0-7 a question, 8 the reading,
 // null in the lobby. Read from the page, so a check holds in any language
 function roundStep(page) {
@@ -274,7 +263,6 @@ module.exports = {
     questionsOfSet,
     storyLines,
     roundStep,
-    holdMouseOn,
     waitForStep,
     startRound,
     startedRound,

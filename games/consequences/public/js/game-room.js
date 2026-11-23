@@ -24,7 +24,7 @@
 // From the game's config.js
 /* global APP_STORAGE_PREFIX */
 // From the kit's room-page.js
-/* global currentGame, currentPlayer, sendMove, renderAvatar, startRoomPage */
+/* global currentGame, currentPlayer, sendMove, renderAvatar, redrawChildren, startRoomPage */
 
 // The answers of the sheets this player opened, by sheet number (`sheet`):
 // the only answers a page has until every sheet is open
@@ -145,22 +145,6 @@ function button(className, text, onClick) {
     node.type = 'button';
     node.addEventListener('click', onClick);
     return node;
-}
-
-// Puts a part of the screen drawn anew into its place, keeping each old part
-// equal to the new one at the same place (isEqualNode): another player's move
-// redraws the screen while a player presses a button or has the focus on it,
-// and a part taken out of the page loses both - the press never counts (the
-// consequences/room spec). The screen is still drawn whole from the room; an
-// unchanged part only stays where it is. An equal part keeps its old handler,
-// so a part's markup says all its buttons act on (a seat's data-player-id)
-function redrawChildren(container, parts) {
-    parts.forEach((part, index) => {
-        const old = container.children[index];
-        if (!old) container.append(part);
-        else if (!old.isEqualNode(part)) old.replaceWith(part);
-    });
-    while (container.children.length > parts.length) container.lastElementChild.remove();
 }
 
 startRoomPage({
