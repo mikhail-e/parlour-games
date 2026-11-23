@@ -20,7 +20,7 @@
 ## 5. Проверка целиком
 
 - [x] 5.1 `npm test` в корне зелёный
-- [ ] 5.2 После выкладки: `/api/version` whoami 2.7.0 и Consequences 1.9.1; `npm run test:e2e:prod` обеих игр зелёный
+- [x] 5.2 После выкладки: `/api/version` whoami 2.7.0 и Consequences 1.9.1; `npm run test:e2e:prod` обеих игр зелёный. Сделано: прод отдаёт whoami 2.7.0 и Consequences 1.9.1, проверка прода обеих игр зелёная
 
 ## Workflow follow-up
 
